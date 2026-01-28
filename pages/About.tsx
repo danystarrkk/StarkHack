@@ -8,7 +8,7 @@ const AboutPage: React.FC = () => {
           <div className="relative group">
             <div className="absolute -inset-2 bg-nord7/10 blur-xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
             <div className="relative aspect-square w-64 md:w-full max-w-xs bg-deep-search border-2 border-nord3/60 rounded-lg overflow-hidden shadow-2xl">
-              <img alt="Cybersecurity profile" className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-500" src="images/stark.png"/>
+              <img alt="Cybersecurity profile" className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-500" src="images/stark.webp"/>
             </div>
           </div>
           <div className="mt-8 flex flex-col items-center text-center">

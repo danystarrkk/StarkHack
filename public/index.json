@@ -16,7 +16,7 @@
       "\"Docker Socket Misconfiguration\"",
       "\"Container Escape\""
     ],
-    "image": "/images/realsaga.png",
+    "image": "/images/realsaga.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "realsaga",
@@ -38,7 +38,7 @@
       "\"Sudo Misconfiguration\"",
       "\"Privilege Escalation\""
     ],
-    "image": "/images/espo.png",
+    "image": "/images/espo.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "espo",
@@ -61,7 +61,7 @@
       "\"Abuse of Legitimate Functionality\"",
       "\"Privilege Escalation\""
     ],
-    "image": "/images/pycrt.png",
+    "image": "/images/pycrt.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "pycrt",
@@ -84,7 +84,7 @@
       "\"Privilege Escalation\"",
       "\"Buffer Overflow\""
     ],
-    "image": "/images/homelab.png",
+    "image": "/images/homelab.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "homelab",
@@ -106,7 +106,7 @@
       "\"Sudo Misconfiguration\"",
       "\"Privilege Escalation\""
     ],
-    "image": "/images/console.png",
+    "image": "/images/console.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "console",
@@ -129,7 +129,7 @@
       "\"Sudo Misconfiguration\"",
       "\"SUID Abuse\""
     ],
-    "image": "/images/ximai.png",
+    "image": "/images/ximai.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "ximai",
@@ -152,7 +152,7 @@
       "\"Sudo Misconfiguration\"",
       "\"Privilege Escalation\""
     ],
-    "image": "/images/Griffin.png",
+    "image": "/images/Griffin.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "griffin",
@@ -173,7 +173,7 @@
       "\"Sudo Misconfiguration\"",
       "\"Privilege Escalation\""
     ],
-    "image": "/images/Birdeye.png",
+    "image": "/images/Birdeye.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "birdeye",
@@ -196,7 +196,7 @@
       "\"Sudo Misconfiguration\"",
       "\"Privilege Escalation\""
     ],
-    "image": "/images/silentdev.png",
+    "image": "/images/silentdev.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "silentdev",

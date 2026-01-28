@@ -25,3 +25,8 @@ Thumbs.db
 
 # Cache
 .cache/
+
+# Images PNG
+temp/
+# Scripts
+/scripts
