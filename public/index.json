@@ -1,0 +1,205 @@
+[
+  {
+    "title": "RealSaga",
+    "date": "2026-01-25",
+    "draft": "false",
+    "description": "Writeup de la máquina SilentDev en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"CVE-2020-35234\"",
+      "\"Exposed Debug Logs\"",
+      "\"User Enumeration\"",
+      "\"Authenticated Remote Code Execution\"",
+      "\"SUID Privilege Escalation\"",
+      "\"Docker Socket Misconfiguration\"",
+      "\"Container Escape\""
+    ],
+    "image": "/images/realsaga.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "realsaga",
+    "path": "/writeups/hackmyvm/realsaga.md"
+  },
+  {
+    "title": "Espo",
+    "date": "2026-01-09",
+    "description": "Writeup de la máquina Espo en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Path Traversal\"",
+      "\"Exposed Backup Files\"",
+      "\"Credential Disclosure\"",
+      "\"CVE-2023-5965\"",
+      "\"Authenticated Remote Code Execution\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/espo.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "espo",
+    "path": "/writeups/hackmyvm/espo.md"
+  },
+  {
+    "title": "PyCrt",
+    "date": "2025-12-24",
+    "draft": "false",
+    "description": "Writeup de la máquina PyCrt en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Local File Inclusion\"",
+      "\"Remote Command Execution\"",
+      "\"Insecure Cryptographic Logic\"",
+      "\"Hardcoded Credentials\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Abuse of Legitimate Functionality\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/pycrt.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "pycrt",
+    "path": "/writeups/hackmyvm/pycrt.md"
+  },
+  {
+    "title": "HomeLab",
+    "date": "2025-12-15",
+    "draft": "false",
+    "description": "Writeup de la máquina HomeLab en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"IP Restriction Bypass\"",
+      "\"Sensitive File Disclosure\"",
+      "\"Credential Disclosure\"",
+      "\"Insecure VPN Configuration\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Privilege Escalation\"",
+      "\"Buffer Overflow\""
+    ],
+    "image": "/images/homelab.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "homelab",
+    "path": "/writeups/hackmyvm/homelab.md"
+  },
+  {
+    "title": "Console",
+    "date": "2025-12-05",
+    "draft": "false",
+    "description": "Writeup de la máquina Console en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Remote Command Execution\"",
+      "\"Exposed Source Code\"",
+      "\"Credential Disclosure\"",
+      "\"SSH Port Forwarding\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/console.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "console",
+    "path": "/writeups/hackmyvm/console.md"
+  },
+  {
+    "title": "Ximai",
+    "date": "2025-11-27",
+    "draft": "false",
+    "description": "Writeup de la máquina Ximai en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Directory Listing Exposure\"",
+      "\"Sensitive File Disclosure\"",
+      "\"WordPress Vulnerability\"",
+      "\"Time-Based SQL Injection\"",
+      "\"Credential Reuse\"",
+      "\"Sudo Misconfiguration\"",
+      "\"SUID Abuse\""
+    ],
+    "image": "/images/ximai.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "ximai",
+    "path": "/writeups/hackmyvm/ximai.md"
+  },
+  {
+    "title": "Griffin",
+    "date": "2025-11-05",
+    "draft": "false",
+    "description": "Writeup de la máquina Griffin en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Exposed Debug Endpoint\"",
+      "\"Remote Command Execution\"",
+      "\"User Enumeration\"",
+      "\"Credential Disclosure\"",
+      "\"Token Decoding\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/Griffin.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "griffin",
+    "path": "/writeups/hackmyvm/griffin.md"
+  },
+  {
+    "title": "Birdeye",
+    "date": "2025-11-03",
+    "draft": "false",
+    "description": "Writeup de la máquina Birdeye en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Server-Side Request Forgery (SSRF)\"",
+      "\"Exposed Administrative Credentials\"",
+      "\"Authenticated Remote Code Execution\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/Birdeye.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "birdeye",
+    "path": "/writeups/hackmyvm/birdeye.md"
+  },
+  {
+    "title": "SilentDev",
+    "date": "2025-11-03",
+    "draft": "false",
+    "description": "Writeup de la máquina SilentDev en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Unrestricted File Upload\"",
+      "\"Content-Type Bypass\"",
+      "\"Remote Command Execution\"",
+      "\"Wildcard Injection\"",
+      "\"Cron Job Abuse\"",
+      "\"Sudo Misconfiguration\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/silentdev.png",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "silentdev",
+    "path": "/writeups/hackmyvm/silentdev.md"
+  }
+]
