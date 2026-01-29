@@ -40,7 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <span className="text-nord14 text-[9px] font-mono leading-none tracking-widest mt-1">ONLINE</span>
             </div>
             <div className="size-10 rounded bg-nord1 border border-nord3/30 overflow-hidden flex items-center justify-center">
-              <span className="material-symbols-outlined text-nord9"> <img src="images/stark.webp"></img> </span>
+              <span className="material-symbols-outlined text-nord9"> <img src="/images/stark.webp"></img> </span>
             </div>
           </div>
         </div>

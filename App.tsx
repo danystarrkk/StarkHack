@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/Home';
 import DirectoryPage from './pages/Directory';
@@ -9,7 +9,7 @@ import AboutPage from './pages/About';
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -21,7 +21,7 @@ const App: React.FC = () => {
           <Route path="/about" element={<AboutPage />} />
         </Routes>
       </Layout>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

