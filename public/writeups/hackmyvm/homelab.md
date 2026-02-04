@@ -5,7 +5,6 @@ draft: false
 description: "Writeup de la máquina HomeLab en HackMyVM."
 categories: ["HackMyVM"]
 tags: ["IP Restriction Bypass", "Sensitive File Disclosure", "Credential Disclosure", "Insecure VPN Configuration", "Sudo Misconfiguration", "Privilege Escalation", "Buffer Overflow"]
-
 image: "/images/homelab.webp"
 level: Medium
 ---

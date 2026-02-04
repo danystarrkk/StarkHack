@@ -1,44 +1,45 @@
-/**
- * This script runs in Node.js environment.
- * It scans 'public/writeups' and generates 'public/index.json'.
- * Usage: node scripts/generate-index.js
- */
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Basic Frontmatter Parser (Regex based to avoid heavy dependencies in this simple script)
+// FRONTMATTER PARSER ROBUSTO
 function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]+?)\n---\n/);
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+
   if (!match) return {};
-  
-  const yamlBlock = match[1];
+
   const attributes = {};
-  
-  yamlBlock.split('\n').forEach(line => {
-    const parts = line.split(':');
-    if (parts.length >= 2) {
-      const key = parts[0].trim();
-      let value = parts.slice(1).join(':').trim();
-      
-      // Remove quotes
-      if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-      if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
-      
-      // Handle arrays [a, b]
-      if (value.startsWith('[') && value.endsWith(']')) {
-        value = value.slice(1, -1).split(',').map(s => s.trim());
-      }
-      
-      attributes[key] = value;
+
+  match[1].split(/\r?\n/).forEach(line => {
+    const i = line.indexOf(':');
+    if (i === -1) return;
+
+    const key = line.slice(0, i).trim();
+    let value = line.slice(i + 1).trim();
+
+    // quitar comillas
+    if (/^["'].*["']$/.test(value)) {
+      value = value.slice(1, -1);
     }
+
+    // arrays
+    if (value.startsWith('[') && value.endsWith(']')) {
+      value = value
+        .slice(1, -1)
+        .split(',')
+        .map(s => s.trim());
+    }
+
+    // boolean auto parse
+    if (value === 'true') value = true;
+    if (value === 'false') value = false;
+
+    attributes[key] = value;
   });
-  
+
   return attributes;
 }
 
@@ -52,31 +53,32 @@ if (fs.existsSync(WRITEUPS_DIR)) {
 
   platforms.forEach(platform => {
     const platformPath = path.join(WRITEUPS_DIR, platform);
-    
-    if (fs.statSync(platformPath).isDirectory()) {
-      const files = fs.readdirSync(platformPath).filter(f => f.endsWith('.md'));
-      
-      files.forEach(file => {
-        const filePath = path.join(platformPath, file);
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const meta = parseFrontmatter(content);
-        
-        // Skip drafts
-        if (meta.draft === 'true' || meta.draft === true) return;
 
-        index.push({
-          ...meta,
-          platform: platform,
-          slug: file.replace('.md', ''),
-          path: `/writeups/${platform}/${file}`
-        });
+    if (!fs.statSync(platformPath).isDirectory()) return;
+
+    const files = fs.readdirSync(platformPath).filter(f => f.endsWith('.md'));
+
+    files.forEach(file => {
+      const filePath = path.join(platformPath, file);
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      const meta = parseFrontmatter(content);
+
+      // skip drafts reales
+      if (meta.draft === true) return;
+
+      index.push({
+        ...meta,
+        platform,
+        slug: file.replace(/\.md$/, ''),
+        path: `/writeups/${platform}/${file}`
       });
-    }
+    });
   });
 }
 
-// Sort by date desc
 index.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
 fs.writeFileSync(OUTPUT_FILE, JSON.stringify(index, null, 2));
+
 console.log(`Generated index.json with ${index.length} writeups.`);

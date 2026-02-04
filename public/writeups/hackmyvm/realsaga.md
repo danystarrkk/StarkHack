@@ -11,7 +11,7 @@ level: Medium
 
 # Reconocimiento
 
-Comenzamos identificando la máquina en red, esto con ayuda de [[Arp-Scan]]:
+Comenzamos identificando la máquina en red, esto con ayuda de **Arp-Scan**:
 
 ```bash
 arp-scan -I ens33 --localnet --ignoredups
@@ -29,7 +29,7 @@ ping -c 1 192.168.1.99
 
 Tenemos un `ttl=64`, esto nos permite intuir un sistema basado en Linux.
 
-Comenzamos con un escaneo activo inicial, solo para identificar en su mayoría los puertos expuestos, esto con ayuda de [[Nmap]]:
+Comenzamos con un escaneo activo inicial, solo para identificar en su mayoría los puertos expuestos, esto con ayuda de **Nmap**:
 
 ```bash
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.99 -oG allPorts
@@ -49,13 +49,13 @@ nmap -p80,25 -sVC 192.168.1.99 -oN target
 
 Como podemos observar, tenemos cierta información extra sobre la máquina víctima. En este caso específico, lo que podemos observar es que el servicio del puerto 25 es un `Postfix smtp`, además tenemos el puerto 80 donde logramos ver dos cosas interesantes: la versión de Apache, que es la 2.4.29, y el `http-title`, donde lo que logro observar es un `saga.local`, lo que me intenta decir que tiene ese dominio asociado. Con esto en mente, procedo a configurar el dominio perteneciente a la IP de la máquina víctima para evitar problemas.
 
-Ahora vamos a identificar las tecnologías con ayuda de [[Whatweb]] y Wappalyzer para tener una idea de lo que tenemos corriendo:
+Ahora vamos a identificar las tecnologías con ayuda de **Whatweb** y Wappalyzer para tener una idea de lo que tenemos corriendo:
 
 ![img5](/images/Pasted%20image%2020260124120652.webp)
 
 ![img6](/images/Pasted%20image%2020260124120731.webp)
 
-De entre todo lo que podemos observar, nos vamos a fijar directamente en `WordPress`, y vamos a volver a utilizar [[Nmap]] con uno de sus scripts, que es `http-enum`, para ver si logramos encontrar algo:
+De entre todo lo que podemos observar, nos vamos a fijar directamente en `WordPress`, y vamos a volver a utilizar **Nmap** con uno de sus scripts, que es `http-enum`, para ver si logramos encontrar algo:
 
 ```bash
 nmap --script='http-enum' -p80 192.168.1.99 -oN WebScan
@@ -67,7 +67,7 @@ De todo lo que podemos observar, vemos una ruta de un `backup` el cual no contie
 
 ![img8](/images/Pasted%20image%2020260124122708.webp)
 
-Pues sí, logramos acceder, pero no vemos nada. En este punto, y tomando en cuenta que tenemos varios recursos expuestos, vamos a intentar enumerar con ayuda de [[Gobuster]] las rutas de la web de la siguiente manera:
+Pues sí, logramos acceder, pero no vemos nada. En este punto, y tomando en cuenta que tenemos varios recursos expuestos, vamos a intentar enumerar con ayuda de **Gobuster** las rutas de la web de la siguiente manera:
 
 ```bash
 gobuster dir -u http://saga.local -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
@@ -75,7 +75,7 @@ gobuster dir -u http://saga.local -w /usr/share/seclists/Discovery/Web-Content/D
 
 ![img9](/images/Pasted%20image%2020260124122933.webp)
 
-Vemos algunas rutas que ya nos reportó [[Nmap]], pero vamos a intentar ver dentro de `wp-content`. Recordemos que dentro de esta ruta usualmente se almacena mucha información y complementos de WordPress, por lo que es una buena idea enumerarla:
+Vemos algunas rutas que ya nos reportó **Nmap**, pero vamos a intentar ver dentro de `wp-content`. Recordemos que dentro de esta ruta usualmente se almacena mucha información y complementos de WordPress, por lo que es una buena idea enumerarla:
 
 ```bash
 gobuster dir -u http://saga.local/wp-content -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
