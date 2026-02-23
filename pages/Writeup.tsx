@@ -166,6 +166,12 @@ interface TOCItem {
   level: number;
 }
 
+const levelColors: Record<string, string> = {
+  Easy: 'text-nord14',   // Verde
+  Medium: 'text-nord13', // Amarillo
+  Hard: 'text-nord11',   // Rojo
+};
+
 const WriteupViewPage: React.FC = () => {
   const { platformId, slug } = useParams<{ platformId: string; slug: string }>();
   const [data, setData] = useState<WriteupContent | null>(null);
@@ -224,17 +230,17 @@ const WriteupViewPage: React.FC = () => {
           <div className="sticky top-32 p-6 rounded-lg bg-deep-card/40 border border-nord3/20 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-6 text-nord8">
               <span className="material-symbols-outlined text-sm">segment</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em]">
                 Metadata
               </span>
             </div>
 
-            <div className="space-y-4 text-sm font-mono text-nord4/70">
+            <div className="space-y-4 text-[14px] font-mono text-nord4/70">
               <div className="flex justify-between">
                 <span className="text-nord9">Date: {data.date || 'Unknown'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-nord14">Level: {data.level || 'N/A'}</span>
+                <span className={levelColors[data.level] || "text-nord4"} >Level: {data.level || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-nord4">Platform: {platformId}</span>
@@ -245,7 +251,7 @@ const WriteupViewPage: React.FC = () => {
                   {safeTags.map(tag => (
                     <span
                       key={tag}
-                      className="px-1.5 py-0.5 bg-nord3/40 rounded text-[10px]"
+                      className="px-1.5 py-0.5 bg-nord3/40 rounded text-[11px]"
                     >
                       {tag}
                     </span>
@@ -258,7 +264,7 @@ const WriteupViewPage: React.FC = () => {
               <div className="mt-8 pt-6 border-t border-nord3/10">
                 <div className="flex items-center gap-2 mb-4 text-nord8">
                   <span className="material-symbols-outlined text-sm">toc</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                  <span className="text-[12px] font-black uppercase tracking-[0.2em]">
                     Index
                   </span>
                 </div>
@@ -275,8 +281,8 @@ const WriteupViewPage: React.FC = () => {
                       }
                     }}
                     className={`text-xs cursor-pointer hover:text-nord8
-                      ${item.level === 1 ? 'text-nord6 font-bold' : ''}
-                      ${item.level === 2 ? 'text-nord4/80 pl-3' : ''}
+                      ${item.level === 1 ? 'text-nord6 font-bold text-[15px]' : ''}
+                      ${item.level === 2 ? 'text-nord4/80 pl-3 text-[13px]' : ''}
                       ${item.level === 3 ? 'text-nord4/60 pl-6 text-[11px]' : ''}
                     `}
                   >
@@ -291,7 +297,7 @@ const WriteupViewPage: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-nord3/10">
               <Link
                 to={`/machines/${platformId}`}
-                className="flex items-center gap-2 text-[10px] font-mono text-nord3 hover:text-nord8"
+                className="flex items-center gap-2 text-[13px] font-mono text-nord3 hover:text-nord8"
               >
                 <span className="material-symbols-outlined text-sm">
                   arrow_back

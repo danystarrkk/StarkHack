@@ -9,6 +9,8 @@ image: "/images/sabulaji.webp"
 level: Medium
 ---
 
+# Reconocimiento
+
 Iniciamos con un escaneo en red, esto con ayuda de **Arp-Scan**:
 
 ```bash
@@ -90,6 +92,8 @@ Bueno, vamos ahora a intentar listar lo perteneciente a `epages`:
 ```bash
 rsync --list-only rsync://192.168.1.71/epages
 ```
+
+# Explotación
 
 ![img10](/images/Pasted%20image%2020260217222411.webp)
 
@@ -175,6 +179,8 @@ ssh welcome@192.168.1.71
 ![img17](/images/Pasted%20image%2020260219221600.webp)
 
 Como observamos, dentro del directorio personal de `welcome` vamos a lograr encontrar la flag de usuario.
+
+# Escalada de Privilegios
 
 Comenzamos el reconocimiento ejecutando `sudo -l` para ver si nos permite ejecutar binarios como otro usuario o directamente como `root`:
 
