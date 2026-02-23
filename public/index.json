@@ -1,5 +1,29 @@
 [
   {
+    "title": "Sabulaji",
+    "date": "2026-02-23",
+    "draft": false,
+    "description": "Writeup de la máquina Sabulaji en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Exposed Rsync Service\"",
+      "\"Rsync Weak Credentials\"",
+      "\"Credential Disclosure in Document\"",
+      "\"Password Reuse\"",
+      "\"Insecure Sudo Script\"",
+      "\"Path Traversal Logic Bypass\"",
+      "\"Mlocate Database Information Disclosure\"",
+      "\"Sudo Rsync Privilege Escalation\""
+    ],
+    "image": "/images/sabulaji.webp",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "sabulaji",
+    "path": "/writeups/hackmyvm/sabulaji.md"
+  },
+  {
     "title": "Tryharder",
     "date": "2026-02-04",
     "draft": false,
