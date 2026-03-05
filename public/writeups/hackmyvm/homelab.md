@@ -366,3 +366,40 @@ Podemos ver la flag:
 Lab Terminado.
 
 ![img50](/images/Pasted%20image%2020251214214826.webp)
+
+# Mitigaciones
+
+Al terminar con la enumeración y explotación de la máquina Homelab se proponen
+las siguientes mitigaciones para fortalecer y mantener la seguridad:
+
+## Validación de Cabeceras HTTP
+
+La vulnerabilidad inicial se debe al exceso de confianza en la cabecera
+`X-Forwarded-For`, mediante la cual se valida la identidad del cliente.
+
+Se propone una configuración donde el servidor web solo acepte cabeceras
+provenientes de nodos de confianza. No se recomienda utilizar cabeceras HTTP
+manipulables por los usuarios, que permitan gestionar la lógica de
+autorización o el control de acceso a nivel de red.
+
+## Protección de Archivos y Certificados
+
+El acceso se obtiene mediante la exposición de un archivo de configuración
+`VPN`.
+
+Se propone el mover todo archivo de configuración fuera de la raíz del servidor
+web, desactivar el `Directory Listing` en todo el servidor y emplear gestores de
+bóvedas para el almacenamiento de credenciales.
+
+## Desarrollo Seguro
+
+El binario `deepseek` encontrado en el sistema tiene un Buffer Overflow debido a
+un mal gestionamiento de la memoria al momento de asignar una cantidad
+específica de bytes a una variable y aumentar dicho tamaño al
+recibir la entrada, generando una discrepancia peligrosa.
+
+Se propone la verificación de la asignación de memoria y se
+recomienda la compilación de binarios críticos con protecciones como `Stack
+Canaries` que permiten la detección de corrupción en pila, `NX` para dificultar la
+ejecución en la pila, y tener en el sistema habilitado el ASLR para dificultar las
+redirecciones en el flujo.
