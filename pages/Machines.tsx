@@ -63,21 +63,19 @@ const MachineListingsPage: React.FC = () => {
           <div className="flex gap-1.5 p-1 bg-deep-card border border-nord3/20 rounded-lg max-w-xs">
             <button
               onClick={() => setFilterMode('all')}
-              className={`flex-1 h-9 rounded px-5 text-xs uppercase tracking-widest transition-all ${
-                filterMode === 'all'
+              className={`flex-1 h-9 rounded px-5 text-xs uppercase tracking-widest transition-all ${filterMode === 'all'
                   ? 'bg-nord9 text-nord0 font-black shadow-lg shadow-nord9/20'
                   : 'text-nord4 font-bold hover:bg-nord1/50'
-              }`}
+                }`}
             >
               All
             </button>
             <button
               onClick={() => setFilterMode('latest')}
-              className={`flex-1 h-9 rounded px-5 text-xs uppercase tracking-widest transition-all ${
-                filterMode === 'latest'
+              className={`flex-1 h-9 rounded px-5 text-xs uppercase tracking-widest transition-all ${filterMode === 'latest'
                   ? 'bg-nord9 text-nord0 font-black shadow-lg shadow-nord9/20'
                   : 'text-nord4 font-bold hover:bg-nord1/50'
-              }`}
+                }`}
             >
               Latest
             </button>
@@ -143,7 +141,7 @@ const MachineListingsPage: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => navigate(`/writeup/${platformId}/${machine.slug}`)}
+                      onClick={() => navigate(`/writeups/${platformId}/${machine.slug}`)}
                       className="mt-2 w-full py-2.5 border border-nord9/40 text-nord9 text-[12px] font-black uppercase tracking-[0.2em] hover:bg-nord9 hover:text-nord0 rounded flex items-center justify-center gap-2"
                     >
                       <span className="material-symbols-outlined text-sm">visibility</span>

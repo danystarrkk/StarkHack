@@ -17,7 +17,7 @@ const App: React.FC = () => {
           {/* Dynamic Route for Machines List by Platform */}
           <Route path="/machines/:platformId" element={<MachineListingsPage />} />
           {/* Dynamic Route for Specific Writeup */}
-          <Route path="/writeup/:platformId/:slug" element={<WriteupViewPage />} />
+          <Route path="/writeups/:platformId/:slug" element={<WriteupViewPage />} />
           <Route path="/about" element={<AboutPage />} />
         </Routes>
       </Layout>

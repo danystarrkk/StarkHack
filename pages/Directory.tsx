@@ -28,39 +28,39 @@ const DirectoryPage: React.FC = () => {
   useEffect(() => {
     // Fetch both platforms stats and the full index for searching
     Promise.all([getPlatforms(), fetchIndex()]).then(([platformsData, indexData]) => {
-    setPlatforms(Array.isArray(platformsData) ? platformsData : []);
-    setAllWriteups(Array.isArray(indexData) ? indexData : []);
-    setLoading(false);
-});
+      setPlatforms(Array.isArray(platformsData) ? platformsData : []);
+      setAllWriteups(Array.isArray(indexData) ? indexData : []);
+      setLoading(false);
+    });
 
   }, []);
 
   const getLevelColorClass = (level?: string) => {
     const l = level?.toLowerCase() || 'easy';
-    switch(l) {
-        case 'easy': return 'text-nord14 border-nord14/30 bg-nord14/10';
-        case 'hard': return 'text-nord11 border-nord11/30 bg-nord11/10';
-        case 'medium': return 'text-nord13 border-nord13/30 bg-nord13/10';
-        default: return 'text-nord9 border-nord9/30 bg-nord9/10';
+    switch (l) {
+      case 'easy': return 'text-nord14 border-nord14/30 bg-nord14/10';
+      case 'hard': return 'text-nord11 border-nord11/30 bg-nord11/10';
+      case 'medium': return 'text-nord13 border-nord13/30 bg-nord13/10';
+      default: return 'text-nord9 border-nord9/30 bg-nord9/10';
     }
   };
 
   const filteredResults = allWriteups.filter(item => {
-  if (!searchQuery) return false;
-  const q = searchQuery.toLowerCase();
-  
-  // Check various fields
-  const inTitle = safeString(item.title).toLowerCase().includes(q);
-  const inPlatform = safeString(item.platform).toLowerCase().includes(q);
-  const inLevel = safeString(item.level).toLowerCase().includes(q);
-  const inSlug = safeString(item.slug).toLowerCase().includes(q);
-  const inDescription = safeString(item.description).toLowerCase().includes(q);
-  const inTags = safeTags(item.tags).some(tag =>
-    tag.toLowerCase().includes(q)
-  );
+    if (!searchQuery) return false;
+    const q = searchQuery.toLowerCase();
 
-  return inTitle || inPlatform || inLevel || inSlug || inTags || inDescription;
-});
+    // Check various fields
+    const inTitle = safeString(item.title).toLowerCase().includes(q);
+    const inPlatform = safeString(item.platform).toLowerCase().includes(q);
+    const inLevel = safeString(item.level).toLowerCase().includes(q);
+    const inSlug = safeString(item.slug).toLowerCase().includes(q);
+    const inDescription = safeString(item.description).toLowerCase().includes(q);
+    const inTags = safeTags(item.tags).some(tag =>
+      tag.toLowerCase().includes(q)
+    );
+
+    return inTitle || inPlatform || inLevel || inSlug || inTags || inDescription;
+  });
 
 
   return (
@@ -72,7 +72,7 @@ const DirectoryPage: React.FC = () => {
           </h1>
           <p className="px-4 text-nord9/80 text-sm md:text-base font-medium">Accessing high-security documentation repository...</p>
         </div>
-        
+
         {/* Search Bar */}
         <div className="px-3 py-0 mb-10 bg-deep-card/80 rounded-3xl border border-nord3/20 terminal-glow-nord backdrop-blur-sm">
           <div className="py-3">
@@ -81,14 +81,14 @@ const DirectoryPage: React.FC = () => {
                 <div className={`flex items-center justify-center pl-6 transition-colors ${searchQuery ? 'text-nord8' : 'text-nord7'}`}>
                   <span className="material-symbols-outlined scale-100">search</span>
                 </div>
-                <input 
+                <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex w-full min-w-0 flex-1 bg-transparent px-3 pl-3 text-nord4 text-xl text-[16px] leading-normal placeholder:text-nord3/60 border-0 outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:shadow-none focus-visible:outline-none appearance-none [-webkit-appearance:none] [-moz-appearance:none]"
-                  placeholder="Search archives (name, tag, level, platform)..." 
+                  placeholder="Search archives (name, tag, level, platform)..."
                 />
                 {searchQuery && (
-                  <button 
+                  <button
                     onClick={() => setSearchQuery('')}
                     className="pr-6 text-nord3 hover:text-nord11 transition-colors flex items-center"
                   >
@@ -102,7 +102,7 @@ const DirectoryPage: React.FC = () => {
 
         <div className="px-4">
           {loading ? (
-             <div className="text-nord3 font-mono p-4 animate-pulse">Scanning filesystem...</div>
+            <div className="text-nord3 font-mono p-4 animate-pulse">Scanning filesystem...</div>
           ) : (
             <>
               {/* Conditional View: Search Results OR Platform Grid */}
@@ -139,19 +139,19 @@ const DirectoryPage: React.FC = () => {
                             <span className={`text-[10px] uppercase font-black px-2 py-1 rounded border ${getLevelColorClass(machine.level)} whitespace-nowrap`}>{machine.level || 'Unk'}</span>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-auto">
-                              {safeTags(machine.tags).slice(0,3).map(tag => (
+                            {safeTags(machine.tags).slice(0, 3).map(tag => (
                               <span key={tag} className="text-[9px] text-nord4/60 border border-nord3/20 px-1 rounded">
-                              {tag}
+                                {tag}
                               </span>
-))}
+                            ))}
                           </div>
-                          <button onClick={() => navigate(`/writeup/${machine.platform}/${machine.slug}`)} className="mt-2 w-full py-2.5 border border-nord9/40 text-nord9 text-xs font-black uppercase tracking-[0.2em] hover:bg-nord9 hover:text-nord0 rounded flex items-center justify-center gap-2 transition-colors">
+                          <button onClick={() => navigate(`/writeups/${machine.platform}/${machine.slug}`)} className="mt-2 w-full py-2.5 border border-nord9/40 text-nord9 text-xs font-black uppercase tracking-[0.2em] hover:bg-nord9 hover:text-nord0 rounded flex items-center justify-center gap-2 transition-colors">
                             <span className="material-symbols-outlined text-sm">visibility</span> Read
                           </button>
                         </div>
                       </div>
                     ))}
-                    
+
                     {filteredResults.length === 0 && (
                       <div className="col-span-full flex flex-col items-center justify-center py-16 border border-dashed border-nord3/30 rounded-lg bg-nord1/10 text-nord4/50">
                         <span className="material-symbols-outlined text-4xl mb-4 text-nord3">search_off</span>
@@ -168,12 +168,12 @@ const DirectoryPage: React.FC = () => {
                     <span className="material-symbols-outlined text-nord7">folder_open</span>
                     <h2 className="text-nord6 text-[22px] font-bold leading-tight tracking-[-0.015em] uppercase">platforms</h2>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                     {platforms.map(platform => (
-                      <div 
+                      <div
                         key={platform.id}
-                        onClick={() => navigate(`/machines/${platform.id}`)} 
+                        onClick={() => navigate(`/machines/${platform.id}`)}
                         className="flex flex-col bg-deep-card p-8 rounded nord-border-blue transition-all cursor-pointer group relative overflow-hidden"
                       >
                         <div className="flex justify-between items-start mb-8 relative z-10">
@@ -196,7 +196,7 @@ const DirectoryPage: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                    
+
                     {platforms.length === 0 && (
                       <div className="col-span-2 border border-nord11/30 bg-nord11/10 p-6 rounded text-nord11 font-mono">
                         [ERROR] No platforms found. Ensure 'public/index.json' exists.

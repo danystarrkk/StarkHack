@@ -112,7 +112,7 @@ const HomePage: React.FC = () => {
                 <div
                   key={idx}
                   onClick={() =>
-                    navigate(`/writeup/${item.platform}/${item.slug}`)
+                    navigate(`/writeups/${item.platform}/${item.slug}`)
                   }
                   className="flex flex-col gap-4 rounded-xl border border-nord3/30 bg-deep-card/50 p-6 hover:border-nord8/40 hover:bg-deep-card transition-all group cursor-pointer relative overflow-hidden"
                 >
@@ -151,11 +151,10 @@ const HomePage: React.FC = () => {
                     {safeTags.slice(0, 3).map(tag => (
                       <span
                         key={tag}
-                        className={`px-2 py-0.5 ${
-                          tag.toUpperCase() === 'HARD'
-                            ? 'bg-nord11/10 text-nord11'
-                            : 'bg-nord10/10 text-nord10'
-                        } text-[10px] rounded border border-current font-bold`}
+                        className={`px-2 py-0.5 ${tag.toUpperCase() === 'HARD'
+                          ? 'bg-nord11/10 text-nord11'
+                          : 'bg-nord10/10 text-nord10'
+                          } text-[10px] rounded border border-current font-bold`}
                       >
                         {tag}
                       </span>
