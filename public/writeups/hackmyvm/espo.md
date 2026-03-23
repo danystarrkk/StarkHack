@@ -36,7 +36,7 @@ nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.87 -oG allPorts
 
 ![img3](/images/Pasted%20image%2020260107005536.webp)
 
-Como podemos observar, tenemos los puertos `80 y 22` abiertos, vamos a tratar de con **Nmap**d obtener más información sobre los mismos:
+Como podemos observar, tenemos los puertos `80 y 22` abiertos, vamos a tratar de con **Nmap** obtener más información sobre los mismos:
 
 ```bash
 nmap -p80,22 -sVC 192.168.1.87 -oN target
@@ -112,7 +112,7 @@ Se descarga un archivo con el siguiente contenido:
 
 ![img15](/images/Pasted%20image%2020260107161811.webp)
 
-Lo que en realidad nos sirve es que nos avisa que al parecer tenemos dentro de `/admin/_odsite` un archivo backup con formato zip, busquémoslo:
+Lo que en realidad nos sirve es que nos avisa que al parecer tenemos dentro de `/admin/_oldsite` un archivo backup con formato zip, busquémoslo:
 
 ```bash
 gobuster dir -u http://192.168.1.87/admin../_oldsite/ -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt -x zip
@@ -166,7 +166,7 @@ Perfecto, vamos a darle tratamiento y tendremos ya una bash:
 
 # Escalada de Privilegios
 
-Realizamos reconocimiento, pero no encontramos nada, pero vamos a revisar mediante un mini script qué comandos se ejecutan a intervalos de tiempo:
+Realizamos reconocimiento, pero no encontramos nada, vamos a revisar mediante un mini script qué comandos se ejecutan a intervalos de tiempo:
 
 ![img26](/images/Pasted%20image%2020260107182305.webp)
 
@@ -212,3 +212,61 @@ sudo /usr/bin/savelog -x "bash" test3
 Máquina terminada.
 
 ![img36](/images/Pasted%20image%2020260108104134.webp)
+
+# Mitigaciones
+
+Al terminar con la enumeración y explotación de la máquina Espo, se proponen
+las siguientes mitigaciones para fortalecer y mantener la seguridad:
+
+## Configuración segura de Nginx
+
+El medio de entrada principal fue la configuración errónea en los `alias` de
+Nginx, esto al definir la ruta como `/admin` y no finalizarla con el `/`.
+Gracias a este error, se realiza un **Path Traversal** que nos permitió enumerar
+el servidor web.
+
+Se propone el revisar y auditar siempre que se usen directivas como lo son alias
+en su archivo de configuración con el objetivo de prevenir la falta de diagonal
+final en rutas.
+
+## Gestionar correctamente copias de seguridad y datos sensibles
+
+La mala gestión de archivos con información sensible llevó a obtener un
+archivo de `backup.zip` que contaba con credenciales en texto claro.
+
+Se propone una gestión correcta de archivos sensibles evitando guardarlos dentro
+de directorios públicos en el servidor, como mínimo estos deben ser movidos a un
+directorio fuera de la raíz de la web; además, también se debe desactivar el
+Directory listing para evitar enumeración dentro de carpetas expuestas.
+
+## Control de Versiones vulnerables
+
+Se logró una Ejecución remota de comandos (RCE) en EspoCRM por una
+vulnerabilidad pública y válida para la versión del software usado.
+
+Se propone actualizar EspoCRM a la última versión estable la cual contenga el
+parche de seguridad correspondiente, además de mantenerse al día de
+vulnerabilidades encontradas para el software en uso y utilizar medidas de
+prevención en caso de no tener parches de la misma.
+
+## Tareas programadas seguras (Cronjobs)
+
+El movimiento lateral a `madie` es gracias al descubrimiento de una tarea cron
+que realizaba copias y ejecuciones de archivos en un directorio sin
+restricciones.
+
+Se propone configurar de forma correcta los permisos de directorios compartidos
+con el objetivo de que usuarios no autorizados no puedan interactuar con ellos,
+además de siempre intentar que las tareas programadas verifiquen la integridad y
+el tipo de archivos con los que interactúan.
+
+## Correcta asignación de privilegios
+
+El movimiento a root desde `madie` es permitido debido a la asignación de
+privilegios sobre el usuario `madie` para ejecutar el comando `savelog` como
+administrador.
+
+Se propone definir de forma correcta la ejecución de binarios y rutas sobre los
+que este debe interactuar, es decir, que el administrador debe encargarse de
+configurar el comando exacto y la ruta exacta donde se efectúa para evitar que
+el usuario lo altere o se aproveche del mismo.

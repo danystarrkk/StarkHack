@@ -8,7 +8,7 @@ const AboutPage: React.FC = () => {
           <div className="relative group">
             <div className="absolute -inset-2 bg-nord7/10 blur-xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
             <div className="relative aspect-square w-64 md:w-full max-w-xs bg-deep-search border-2 border-nord3/60 rounded-lg overflow-hidden shadow-2xl">
-              <img alt="Cybersecurity profile" className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-500" src="/images/stark.webp"/>
+              <img alt="Cybersecurity profile" className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-500" src="/images/stark.webp" />
             </div>
           </div>
           <div className="mt-8 flex flex-col items-center text-center">
@@ -35,7 +35,7 @@ const AboutPage: React.FC = () => {
                 <span className="w-2 h-2 bg-nord8"></span> WHOAMI
               </h3>
               <p className="text-sm leading-relaxed text-nord4 opacity-90 first-letter:text-2xl first-letter:font-bold first-letter:text-nord8">
-              No busco atajos ni fama. Busco entender la raíz del sistema, porque solo quien comprende lo invisible puede dominar lo imposible.
+                No busco atajos ni fama. Busco entender la raíz del sistema, porque solo quien comprende lo invisible puede dominar lo imposible.
               </p>
             </div>
           </div>
@@ -46,10 +46,10 @@ const AboutPage: React.FC = () => {
                 <div key={idx}>
                   <div className="flex justify-between items-end mb-3">
                     <span className="text-[10px] font-bold text-nord5 uppercase tracking-widest">{skill}</span>
-                    <span className="text-[10px] font-mono text-nord14">{85 - idx*5}%</span>
+                    <span className="text-[10px] font-mono text-nord14">{85 - idx * 5}%</span>
                   </div>
                   <div className="h-2 w-full bg-deep-search border border-nord3/50 rounded-full overflow-hidden">
-                    <div className="h-full bg-nord14 shadow-[0_0_15px_rgba(163,190,140,0.4)]" style={{width: `${85 - idx*5}%`}}></div>
+                    <div className="h-full bg-nord14 shadow-[0_0_15px_rgba(163,190,140,0.4)]" style={{ width: `${85 - idx * 5}%` }}></div>
                   </div>
                 </div>
               ))}
