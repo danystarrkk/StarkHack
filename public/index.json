@@ -1,5 +1,26 @@
 [
   {
+    "title": "Gitdwn",
+    "date": "2026-04-06",
+    "draft": false,
+    "description": "Writeup de la máquina Gitdwn en HackMyVM.",
+    "categories": [
+      "\"HackMyVM\""
+    ],
+    "tags": [
+      "\"Broken Access Control\"",
+      "\"Brute Force\"",
+      "\"XML External Entity (XXE)\"",
+      "\"Information Disclosure\"",
+      "\"Privilege Escalation\""
+    ],
+    "image": "/images/gitdwn.webp",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "gitdwn",
+    "path": "/writeups/hackmyvm/gitdwn.md"
+  },
+  {
     "title": "Sabulaji",
     "date": "2026-02-23",
     "draft": false,
