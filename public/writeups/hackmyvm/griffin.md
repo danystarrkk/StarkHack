@@ -349,3 +349,36 @@ Listo ya estamos como root y en su ruta encontraremos la flag:
 Ya con esto terminamos la Máquina:
 
 ![img45](/images/{1CA373A4-ECAB-4BBE-A247-41B9B188B21B}.webp)
+
+
+# Recomendaciones y Mitigaciones
+
+Tras finalizar la explotación de esta máquina, queda en evidencia que la cadena de compromiso fue posible gracias a la suma de malas configuraciones y fallos en la lógica de desarrollo. A continuación, se detallan las vulnerabilidades encontradas y cómo mitigarlas:
+
+## Exposición de Entornos de Depuración (Debug) y RCE
+
+La aplicación web inicial exponía las rutas `/info` y `/debug`. En entornos como Werkzeug o Flask, dejar el modo "Debug" activado en producción permite la ejecución remota de código (RCE) si un atacante obtiene acceso a la consola interactiva (como ocurrió mediante la filtración de tokens).
+
+Se recomienda jamás se debe desplegar una aplicación en producción con el modo "Debug" habilitado. Se deben eliminar o restringir por IP (solo *localhost* o VPN administrativa) todas las rutas de diagnóstico o pruebas.
+
+## Falta de Protección contra Fuerza Bruta y Contraseñas Débiles
+
+El panel interno ubicado en `/family` permitió un ataque de fuerza bruta ininterrumpido utilizando un diccionario común (`rockyou.txt`), lo que derivó en la obtención de la contraseña del usuario `brian` (`savannah`).
+
+Se recomienda implementar un mecanismo de limitación de tasa (Rate Limiting) y políticas de bloqueo temporal de cuentas (Account Lockout) tras múltiples intentos fallidos. Además, es obligatorio forzar una política de contraseñas seguras y robustas para todos los usuarios.
+
+## Gestión Insegura de Tokens (Codificación vs. Cifrado)
+
+Tras autenticarse como `brian`, la web asigna un Token que simplemente estaba codificado en Base58 y Base64. Al decodificarlo, exponía las credenciales en texto plano del usuario `meg` (`meg:lovelyfamily`). **Codificar no es cifrar**.
+
+Se recomienda nunca almacenar información sensible (y mucho menos contraseñas en texto plano) dentro de las cookies o tokens de sesión. Se debe utilizar un gestor de sesiones del lado del servidor, o en su defecto, implementar tokens firmados criptográficamente (como JWT correctamente configurados). Las contraseñas en bases de datos siempre deben estar hasheadas (ej. Bcrypt o Argon2).
+
+## Fuga de Información en Scripts Críticos
+El usuario `meg` podía ejecutar el script `/root/game.py` con privilegios de superusuario. Al interactuar y resolver los retos del script, este devolvía directamente la contraseña del usuario `peter`.
+
+Se recomienda que a cualquier script o binario que se ejecute con privilegios elevados debe ser auditado rigurosamente para evitar fallos lógicos o fugas de información. Los datos sensibles no deben estar *hardcodeados* (quemados) en el código ni ser devueltos en la salida estándar (*stdout*).
+
+## Mala Configuración de Permisos Sudo (Principio de Menor Privilegio)
+El usuario `peter` tenía permisos para ejecutar el editor `meg` como `root` sin proporcionar contraseña. Esto permitió abrir y modificar el archivo `/etc/sudoers`, otorgándose permisos absolutos sobre el sistema.
+
+Se recomienda aplicar estrictamente el Principio de Menor Privilegio (PoLP). Nunca se debe permitir a un usuario común ejecutar programas interactivos (como editores de texto, paginadores o consolas) con privilegios de `root` mediante `sudo`, ya que permiten escapar al sistema (Shell Escaping). Si es necesario que un usuario edite un archivo protegido, se debe utilizar `sudoedit` restringido únicamente a ese archivo en concreto.
