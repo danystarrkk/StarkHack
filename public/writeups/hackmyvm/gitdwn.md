@@ -4,7 +4,14 @@ date: 2026-04-06
 draft: false
 description: "Writeup de la máquina Gitdwn en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Broken Access Control", "Brute Force", "XML External Entity (XXE)", "Information Disclosure", "Privilege Escalation"]
+tags:
+  [
+    "Broken Access Control",
+    "Brute Force",
+    "XML External Entity (XXE)",
+    "Information Disclosure",
+    "Privilege Escalation",
+  ]
 image: "/images/gitdwn.webp"
 level: Medium
 ---
@@ -92,13 +99,14 @@ Con el archivo en local vamos a tratar de entender qué hace, se va a registrar 
 ![img11](/images/Pasted%20image%2020260325171014.webp)
 
 Lo primero es la clave pública, esta puede estar siendo utilizada para algún tipo de autenticación o encriptación, luego observamos que dentro de la función se recuperan los valores de `username` y `password`.
- d
+d
 ![img12](/images/Pasted%20image%2020260325171303.webp)
 
 Aquí tenemos lo más importante de manera general lo que vemos es un cifrado híbrido donde:
+
 - Primero generamos el `aeskey` y `iv` que serán para el cifrado simétrico o sea la llave y el ruido con el cual se mezclará para hacerlo dinámico evitando duplicados al hacerlo de forma múltiple.
-- Lo siguiente es el cifrado simétrico utilizando las credenciales, el `aeskey` y también el `iv`  para por último dejarlo en base64.
-- Ya lo último es el cifrado asimétrico donde tomamos tanto la `aeskey` ya en base64 y el  `iv` también en base64 y los ciframos de forma asimétrica con el objetivo de tramitarlo de forma segura.
+- Lo siguiente es el cifrado simétrico utilizando las credenciales, el `aeskey` y también el `iv` para por último dejarlo en base64.
+- Ya lo último es el cifrado asimétrico donde tomamos tanto la `aeskey` ya en base64 y el `iv` también en base64 y los ciframos de forma asimétrica con el objetivo de tramitarlo de forma segura.
 
 ![img13](/images/Pasted%20image%2020260325200724.webp)
 
@@ -264,7 +272,7 @@ Tenemos un panel donde al parecer el objetivo es subir archivos de tipo XML, en 
 
 Se envía el contenido del archivo `test.xml` para posteriormente representarse en en la respuesta.
 
-En este punto al ver que es un archivo `xml` y el cómo se tramita se intenta [[XML External Entity Injection|XXE Injection]]:
+En este punto al ver que es un archivo `xml` y el cómo se tramita se intenta **XML External Entity Injection**:
 
 ![img21](/images/Pasted%20image%2020260326225352.webp)
 
@@ -278,7 +286,7 @@ Comenzamos construyendo la petición de forma normal y valido que funciona.
 
 ![img23](/images/Pasted%20image%2020260326231844.webp)
 
-Como observamos pasamos el formato a `utf-16` donde se tiene una respuesta normal así que intentamos el [[XML External Entity Injection|XXE Injection]]:
+Como observamos pasamos el formato a `utf-16` donde se tiene una respuesta normal así que intentamos el XML External Entity Injection:
 
 ![img24](/images/Pasted%20image%2020260326232205.webp)
 
@@ -338,7 +346,7 @@ python3 xxeInjection.py /etc/passwd
 
 ![img25](/images/Pasted%20image%2020260327164935.webp)
 
-Podemos ver archivos de la máquina, en este caso voy a intentar ver el contenido del archivo `/etc/passwd` para luego  filtrar el output por líneas donde terminen en `sh`, el objetivo es identificar potenciales usuarios:
+Podemos ver archivos de la máquina, en este caso voy a intentar ver el contenido del archivo `/etc/passwd` para luego filtrar el output por líneas donde terminen en `sh`, el objetivo es identificar potenciales usuarios:
 
 ```bash
 python3 xxeInjection.py /etc/passwd | grep ".*sh$"
@@ -513,7 +521,7 @@ Algo interesante es que en el repositorio de `root` podemos ver su configuració
 
 ![img50](/images/Pasted%20image%2020260330210021.webp)
 
-Como observamos tenemos una cabecera de autorización `bearer`  y el valor que parece estar en base64, vamos a intentar ver su contenido decodificado:
+Como observamos tenemos una cabecera de autorización `bearer` y el valor que parece estar en base64, vamos a intentar ver su contenido decodificado:
 
 ```bash
 echo "YmlsaXIhQCM=" | base64 -d; echo
@@ -529,7 +537,7 @@ Con esto actualmente estamos como el usuario `bilir`, por lo tanto vamos a reali
 
 ![img53](/images/Pasted%20image%2020260330210454.webp)
 
-En  su directorio home encontramos una carpeta code, vemos su interior:
+En su directorio home encontramos una carpeta code, vemos su interior:
 
 ![img54](/images/Pasted%20image%2020260330210552.webp)
 

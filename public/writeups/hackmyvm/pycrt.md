@@ -4,7 +4,16 @@ date: 2025-12-24
 draft: false
 description: "Writeup de la máquina PyCrt en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Local File Inclusion", "Remote Command Execution", "Insecure Cryptographic Logic", "Hardcoded Credentials", "Sudo Misconfiguration", "Abuse of Legitimate Functionality", "Privilege Escalation"]
+tags:
+  [
+    "Local File Inclusion",
+    "Remote Command Execution",
+    "Insecure Cryptographic Logic",
+    "Hardcoded Credentials",
+    "Sudo Misconfiguration",
+    "Abuse of Legitimate Functionality",
+    "Privilege Escalation",
+  ]
 image: "/images/pycrt.webp"
 level: Medium
 ---

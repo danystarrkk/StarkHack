@@ -4,7 +4,15 @@ date: 2025-12-05
 draft: false
 description: "Writeup de la máquina Console en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Remote Command Execution", "Exposed Source Code", "Credential Disclosure", "SSH Port Forwarding", "Sudo Misconfiguration", "Privilege Escalation"]
+tags:
+  [
+    "Remote Command Execution",
+    "Exposed Source Code",
+    "Credential Disclosure",
+    "SSH Port Forwarding",
+    "Sudo Misconfiguration",
+    "Privilege Escalation",
+  ]
 image: "/images/console.webp"
 level: Medium
 ---

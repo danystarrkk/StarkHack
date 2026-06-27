@@ -4,7 +4,16 @@ date: 2025-11-05
 draft: false
 description: "Writeup de la máquina Griffin en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Exposed Debug Endpoint", "Remote Command Execution", "User Enumeration", "Credential Disclosure", "Token Decoding", "Sudo Misconfiguration", "Privilege Escalation"]
+tags:
+  [
+    "Exposed Debug Endpoint",
+    "Remote Command Execution",
+    "User Enumeration",
+    "Credential Disclosure",
+    "Token Decoding",
+    "Sudo Misconfiguration",
+    "Privilege Escalation",
+  ]
 image: "/images/Griffin.webp"
 level: Medium
 ---
@@ -182,7 +191,7 @@ Con el usuario `brian` esto cambia y nos dice:
 
 Esto ya nos indica que el usuario es válido, pero su contraseña NO.
 
-Lo que vamos a hacer es realizar un ataque de fuerza bruta a la contraseña y para esto usare la herramienta que diseñe con python3 para este apartado y la pueden encontrar en el siguiente repo de [**GitHub**](https://github.com/danystarrkk/Hacknig-Tools/tree/main/Tools/Web%20Brute%20Force%20(Griffin)).
+Lo que vamos a hacer es realizar un ataque de fuerza bruta a la contraseña y para esto usare la herramienta que diseñe con python3 para este apartado y la pueden encontrar en el siguiente repo de [**GitHub**](<https://github.com/danystarrkk/Hacknig-Tools/tree/main/Tools/Web%20Brute%20Force%20(Griffin)>).
 Algo que tenemos que hacer de forma extra es extraer la cookie que tenemos asignada en ese momento y lo podemos hacer con `ctrl + shift + c` y se desplegara:
 
 ![img28](/images/Pasted%20image%2020251105180223.webp)
@@ -350,7 +359,6 @@ Ya con esto terminamos la Máquina:
 
 ![img45](/images/{1CA373A4-ECAB-4BBE-A247-41B9B188B21B}.webp)
 
-
 # Recomendaciones y Mitigaciones
 
 Tras finalizar la explotación de esta máquina, queda en evidencia que la cadena de compromiso fue posible gracias a la suma de malas configuraciones y fallos en la lógica de desarrollo. A continuación, se detallan las vulnerabilidades encontradas y cómo mitigarlas:
@@ -359,7 +367,7 @@ Tras finalizar la explotación de esta máquina, queda en evidencia que la caden
 
 La aplicación web inicial exponía las rutas `/info` y `/debug`. En entornos como Werkzeug o Flask, dejar el modo "Debug" activado en producción permite la ejecución remota de código (RCE) si un atacante obtiene acceso a la consola interactiva (como ocurrió mediante la filtración de tokens).
 
-Se recomienda jamás se debe desplegar una aplicación en producción con el modo "Debug" habilitado. Se deben eliminar o restringir por IP (solo *localhost* o VPN administrativa) todas las rutas de diagnóstico o pruebas.
+Se recomienda jamás se debe desplegar una aplicación en producción con el modo "Debug" habilitado. Se deben eliminar o restringir por IP (solo _localhost_ o VPN administrativa) todas las rutas de diagnóstico o pruebas.
 
 ## Falta de Protección contra Fuerza Bruta y Contraseñas Débiles
 
@@ -374,11 +382,13 @@ Tras autenticarse como `brian`, la web asigna un Token que simplemente estaba co
 Se recomienda nunca almacenar información sensible (y mucho menos contraseñas en texto plano) dentro de las cookies o tokens de sesión. Se debe utilizar un gestor de sesiones del lado del servidor, o en su defecto, implementar tokens firmados criptográficamente (como JWT correctamente configurados). Las contraseñas en bases de datos siempre deben estar hasheadas (ej. Bcrypt o Argon2).
 
 ## Fuga de Información en Scripts Críticos
+
 El usuario `meg` podía ejecutar el script `/root/game.py` con privilegios de superusuario. Al interactuar y resolver los retos del script, este devolvía directamente la contraseña del usuario `peter`.
 
-Se recomienda que a cualquier script o binario que se ejecute con privilegios elevados debe ser auditado rigurosamente para evitar fallos lógicos o fugas de información. Los datos sensibles no deben estar *hardcodeados* (quemados) en el código ni ser devueltos en la salida estándar (*stdout*).
+Se recomienda que a cualquier script o binario que se ejecute con privilegios elevados debe ser auditado rigurosamente para evitar fallos lógicos o fugas de información. Los datos sensibles no deben estar _hardcodeados_ (quemados) en el código ni ser devueltos en la salida estándar (_stdout_).
 
 ## Mala Configuración de Permisos Sudo (Principio de Menor Privilegio)
+
 El usuario `peter` tenía permisos para ejecutar el editor `meg` como `root` sin proporcionar contraseña. Esto permitió abrir y modificar el archivo `/etc/sudoers`, otorgándose permisos absolutos sobre el sistema.
 
 Se recomienda aplicar estrictamente el Principio de Menor Privilegio (PoLP). Nunca se debe permitir a un usuario común ejecutar programas interactivos (como editores de texto, paginadores o consolas) con privilegios de `root` mediante `sudo`, ya que permiten escapar al sistema (Shell Escaping). Si es necesario que un usuario edite un archivo protegido, se debe utilizar `sudoedit` restringido únicamente a ese archivo en concreto.

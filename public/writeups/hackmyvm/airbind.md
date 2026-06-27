@@ -4,7 +4,15 @@ date: 2026-06-02
 draft: false
 description: "Writeup de la máquina Airbind en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Exposed Database", "Default Credentials", "Authenticated Remote Code Execution", "Sudo Misconfiguration", "Privilege Escalation", "Container Breakout"]
+tags:
+  [
+    "Exposed Database",
+    "Default Credentials",
+    "Authenticated Remote Code Execution",
+    "Sudo Misconfiguration",
+    "Privilege Escalation",
+    "Container Breakout",
+  ]
 image: "/images/Airbind.webp"
 level: Medium
 ---
@@ -170,7 +178,7 @@ Con esto claro, tenemos que comenzar con la modificación. Por lo tanto, vamos a
 
 ```php
 <?php
-	system($_GET['cmd']);
+ system($_GET['cmd']);
 ?>
 ```
 
@@ -236,7 +244,7 @@ cat /etc/passwd | grep '.*sh'
 
 ![img32](/images/Pasted%20image%2020260528122456.webp)
 
-Podemos observar los usuarios `root` y ` ubuntu`, tomando en cuenta que actualmente estamos como el usuario `www-data`, algo extra que siempre trato de hacer es verificar la IP para asegurar que estoy dentro de la máquina y no en un contenedor:
+Podemos observar los usuarios `root` y `ubuntu`, tomando en cuenta que actualmente estamos como el usuario `www-data`, algo extra que siempre trato de hacer es verificar la IP para asegurar que estoy dentro de la máquina y no en un contenedor:
 
 ```bash
 ip a
@@ -354,19 +362,19 @@ Listo máquina terminada.
 
 # Mitigaciónes
 
-### 1. Exposición de directorios (Information Disclosure)
+## 1. Exposición de directorios (Information Disclosure)
 
 En esta máquina contamos con un serio problema de exposición excesiva de información en la web. Al momento de realizar un _fuzzing_ preliminar, descubrimos una gran cantidad de directorios expuestos, entre los cuales encontramos el archivo referente a la base de datos (SQLite). Este archivo almacenaba las credenciales del usuario administrador, lo que posteriormente aprovechamos para obtener acceso.
 
 Se propone restringir el acceso público a directorios sensibles como `/db` e incluso al directorio `/images`. Adicionalmente, se debe deshabilitar el "Directory Listing" (listado de directorios) en la configuración del servidor web (Apache/Nginx) para evitar que, con el simple hecho de ver carpetas como `/uploads`, un atacante pueda mapear la estructura interna de la aplicación y describir posibles vectores de ataque.
 
-### 2. Credenciales por defecto
+## 2. Credenciales por defecto
 
 Otro problema crítico es el uso de credenciales por defecto. Hay que tener en cuenta que las contraseñas predeterminadas son poco efectivas y altamente predecibles; en este caso, las credenciales eran `admin:admin`. Esto no solo deriva en un ataque de fuerza bruta contra los _hashes_ extraídos de la base de datos, sino que, en la etapa preliminar de reconocimiento, probar credenciales por defecto en los paneles de inicio de sesión suele dar resultados positivos directos.
 
 Se propone exigir a los usuarios que utilicen contraseñas seguras, implementando políticas de contraseñas que fuercen una longitud mínima de 8 caracteres (no solo dígitos), requiriendo combinaciones de números, letras mayúsculas, minúsculas y caracteres especiales. Además, se debe forzar el cambio de credenciales por defecto en el primer inicio de sesión.
 
-### 3. Control deficiente en la subida de archivos (File Upload Bypass)
+## 3. Control deficiente en la subida de archivos (File Upload Bypass)
 
 Uno de los vectores explotados para ganar acceso al contenedor fue la funcionalidad de subida de archivos. Se logró evadir los filtros de validación (basados únicamente en el `Content-Type` de la petición HTTP y en los _magic numbers_) modificando las cabeceras para hacer pasar un archivo PHP por una imagen (añadiendo `GIF89a;`). Esto permitió alojar un archivo malicioso en el servidor y cargarlo posteriormente para lograr Ejecución Remota de Comandos (RCE).
 
@@ -376,13 +384,13 @@ Se proponen verificaciones más robustas a nivel de servidor. En lugar de intent
 2. Renombrar aleatoriamente todos los archivos al subirlos.
 3. Utilizar una lista blanca (_whitelist_) estricta de extensiones permitidas, descartando o reescribiendo cualquier extensión no autorizada para evitar la interpretación de código malicioso.
 
-### 4. Mala gestión de Privilegios (Sudo Misconfiguration)
+## 4. Mala gestión de Privilegios (Sudo Misconfiguration)
 
 Ya con la máquina comprometida, es de reconocer el buen uso inicial de Docker para aislar la aplicación web; sin embargo, el problema radica en la pésima gestión de permisos mediante `sudo`. El usuario `www-data` tenía permisos para ejecutar comandos como el usuario `ubuntu` sin necesidad de proporcionar contraseña. Aún peor, el usuario `ubuntu` contaba con permisos equivalentes para ejecutar cualquier comando como `root`, facilitando la escalada de privilegios total dentro del entorno.
 
 Se debe aplicar estrictamente el **Principio de Menor Privilegio (PoLP)**. Se propone una gestión óptima del archivo `/etc/sudoers`, donde tanto el usuario `www-data` como `ubuntu` cuenten única y exclusivamente con los permisos mínimos necesarios para ejecutar tareas o binarios específicos requeridos para su funcionamiento, evitando asignaciones amplias (`ALL`) que abren la puerta a vectores de escalada de privilegios.
 
-### 5. Mala gestión de Secretos (SSH Key Exposure)
+## 5. Mala gestión de Secretos (SSH Key Exposure)
 
 Aunque el entorno web estaba correctamente aislado en un contenedor, se encontró una clave privada SSH válida (`id_rsa`) almacenada dentro del directorio de configuración del contenedor. Al enumerar la red IPv6 y descubrir la interfaz del host principal, esta clave permitió pivotar y acceder directamente al host por el puerto 22, rompiendo así el aislamiento de la arquitectura.
 

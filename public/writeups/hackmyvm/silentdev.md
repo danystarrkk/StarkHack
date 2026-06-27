@@ -4,7 +4,16 @@ date: 2025-11-03
 draft: false
 description: "Writeup de la máquina SilentDev en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Unrestricted File Upload", "Content-Type Bypass", "Remote Command Execution", "Wildcard Injection", "Cron Job Abuse", "Sudo Misconfiguration", "Privilege Escalation"]
+tags:
+  [
+    "Unrestricted File Upload",
+    "Content-Type Bypass",
+    "Remote Command Execution",
+    "Wildcard Injection",
+    "Cron Job Abuse",
+    "Sudo Misconfiguration",
+    "Privilege Escalation",
+  ]
 image: "/images/silentdev.webp"
 level: Medium
 ---
@@ -165,7 +174,7 @@ Vemos una carpeta `crontabs`, pero no logramos acceder, ya que no tenemos permis
 
 Podemos también buscar por capabilities en el sistema:
 
-```
+```bash
 find / -type f -exec getcat {} \; 2>/dev/null
 ```
 

@@ -3,7 +3,16 @@ title: "Espo"
 date: 2026-01-09
 description: "Writeup de la máquina Espo en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Path Traversal", "Exposed Backup Files", "Credential Disclosure", "CVE-2023-5965", "Authenticated Remote Code Execution", "Sudo Misconfiguration", "Privilege Escalation"]
+tags:
+  [
+    "Path Traversal",
+    "Exposed Backup Files",
+    "Credential Disclosure",
+    "CVE-2023-5965",
+    "Authenticated Remote Code Execution",
+    "Sudo Misconfiguration",
+    "Privilege Escalation",
+  ]
 image: "/images/espo.webp"
 level: Medium
 ---

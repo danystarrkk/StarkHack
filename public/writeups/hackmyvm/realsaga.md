@@ -4,7 +4,16 @@ date: 2026-01-25
 draft: false
 description: "Writeup de la máquina SilentDev en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["CVE-2020-35234","Exposed Debug Logs","User Enumeration","Authenticated Remote Code Execution","SUID Privilege Escalation","Docker Socket Misconfiguration","Container Escape"]
+tags:
+  [
+    "CVE-2020-35234",
+    "Exposed Debug Logs",
+    "User Enumeration",
+    "Authenticated Remote Code Execution",
+    "SUID Privilege Escalation",
+    "Docker Socket Misconfiguration",
+    "Container Escape",
+  ]
 image: "/images/realsaga.webp"
 level: Medium
 ---

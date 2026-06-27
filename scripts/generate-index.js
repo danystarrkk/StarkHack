@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,55 +12,71 @@ function parseFrontmatter(content) {
   if (!match) return {};
 
   const attributes = {};
+  let currentKey = null;
+  let currentValue = "";
 
-  match[1].split(/\r?\n/).forEach(line => {
-    const i = line.indexOf(':');
-    if (i === -1) return;
+  const saveCurrentAttribute = () => {
+    if (!currentKey) return;
+    let value = currentValue.trim();
 
-    const key = line.slice(0, i).trim();
-    let value = line.slice(i + 1).trim();
-
-    // quitar comillas
-    if (/^["'].*["']$/.test(value)) {
+    // quitar comillas simples de toda la cadena
+    if (/^["'].*["']$/.test(value) && !value.includes("\n")) {
       value = value.slice(1, -1);
     }
 
-    // arrays
-    if (value.startsWith('[') && value.endsWith(']')) {
+    // arrays (soporta formato en una línea o multilínea)
+    if (value.startsWith("[") && value.endsWith("]")) {
       value = value
         .slice(1, -1)
-        .split(',')
-        .map(s => s.trim());
+        .split(",")
+        .map((s) => s.trim().replace(/^["']|["']$/g, "")) // limpia espacios y comillas internas
+        .filter((s) => s.length > 0); // ignora vacíos si existe una coma final (ej. "Privilege Escalation", ])
+    } else {
+      // boolean auto parse
+      if (value === "true") value = true;
+      if (value === "false") value = false;
     }
 
-    // boolean auto parse
-    if (value === 'true') value = true;
-    if (value === 'false') value = false;
+    attributes[currentKey] = value;
+  };
 
-    attributes[key] = value;
+  match[1].split(/\r?\n/).forEach((line) => {
+    // Si la línea no tiene espacios al inicio y contiene ':', asumimos que es una nueva clave
+    if (!/^\s/.test(line) && line.includes(":")) {
+      saveCurrentAttribute(); // Guardar la clave que se estaba acumulando anteriormente
+      const i = line.indexOf(":");
+      currentKey = line.slice(0, i).trim();
+      currentValue = line.slice(i + 1);
+    } else if (currentKey) {
+      // Si está indentada o no tiene ':', pertenece al valor de la clave actual (multilínea)
+      currentValue += "\n" + line;
+    }
   });
+
+  // Asegurarnos de guardar el último atributo procesado
+  saveCurrentAttribute();
 
   return attributes;
 }
 
-const WRITEUPS_DIR = path.join(__dirname, '../public/writeups');
-const OUTPUT_FILE = path.join(__dirname, '../public/index.json');
+const WRITEUPS_DIR = path.join(__dirname, "../public/writeups");
+const OUTPUT_FILE = path.join(__dirname, "../public/index.json");
 
 const index = [];
 
 if (fs.existsSync(WRITEUPS_DIR)) {
   const platforms = fs.readdirSync(WRITEUPS_DIR);
 
-  platforms.forEach(platform => {
+  platforms.forEach((platform) => {
     const platformPath = path.join(WRITEUPS_DIR, platform);
 
     if (!fs.statSync(platformPath).isDirectory()) return;
 
-    const files = fs.readdirSync(platformPath).filter(f => f.endsWith('.md'));
+    const files = fs.readdirSync(platformPath).filter((f) => f.endsWith(".md"));
 
-    files.forEach(file => {
+    files.forEach((file) => {
       const filePath = path.join(platformPath, file);
-      const content = fs.readFileSync(filePath, 'utf8');
+      const content = fs.readFileSync(filePath, "utf8");
 
       const meta = parseFrontmatter(content);
 
@@ -70,8 +86,8 @@ if (fs.existsSync(WRITEUPS_DIR)) {
       index.push({
         ...meta,
         platform,
-        slug: file.replace(/\.md$/, ''),
-        path: `/writeups/${platform}/${file}`
+        slug: file.replace(/\.md$/, ""),
+        path: `/writeups/${platform}/${file}`,
       });
     });
   });

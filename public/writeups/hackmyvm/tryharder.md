@@ -4,7 +4,16 @@ date: 2026-02-04
 draft: false
 description: "Writeup de la máquina SilentDev en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Hidden Path Disclosure", "Weak Credentials", "JWT Secret Brute Force", "JWT Privilege Escalation", "Unrestricted File Upload", "Apache .htaccess Abuse", "LD_PRELOAD Privilege Escalation"]
+tags:
+  [
+    "Hidden Path Disclosure",
+    "Weak Credentials",
+    "JWT Secret Brute Force",
+    "JWT Privilege Escalation",
+    "Unrestricted File Upload",
+    "Apache .htaccess Abuse",
+    "LD_PRELOAD Privilege Escalation",
+  ]
 image: "/images/tryharder.webp"
 level: Medium
 ---
@@ -28,7 +37,7 @@ ping -c 1 192.168.1.72
 
 ![img2](/images/Pasted%20image%2020260131215828.webp)
 
-Podemos ver que  `ttl=64`, por lo tanto intuimos una posible máquina Linux.
+Podemos ver que `ttl=64`, por lo tanto intuimos una posible máquina Linux.
 
 Comenzamos a realizar un escaneo con ayuda de **Nmap**, esto con el primer objetivo de identificar primero los puertos abiertos:
 
@@ -238,14 +247,14 @@ Vemos que sí se abre el archivo y que efectivamente es lo que subimos, pero aho
 
 Se puede ver cómo se creó la carpeta `123` que almacena los archivos que subimos. En este punto, lo que se busca es un **Abuso de subida de archivos** con el objetivo de obtener un RCE.
 
-Se realizaron diferentes pruebas y, si no es extensión tipo `.jgp` o `.png` no nos permite subirlo. Por lo tanto, vamos a intentar subir un archivo `.htaccess` el cual es interpretado por el servicio de Apache y nos permite modificar ciertas reglas dentro del servidor. En este caso nuestro objetivo será que a los archivos .png se interpreten como `php`  y se definirá el uso del intérprete `php` de la siguiente manera:
+Se realizaron diferentes pruebas y, si no es extensión tipo `.jgp` o `.png` no nos permite subirlo. Por lo tanto, vamos a intentar subir un archivo `.htaccess` el cual es interpretado por el servicio de Apache y nos permite modificar ciertas reglas dentro del servidor. En este caso nuestro objetivo será que a los archivos .png se interpreten como `php` y se definirá el uso del intérprete `php` de la siguiente manera:
 
 Comenzamos creando el archivo `.htaccess` y luego implementamos el siguiente contenido:
 
-```
+```file
 <IfModule mime_module>
-	AddHandler php5-script .png 
-	SetHandler application/x-httpd-php 
+ AddHandler php5-script .png
+ SetHandler application/x-httpd-php
 </IfModule>
 ```
 
@@ -402,7 +411,7 @@ Algo que quedó pendiente es el comando `sudo -l`, que pedía de una contraseña
 
 ## Escalada vía LD_PRELOAD
 
-Vemos que tenemos permisos para ejecutar como sudo el comando `whoami`, pero esto no es algo que en realidad nos impacte. Lo que en verdad tenemos que poner atención es en `env_keep+=LD_PRELOAD`,  ya que esta implementación nos da puerta abierta a una posible escalada de privilegios. Esto se deber a que si y solo si esta regla esta establecida por sudo y además el binario al que podemos ejecutar como sudo, en este caso `whoami`, es dinámico, se puede abusar de las librerías compartidas para crear una maliciosa que nos ejecute una shell antes de siquiera llegar a ejecutar el binario.
+Vemos que tenemos permisos para ejecutar como sudo el comando `whoami`, pero esto no es algo que en realidad nos impacte. Lo que en verdad tenemos que poner atención es en `env_keep+=LD_PRELOAD`, ya que esta implementación nos da puerta abierta a una posible escalada de privilegios. Esto se deber a que si y solo si esta regla esta establecida por sudo y además el binario al que podemos ejecutar como sudo, en este caso `whoami`, es dinámico, se puede abusar de las librerías compartidas para crear una maliciosa que nos ejecute una shell antes de siquiera llegar a ejecutar el binario.
 
 Uno de los requisitos se cumple. Verifiquemos si `whoami` es dinámico de la siguiente manera:
 
@@ -439,6 +448,7 @@ gcc -fPIC -shared -nostartfiles -o hack.so hack.c
 ![img54](/images/Pasted%20image%2020260202175611.webp)
 
 Donde:
+
 - `-fPIC` -> Permite generar una librería independiente capaz de ser cargada en una dirección diferente de memoria.
 - `-shared` -> Definimos que será una librería compartida en lugar de una ejecutable.
 - `-nostartfiles` -> Indicamos que la librería no requiere de los archivos runtime, debido a que la librería no requiere de un punto de entrada ni de un flujo de ejecución autónomo.

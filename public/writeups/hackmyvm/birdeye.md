@@ -4,7 +4,14 @@ date: 2025-11-03
 draft: false
 description: "Writeup de la máquina Birdeye en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Server-Side Request Forgery (SSRF)", "Exposed Administrative Credentials", "Authenticated Remote Code Execution", "Sudo Misconfiguration", "Privilege Escalation"]
+tags:
+  [
+    "Server-Side Request Forgery (SSRF)",
+    "Exposed Administrative Credentials",
+    "Authenticated Remote Code Execution",
+    "Sudo Misconfiguration",
+    "Privilege Escalation",
+  ]
 image: "/images/Birdeye.webp"
 level: Medium
 ---

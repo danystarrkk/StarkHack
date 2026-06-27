@@ -4,7 +4,17 @@ date: 2026-02-23
 draft: false
 description: "Writeup de la máquina Sabulaji en HackMyVM."
 categories: ["HackMyVM"]
-tags: ["Exposed Rsync Service", "Rsync Weak Credentials", "Credential Disclosure in Document", "Password Reuse", "Insecure Sudo Script", "Path Traversal Logic Bypass", "Mlocate Database Information Disclosure", "Sudo Rsync Privilege Escalation"]
+tags:
+  [
+    "Exposed Rsync Service",
+    "Rsync Weak Credentials",
+    "Credential Disclosure in Document",
+    "Password Reuse",
+    "Insecure Sudo Script",
+    "Path Traversal Logic Bypass",
+    "Mlocate Database Information Disclosure",
+    "Sudo Rsync Privilege Escalation",
+  ]
 image: "/images/sabulaji.webp"
 level: Medium
 ---
@@ -191,6 +201,7 @@ El código del script es el siguiente:
 ![img19](/images/Pasted%20image%2020260222095315.webp)
 
 En lo que nos fijamos del script son 3 puntos fundamentales:
+
 - En el primer condicional observamos cómo filtra la ruta que se le pasa no contenga `sabulaji`, esto haciendo referencia a la ruta personal del usuario (Si nos lo impide, puede haber algo dentro).
 - Utiliza el comando `diff` para almacenar todo cambio entre el archivo `notes.txt` dentro del directorio personal del usuario `sabulaji` y el archivo que le indiquemos.
 - En el siguiente condicional verifica si la variable `difference` tiene contenido, y esta solo tendrá contenido en caso de que se encuentren diferencias. Si no tiene contenido pues cierra el script.
@@ -219,6 +230,7 @@ locate --help
 Vemos cómo nos da un parámetro para la base de datos y, además nos indica la ruta usual, que seria `/var/lib/mlocate/mlocate.db`.
 
 Con la ruta de la base de datos podemos, mediante `strings`, listar toda cadena legible de la misma y ver si encontramos algo:
+
 ```bash
 strings /var/lib/mlocate/mlocate.db | grep -A 5 "/home"
 ```
@@ -258,3 +270,5 @@ Ya podemos ver la Flag:
 Con esto Terminamos la máquina.
 
 ![img30](/images/Pasted%20image%2020260222131524.webp)
+
+Lab Terminado.
