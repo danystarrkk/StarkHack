@@ -103,7 +103,7 @@ Tenemos 3 peticiones armadas, donde vamos a fijarnos en la que al parecer podemo
 
 Como podemos observar, es válida, y no tendría sentido el usar o dejar un campo `user` si no vamos a tener nada, así que aprovecharé la situación para desarrollar un script básico en Python 3 que nos permita buscar por algún ID válido.
 
-El script lo podemos encontrar en el link del [GitHub](<https://github.com/danystarrkk/Hacknig-Tools/tree/main/Tools/Fuzzing%20ID%20(Flossy)>).
+El script lo podemos encontrar en el link del [GitHub](<https://github.com/danystarrkk/Hacking-Tools/tree/main/Tools/Fuzzing%20ID%20(Flossy)>).
 
 El script, como podemos observar, realiza varias peticiones intentando encontrar un ID válido, de igual forma lo que se hizo fue simplificar la petición para una mejor adaptación en el código. En Burp Suite la petición quedaría de la siguiente manera:
 

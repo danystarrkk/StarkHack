@@ -161,7 +161,7 @@ http://192.168.1.89:8000/wp-admin/admin-ajax.php?s=9999%27)%20and%20(select%2012
 
 ![img17](/images/Pasted%20image%2020251126180658.webp)
 
-Excelente esto funciona, ahora algo que se intentaría es comenzar a enumerar cosas como las bases de datos tablas y columnas, pero en este caso no, tenemos que prestar mucha atención a las pistas, recordemos que tenemos un archivo con las credenciales de `jimmy` en la ruta `/etc/jimmy.txt` vamos a intentar cargar ese archivo con la función `load_file()` y reconstruir el contenido del mismo letra por letra, para esto vamos a jugar también con `group_concat` para compactar todo el texto en una sola línea y como esto puede ser muy tardado de forma manual lo hemos automatizado con ayuda de python, lo pueden clonar de mi [**GitHub**](<https://github.com/danystarrkk/Hacknig-Tools/tree/main/Tools/SQLI%20Brute%20Force%20(Ximai)>)
+Excelente esto funciona, ahora algo que se intentaría es comenzar a enumerar cosas como las bases de datos tablas y columnas, pero en este caso no, tenemos que prestar mucha atención a las pistas, recordemos que tenemos un archivo con las credenciales de `jimmy` en la ruta `/etc/jimmy.txt` vamos a intentar cargar ese archivo con la función `load_file()` y reconstruir el contenido del mismo letra por letra, para esto vamos a jugar también con `group_concat` para compactar todo el texto en una sola línea y como esto puede ser muy tardado de forma manual lo hemos automatizado con ayuda de python, lo pueden clonar de mi [**GitHub**](<https://github.com/danystarrkk/Hacking-Tools/tree/main/Tools/SQLI%20Brute%20Force%20(Ximai)>)
 
 Si ya tenemos el script es cuestión de clonarlo y ejecutarlo:
 

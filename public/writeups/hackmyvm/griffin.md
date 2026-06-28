@@ -191,7 +191,7 @@ Con el usuario `brian` esto cambia y nos dice:
 
 Esto ya nos indica que el usuario es válido, pero su contraseña NO.
 
-Lo que vamos a hacer es realizar un ataque de fuerza bruta a la contraseña y para esto usare la herramienta que diseñe con python3 para este apartado y la pueden encontrar en el siguiente repo de [**GitHub**](<https://github.com/danystarrkk/Hacknig-Tools/tree/main/Tools/Web%20Brute%20Force%20(Griffin)>).
+Lo que vamos a hacer es realizar un ataque de fuerza bruta a la contraseña y para esto usare la herramienta que diseñe con python3 para este apartado y la pueden encontrar en el siguiente repo de [**GitHub**](<https://github.com/danystarrkk/Hacking-Tools/tree/main/Tools/Web%20Brute%20Force%20(Griffin)>).
 Algo que tenemos que hacer de forma extra es extraer la cookie que tenemos asignada en ese momento y lo podemos hacer con `ctrl + shift + c` y se desplegara:
 
 ![img28](/images/Pasted%20image%2020251105180223.webp)
