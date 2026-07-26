@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getRecentWriteups } from '../lib/content';
-import { WriteupIndexItem } from '../types';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getRecentWriteups } from "../lib/content";
+import { WriteupIndexItem } from "../types";
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getRecentWriteups(3).then(data => {
+    getRecentWriteups(3).then((data) => {
       setRecentWriteups(data);
       setLoading(false);
     });
@@ -21,20 +21,20 @@ const HomePage: React.FC = () => {
     for (let i = 0; i < slug.length; i++) {
       hash = slug.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-    return '0x' + '00000'.substring(0, 6 - c.length) + c + '...';
+    const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+    return "0x" + "00000".substring(0, 6 - c.length) + c + "...";
   };
 
   // Helper to pick an icon based on tags/platform
   const getIcon = (item: WriteupIndexItem) => {
     const tags = Array.isArray(item.tags)
-      ? item.tags.map(t => t.toUpperCase())
+      ? item.tags.map((t) => t.toUpperCase())
       : [];
 
-    if (tags.includes('WINDOWS')) return 'window';
-    if (tags.includes('ANDROID')) return 'android';
-    if (item.platform.toLowerCase() === 'hackthebox') return 'deployed_code';
-    return 'terminal';
+    if (tags.includes("WINDOWS")) return "window";
+    if (tags.includes("ANDROID")) return "android";
+    if (item.platform.toLowerCase() === "hackthebox") return "deployed_code";
+    return "terminal";
   };
 
   return (
@@ -67,15 +67,17 @@ const HomePage: React.FC = () => {
                   <div className="mt-6 border-l-2 border-nord8 pl-6 py-2">
                     <p className="text-nord4 text-lg md:text-xl font-medium tracking-wide space-y-2">
                       <span className="text-nord8">[USER]</span> Stark <br />
-                      <span className="text-nord8">[ATTR]</span> Autodidacta en proceso <br />
-                      <span className="text-nord8">[INFO]</span> Hackeando el sistema (legalmente)
+                      <span className="text-nord8">[ATTR]</span> Autodidacta en
+                      proceso <br />
+                      <span className="text-nord8">[INFO]</span> Hackeando el
+                      sistema (legalmente)
                     </p>
                   </div>
                 </div>
 
                 <div className="pt-8">
                   <button
-                    onClick={() => navigate('/directory')}
+                    onClick={() => navigate("/directory")}
                     className="group flex items-center justify-center overflow-hidden rounded h-14 px-10 bg-nord8 text-deep-bg text-base font-black uppercase tracking-widest hover:bg-nord9 hover:shadow-[0_0_25px_rgba(136,192,208,0.5)] transition-all transform hover:-translate-y-1"
                   >
                     <span className="truncate">access_mainframe</span>
@@ -148,13 +150,14 @@ const HomePage: React.FC = () => {
                   </div>
 
                   <div className="pt-2 flex gap-2 flex-wrap">
-                    {safeTags.slice(0, 3).map(tag => (
+                    {safeTags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className={`px-2 py-0.5 ${tag.toUpperCase() === 'HARD'
-                          ? 'bg-nord11/10 text-nord11'
-                          : 'bg-nord10/10 text-nord10'
-                          } text-[10px] rounded border border-current font-bold`}
+                        className={`px-2 py-0.5 ${
+                          tag.toUpperCase() === "HARD"
+                            ? "bg-nord11/10 text-nord11"
+                            : "bg-nord10/10 text-nord10"
+                        } text-[10px] rounded border border-current font-bold`}
                       >
                         {tag}
                       </span>
@@ -177,4 +180,3 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-

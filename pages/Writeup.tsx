@@ -1,33 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import { fetchWriteup } from '../lib/content';
-import { WriteupContent } from '../types';
+import React, { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import { fetchWriteup } from "../lib/content";
+import { WriteupContent } from "../types";
 
 const formatMachineName = (slug?: string) => {
-  if (!slug) return '';
-  return slug
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, char => char.toUpperCase());
+  if (!slug) return "";
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 // Helper to extract plain text
 const getNodeText = (node: any): string => {
-  if (['string', 'number'].includes(typeof node)) return String(node);
-  if (Array.isArray(node)) return node.map(getNodeText).join('');
-  if (typeof node === 'object' && node?.props?.children)
+  if (["string", "number"].includes(typeof node)) return String(node);
+  if (Array.isArray(node)) return node.map(getNodeText).join("");
+  if (typeof node === "object" && node?.props?.children)
     return getNodeText(node.props.children);
-  return '';
+  return "";
 };
 
 // Helper to generate slug
 const generateSlug = (text: string) =>
   text
-    .replace(/[*_`\[\]]/g, '')
+    .replace(/[*_`\[\]]/g, "")
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]/g, '');
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]/g, "");
 
 const MarkdownImage = ({ src, alt, ...props }: any) => {
   const [imgSrc, setImgSrc] = useState<string | undefined>(src);
@@ -43,7 +41,7 @@ const MarkdownImage = ({ src, alt, ...props }: any) => {
   }, [src]);
 
   const handleError = () => {
-    if (!retry && src && src.startsWith('/images/')) {
+    if (!retry && src && src.startsWith("/images/")) {
       setImgSrc(`/public${src}`);
       setRetry(true);
     } else {
@@ -153,7 +151,7 @@ const CodeBlock = ({ children, ...props }: any) => {
         className="absolute top-2 right-2 text-nord4 hover:text-nord8 opacity-0 group-hover:opacity-100 transition"
       >
         <span className="material-symbols-outlined text-sm">
-          {copied ? 'check' : 'content_copy'}
+          {copied ? "check" : "content_copy"}
         </span>
       </button>
     </div>
@@ -167,13 +165,16 @@ interface TOCItem {
 }
 
 const levelColors: Record<string, string> = {
-  Easy: 'text-nord14',   // Verde
-  Medium: 'text-nord13', // Amarillo
-  Hard: 'text-nord11',   // Rojo
+  Easy: "text-nord14", // Verde
+  Medium: "text-nord13", // Amarillo
+  Hard: "text-nord11", // Rojo
 };
 
 const WriteupViewPage: React.FC = () => {
-  const { platformId, slug } = useParams<{ platformId: string; slug: string }>();
+  const { platformId, slug } = useParams<{
+    platformId: string;
+    slug: string;
+  }>();
   const [data, setData] = useState<WriteupContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [toc, setToc] = useState<TOCItem[]>([]);
@@ -181,7 +182,7 @@ const WriteupViewPage: React.FC = () => {
   useEffect(() => {
     if (!platformId || !slug) return;
     setLoading(true);
-    fetchWriteup(platformId, slug).then(result => {
+    fetchWriteup(platformId, slug).then((result) => {
       setData(result);
       setLoading(false);
     });
@@ -195,7 +196,7 @@ const WriteupViewPage: React.FC = () => {
 
     for (const match of data.content.matchAll(regex)) {
       const level = match[1].length;
-      const cleanText = match[2].replace(/[*_`\[\]]/g, '').trim();
+      const cleanText = match[2].replace(/[*_`\[\]]/g, "").trim();
       items.push({
         id: generateSlug(cleanText),
         text: cleanText,
@@ -237,10 +238,14 @@ const WriteupViewPage: React.FC = () => {
 
             <div className="space-y-4 text-[14px] font-mono text-nord4/70">
               <div className="flex justify-between">
-                <span className="text-nord9">Date: {data.date || 'Unknown'}</span>
+                <span className="text-nord9">
+                  Date: {data.date || "Unknown"}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className={levelColors[data.level] || "text-nord4"} >Level: {data.level || 'N/A'}</span>
+                <span className={levelColors[data.level] || "text-nord4"}>
+                  Level: {data.level || "N/A"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-nord4">Platform: {platformId}</span>
@@ -248,7 +253,7 @@ const WriteupViewPage: React.FC = () => {
               <div>
                 <span className="block mb-2">Tags:</span>
                 <div className="flex flex-wrap gap-1">
-                  {safeTags.map(tag => (
+                  {safeTags.map((tag) => (
                     <span
                       key={tag}
                       className="px-1.5 py-0.5 bg-nord3/40 rounded text-[11px]"
@@ -269,28 +274,30 @@ const WriteupViewPage: React.FC = () => {
                   </span>
                 </div>
                 <nav className="flex flex-col gap-1">
-                 {toc.map(item => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const el = document.getElementById(item.id);
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }}
-                    className={`text-xs cursor-pointer hover:text-nord8
-                      ${item.level === 1 ? 'text-nord6 font-bold text-[15px]' : ''}
-                      ${item.level === 2 ? 'text-nord4/80 pl-3 text-[13px]' : ''}
-                      ${item.level === 3 ? 'text-nord4/60 pl-6 text-[11px]' : ''}
+                  {toc.map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = document.getElementById(item.id);
+                        if (el) {
+                          el.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                        }
+                      }}
+                      className={`text-xs cursor-pointer hover:text-nord8
+                      ${item.level === 1 ? "text-nord6 font-bold text-[15px]" : ""}
+                      ${item.level === 2 ? "text-nord4/80 pl-3 text-[13px]" : ""}
+                      ${item.level === 3 ? "text-nord4/60 pl-6 text-[11px]" : ""}
                     `}
-                  >
-                    {item.text}
-                  </a>
-                ))}
-              </nav>
-
+                    >
+                      {item.text}
+                    </a>
+                  ))}
+                </nav>
               </div>
             )}
 
@@ -310,18 +317,18 @@ const WriteupViewPage: React.FC = () => {
 
         <article className="flex-1 max-w-[800px] markdown-content">
           <header className="mb-12">
-    <h1 className=" uppercase text-9xl font-black text-nord6 tracking-tight">
-      {formatMachineName(slug)}
-    </h1>
-    <div className="mt-6 h-px bg-gradient-to-r from-nord3/40 via-nord3/10 to-transparent" />
-  </header>
+            <h1 className=" uppercase text-9xl font-black text-nord6 tracking-tight">
+              {formatMachineName(slug)}
+            </h1>
+            <div className="mt-6 h-px bg-gradient-to-r from-nord3/40 via-nord3/10 to-transparent" />
+          </header>
           <ReactMarkdown
             components={{
-              img: props => <MarkdownImage {...props} />,
-              h1: props => <Heading level={1} {...props} />,
-              h2: props => <Heading level={2} {...props} />,
-              h3: props => <Heading level={3} {...props} />,
-              pre: props => <CodeBlock {...props} />,
+              img: (props) => <MarkdownImage {...props} />,
+              h1: (props) => <Heading level={1} {...props} />,
+              h2: (props) => <Heading level={2} {...props} />,
+              h3: (props) => <Heading level={3} {...props} />,
+              pre: (props) => <CodeBlock {...props} />,
             }}
           >
             {data.content}
