@@ -26,7 +26,7 @@ Comenzaremos identificando la máquina víctima con ayuda de `arp-scan`:
 sudo arp-scan -I vboxnet0 --localnet --ignoredups
 ```
 
-!![img1](/images/Pasted%20image%2020260713211742.webp)
+![img1](/images/Pasted%20image%2020260713211742.webp)
 
 Como observamos, en este caso la IP es la `192.168.56.132`.
 
@@ -36,7 +36,7 @@ Intentemos intuir el sistema operativo con ayuda del comando `ping`:
 ping -c 1 192.168.56.132
 ```
 
-!![img2](/images/Pasted%20image%2020260713211855.webp)
+![img2](/images/Pasted%20image%2020260713211855.webp)
 
 Observamos un `ttl=64`, con esto no podemos determinar el sistema de forma exacta, pero posiblemente está basado en Unix, lo que ya es una pista y reduce las opciones.
 
@@ -46,7 +46,7 @@ Bueno, vamos a comenzar con el escaneo general, para identificar puertos abierto
 sudo nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.56.132 -oG allPorts
 ```
 
-!![img3](/images/Pasted%20image%2020260713212241.webp)
+![img3](/images/Pasted%20image%2020260713212241.webp)
 
 Obtenemos que los puertos abiertos son: 22 y 80, corriendo los servicios de ssh y http respectivamente.
 
@@ -56,41 +56,41 @@ Ahora realicemos un escaneo directo hacia estos dos puertos de igual forma con `
 nmap -p22,80 -sVC 192.168.56.132 -oN target
 ```
 
-!![img4](/images/Pasted%20image%2020260713212531.webp)
+![img4](/images/Pasted%20image%2020260713212531.webp)
 
 Logramos obtener las versiones de cada uno de los servicios correspondiente, además de que en estas nos habla de **Debian**, aun así esto no podría ser del todo certero.
 
 En este punto me interesa saber qué es lo que corre en la web por el puerto 80 así que vamos a ingresar a la web a ver si encontramos algo:
 
-!![img5](/images/Pasted%20image%2020260713212850.webp)
+![img5](/images/Pasted%20image%2020260713212850.webp)
 
 Tenemos la Web de Apache 2 por defecto y con ayuda de Wappalyzer no logramos detectar mucho más.
 
 Algo rutinario es revisar el código fuente de la web, en busca de algún comentario o algo que llame nuestra atención:
 
-!![img6](/images/Pasted%20image%2020260713213132.webp)
+![img6](/images/Pasted%20image%2020260713213132.webp)
 
 Mirando un poco el código nos topamos con ese comentario, recordando que usualmente la ruta por defecto cuando se trabaja con Apache es la `/var/www/html`, y dentro el contenido de la web, es extraño y llamativo el `/finexo`, así que vamos a intentar ingresar:
 
-!![img7](/images/Pasted%20image%2020260713213454.webp)
+![img7](/images/Pasted%20image%2020260713213454.webp)
 
 Excelente, ya tenemos una web con contenido para analizar, en este caso además de información sobre lo que parece ser la aplicación web, nos exponen a algunos trabajadores:
 
-!![img8](/images/Pasted%20image%2020260713213823.webp)
+![img8](/images/Pasted%20image%2020260713213823.webp)
 
 Esto es interesante, ya que nosotros no sabemos si alguno de los nombres pueda estar siendo usado como usuario.
 
 Con lo anterior en mente, dirijámonos a la pestaña del **Login**:
 
-!![img9](/images/Pasted%20image%2020260713213626.webp)
+![img9](/images/Pasted%20image%2020260713213626.webp)
 
 # Explotación
 
 Tenemos un panel de Login simple que cuenta con un captcha. Lo primero que se me ocurre intentar es con credenciales por defecto como `admin:admin` o `root:tor` lo cual no funciona, así que nuestro siguiente paso es intentar con los posibles nombres de usuario que conseguimos en la web:
-!![img10](/images/Pasted%20image%2020260713214336.webp)
+![img10](/images/Pasted%20image%2020260713214336.webp)
 
 Observamos un mensaje interesante, donde se expresa que la contraseña no es válida, esto es muy específico ya que si nosotros intentamos con otro usuario como `admin` el mensaje nos habla de usuario no existente:
-!![img11](/images/Pasted%20image%2020260713214531.webp)
+![img11](/images/Pasted%20image%2020260713214531.webp)
 
 Esto ya nos hace pensar en que este panel de login cuenta con una enumeración de usuario. Pero bueno ahora que tenemos un usuario válido mi idea será intentar un ataque de fuerza bruta programada en python para lograr encontrar la contraseña del usuario `spongebob`.
 
@@ -102,53 +102,53 @@ Clonado e instaladas las dependencias necesarias vamos a realizar la ejecución 
 python3 bruteForce.py -u spongebob -w /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt -c qms9k1qcb4ldu761p0i2fk9fk9
 ```
 
-!![img12](/images/Pasted%20image%2020260715194759.webp)
+![img12](/images/Pasted%20image%2020260715194759.webp)
 
 Ahora nos queda esperar, vemos si logramos obtener credenciales.
 
-!![img13](/images/Pasted%20image%2020260715213610.webp)
+![img13](/images/Pasted%20image%2020260715213610.webp)
 
 Perfecto, encontramos credenciales válidas, vamos a intentar el inicio de sesión con esas credenciales:
 
-!![img14](/images/Pasted%20image%2020260719193142.webp)
+![img14](/images/Pasted%20image%2020260719193142.webp)
 
 Como observamos ya estamos como el usuario `SpongeBob`, exploremos la web.
 
 Explorando la web, nos topamos con la posibilidad de cambiar la información del usuario donde, se incluye el cambio de contraseña:
 
-!![img15](/images/Pasted%20image%2020260719193402.webp)
+![img15](/images/Pasted%20image%2020260719193402.webp)
 
 Podemos intentar un cambio de la misma y ver cómo es que se está tramitando la petición por detrás:
 
-!![img16](/images/Pasted%20image%2020260719193528.webp)
+![img16](/images/Pasted%20image%2020260719193528.webp)
 
 Tenemos dos campos cruciales los cuales podemos ver que son el de usuario y contraseña. Mi pregunta es ¿Y si alteramos el usuario para hacer referencia a otro? Si la contraseña llegara a cambiarse al modificar el username estaríamos delante de un IDOR.
 
 Para poder comprobar esto primero vamos a tener que identificar otro usuario en la web.
 
-!![img17](/images/Pasted%20image%2020260719194314.webp)
+![img17](/images/Pasted%20image%2020260719194314.webp)
 
 Al revisar el apartado de mensajes encontramos a `Cristina Danny` que no parece un nombre de usuario, pero, también nos topamos con `Administratro` el cual podría ser un nombre de usuario por lo tanto por qué no intentamos primero usarlo en el inicio de sesión para comprobarlo.
 
-!![img18](/images/Pasted%20image%2020260719194515.webp)
+![img18](/images/Pasted%20image%2020260719194515.webp)
 
 Excelente, vemos que al intentarlo el mensaje es `Wrong Password` por lo tanto el usuario sí es válido. Ahora conociendo esto vamos a comprobar nuestra teoría de un posible **IDOR**, modifiquemos y enviemos la petición a ver qué logramos conseguir:
 
-!![img19](/images/Pasted%20image%2020260719195009.webp)
+![img19](/images/Pasted%20image%2020260719195009.webp)
 
 Ha funcionado, pero algo importante a tener en cuenta, es que nosotros cerramos la sesión, destruyendo así la cookie de sesión que se estaba empleando y generando una nueva, donde, comprobamos que el usuario `Administratro` existe, por lo que la cookie de sesión de la petición debe cambiarse por la nueva asignada y que es válida.
 
 Ahora intentemos iniciar sesión como el usuario `Administratro`:
 
-!![img20](/images/Pasted%20image%2020260719200108.webp)
+![img20](/images/Pasted%20image%2020260719200108.webp)
 
 Perfecto, vemos si con el nuevo usuario tenemos alguna funcionalidad extra.
 
-!![img21](/images/Pasted%20image%2020260719200156.webp)
+![img21](/images/Pasted%20image%2020260719200156.webp)
 
 Al parecer contamos con la funcionalidad de ejecutar comando, con esto podemos generar una **reverse shell**:
 
-!![img22](/images/Pasted%20image%2020260719200336.webp)!![img23](/images/Pasted%20image%2020260719200350.webp)
+![img22](/images/Pasted%20image%2020260719200336.webp)![img23](/images/Pasted%20image%2020260719200350.webp)
 
 Logramos la conexión y nos encontramos como el usuario `www-data`.
 
@@ -160,11 +160,11 @@ En este punto podemos comenzar con una enumeración a ver si podemos escalar pri
 
 Veamos los permisos de `sudo` con los que contamos mediante `sudo -l`:
 
-!![img24](/images/Pasted%20image%2020260719200644.webp)
+![img24](/images/Pasted%20image%2020260719200644.webp)
 
 Nosotros podemos ejecutar el binario `/usr/bin/split` como el usuario `KrustyKrab`. Lo primero que pienso hacer es buscar si el binario cuenta con alguna vulnerabilidad conocida, y para esto utilizamos la web de GTFOBins:
 
-!![img25](/images/Pasted%20image%2020260719200923.webp)
+![img25](/images/Pasted%20image%2020260719200923.webp)
 
 Ya tenemos el comando exacto para posiblemente escalar como el usuario `krustyKrab`, vamos a intentarlo pero en lugar de usar sh vamos a usar una bash por comodidad:
 
@@ -172,7 +172,7 @@ Ya tenemos el comando exacto para posiblemente escalar como el usuario `krustyKr
 sudo -u KrustyKrab /usr/bin/split --filter='/bin/bash -i 0<&2 1>&2' /etc/hosts
 ```
 
-!![img26](/images/Pasted%20image%2020260719201214.webp)
+![img26](/images/Pasted%20image%2020260719201214.webp)
 
 Ya como el usuario `KrustyKrab` vamos a volver a realizar reconocimiento a ver con qué nos encontramos.
 
@@ -180,25 +180,25 @@ Ya como el usuario `KrustyKrab` vamos a volver a realizar reconocimiento a ver c
 
 Volver a revisar por permisos de sudo con el comando `sudo -l`:
 
-!![img27](/images/Pasted%20image%2020260724174747.webp)
+![img27](/images/Pasted%20image%2020260724174747.webp)
 
 En este caso, podemos ejecutar como el usuario `spongebob` el binario `/usr/bin/ttteeesssttt`. Vamos a ejecutarlo de primeras a ver qué es lo que hace:
 
-!![img28](/images/Pasted%20image%2020260724174921.webp)
+![img28](/images/Pasted%20image%2020260724174921.webp)
 
 Al parecer es un simple juego en el cual tenemos que poner las letras, en un respectivo orden.
 
 Si intentamos un cat al binario, para ver cómo es que este funciona, observaremos que nada es legible:
 
-!![img29](/images/Pasted%20image%2020260724175404.webp)
+![img29](/images/Pasted%20image%2020260724175404.webp)
 
 Si no es legible, listemos por lo poco que sí lo es, para esto usaremos el comando `strings`:
 
-!![img30](/images/Pasted%20image%2020260724175533.webp)
+![img30](/images/Pasted%20image%2020260724175533.webp)
 
 Esto es muy bueno, tenemos la lista de productos ya en un orden y podemos tratar de ordenarlos de esa manera a ver si es válido:
 
-!![img31](/images/Pasted%20image%2020260724175743.webp)
+![img31](/images/Pasted%20image%2020260724175743.webp)
 
 Es correcto y logramos acceder como el usuario `spongebob`.
 
@@ -206,16 +206,16 @@ Es correcto y logramos acceder como el usuario `spongebob`.
 
 Ahora contamos con múltiples archivos en nuestro home:
 
-!![img32](/images/Pasted%20image%2020260724180009.webp)
+![img32](/images/Pasted%20image%2020260724180009.webp)
 
 Veamos el contenido de la nota:
 
-!![img33](/images/Pasted%20image%2020260724180037.webp)
+![img33](/images/Pasted%20image%2020260724180037.webp)
 
 Su contenido trata de decirnos que la contraseña del usuario `squidward` es el valor md5 de los archivos `key1` y `key2`.
 
 El proceso es sencillo de la siguiente manera:
-!![img34](/images/Pasted%20image%2020260724181446.webp)
+![img34](/images/Pasted%20image%2020260724181446.webp)
 
 Ya nos encontramos como el usuario Squidward
 
@@ -223,22 +223,22 @@ Ya nos encontramos como el usuario Squidward
 
 Comencemos revisando que tenemos en nuestra carpeta personal:
 
-!![img35](/images/Pasted%20image%2020260724181741.webp)
+![img35](/images/Pasted%20image%2020260724181741.webp)
 
 Como observamos nos encontramos con un binario el cual por obvias razones no podemos leer.
 
 Observemos los permisos dicho binario:
-!![img36](/images/Pasted%20image%2020260724181915.webp)
+![img36](/images/Pasted%20image%2020260724181915.webp)
 
 Identificamos permisos SUID por lo tanto ese binario se ejecuta como su propietario es decir como `root`.
 
 Vemos que es lo que hace:
 
-!![img37](/images/Pasted%20image%2020260724182027.webp)
+![img37](/images/Pasted%20image%2020260724182027.webp)
 
 Vemos que lista lo que parece ser es el archivo `/etc/shadow` por lo tanto vamos a intentar listar sus cadenas legibles para ver de forma superficial que es lo que hace:
 
-!![img38](/images/Pasted%20image%2020260724182203.webp)
+![img38](/images/Pasted%20image%2020260724182203.webp)
 
 Como observamos aquí está lo que identificamos y acertamos. En este punto debemos comprender que el binario hace uso de rutas relativas lo que obliga al binario a confiar en la variable de entorno `PATH` la cual es alterable para cada usuario y allí está el truco, ya que, podemos modificarla para que la primera ruta en la que busca sea el directorio actual así aplicando la vulnerabilidad de tipo Path Hijacking.
 
@@ -250,11 +250,11 @@ Entonces lo que haremos es primero crear un archivo llamado `cat` con el siguien
 chmod +s /bin/bash
 ```
 
-!![img39](/images/Pasted%20image%2020260724182542.webp)
+![img39](/images/Pasted%20image%2020260724182542.webp)
 
 Ya con esto vamos a darle permisos de ejecución:
 
-!![img40](/images/Pasted%20image%2020260724182614.webp)
+![img40](/images/Pasted%20image%2020260724182614.webp)
 
 Ahora vamos a alterar el path, donde la primera ruta que debe revisar para ejecutar un archivo es la actual y lo hacemos de la siguiente manera:
 
@@ -262,23 +262,23 @@ Ahora vamos a alterar el path, donde la primera ruta que debe revisar para ejecu
 export PATH=./:$PATH
 ```
 
-!![img41](/images/Pasted%20image%2020260724182756.webp)
+![img41](/images/Pasted%20image%2020260724182756.webp)
 
 Tenemos de primera ruta el directorio actual así que por qué no ejecutamos ese binario a ver qué logramos:
 
-!![img42](/images/Pasted%20image%2020260724182849.webp)
+![img42](/images/Pasted%20image%2020260724182849.webp)
 
 Logramos el cometido, y ya tenemos el binario de `/bin/bash` como SUID con el cual mediante el comando `bash -p` podremos ingresar como root:
 
-!![img43](/images/Pasted%20image%2020260724182955.webp)
+![img43](/images/Pasted%20image%2020260724182955.webp)
 
 Con esto ya podemos revisar la flag:
 
-!![img44](/images/Pasted%20image%2020260724183025.webp)
+![img44](/images/Pasted%20image%2020260724183025.webp)
 
 Lab Terminado.
 
-!![img45](/images/Pasted%20image%2020260724183414.webp)
+![img45](/images/Pasted%20image%2020260724183414.webp)
 
 # Mitigaciones
 
