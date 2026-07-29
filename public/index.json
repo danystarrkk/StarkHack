@@ -1,5 +1,28 @@
 [
   {
+    "title": "KrustyKrab",
+    "date": "2026-06-28",
+    "draft": false,
+    "description": "Writeup de la máquina KrustyKrab en HackMyVM.",
+    "categories": [
+      "HackMyVM"
+    ],
+    "tags": [
+      "Information Disclosure",
+      "Broken Access Control",
+      "Remote Code Execution",
+      "Sudo Misconfiguration",
+      "SUID Misconfiguration",
+      "Path Hijacking",
+      "Privilege Escalation"
+    ],
+    "image": "/images/krustykrab.webp",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "krustykrab",
+    "path": "/writeups/hackmyvm/krustykrab.md"
+  },
+  {
     "title": "Flossy",
     "date": "2026-06-27",
     "description": "Writeup de la máquina Flossy en HackMyVM.",
