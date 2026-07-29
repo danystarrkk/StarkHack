@@ -17,7 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       try {
         // NOTA: Cambia "starkhack-tu-nombre-unico" por algo único para que no se mezcle con otros
         const response = await fetch(
-          "https://api.counterapi.dev/v1/starkhack-tu-nombre-unico/pageviews/up",
+          "https://api.counterapi.dev/v1/starkhack-35GH3-1C4B50-1A34/pageviews/up",
         );
         const data = await response.json();
         setViews(data.count);
