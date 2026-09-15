@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     # ====== CONFIGURACIÓN DE RUTAS ======
     # Modifica estas rutas según cómo tengas organizada tu carpeta
-    DIR_ORIGEN = "/home/stark/Projects/Brain/99 - Plantillas y Recursos/Capturas"  # Donde Obsidian/tu editor guarda las imágenes por defecto
+    DIR_ORIGEN = "/home/stark/Documents/Brain/99 - Plantillas y Recursos/Capturas"  # Donde Obsidian/tu editor guarda las imágenes por defecto
     DIR_DESTINO = "/home/stark/Projects/StarkHack/temp/"  # La carpeta de donde el Script 1 (conversor) tomará las imágenes
 
     print("\n\t Procesador de Markdown a formato Web \n")

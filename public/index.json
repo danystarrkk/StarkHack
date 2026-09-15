@@ -1,5 +1,27 @@
 [
   {
+    "title": "Wave",
+    "date": "2026-09-15",
+    "draft": false,
+    "description": "Writeup de la máquina Wave en HackMyVM.",
+    "categories": [
+      "HackMyVM"
+    ],
+    "tags": [
+      "Information Disclosure",
+      "Remote Code Execution",
+      "Arbitrary File Upload",
+      "Misconfigured Service",
+      "Sudo Misconfiguration",
+      "Privilege Escalation"
+    ],
+    "image": "/images/wave.webp",
+    "level": "Medium",
+    "platform": "hackmyvm",
+    "slug": "wave",
+    "path": "/writeups/hackmyvm/wave.md"
+  },
+  {
     "title": "KrustyKrab",
     "date": "2026-06-28",
     "draft": false,
