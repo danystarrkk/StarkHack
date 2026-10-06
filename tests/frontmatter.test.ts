@@ -1,0 +1,97 @@
+import { describe, expect, it } from 'vitest';
+import { parseFrontmatter } from '../lib/frontmatter.js';
+
+describe('parseFrontmatter', () => {
+  it('splits valid frontmatter into data and body', () => {
+    const text = '---\ntitle: "Wave"\nlevel: Medium\ntags: ["a", "b"]\n---\n\n# Heading\n\nBody text.\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({ title: 'Wave', level: 'Medium', tags: ['a', 'b'] });
+    expect(content).toBe('\n# Heading\n\nBody text.\n');
+  });
+
+  it('returns the text unchanged when frontmatter is missing', () => {
+    const text = '# Just a body\n\nNo frontmatter here.\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe(text);
+  });
+
+  it('parses frontmatter delimited with CRLF line endings', () => {
+    const text = '---\r\ntitle: "CRLF"\r\nlevel: Hard\r\n---\r\n\r\n# Body\r\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({ title: 'CRLF', level: 'Hard' });
+    expect(content).toContain('# Body');
+    expect(content).not.toBe(text);
+  });
+
+  it('parses a multiline flow array with a trailing comma (wave.md format)', () => {
+    const text = [
+      '---',
+      'title: "Wave"',
+      'tags:',
+      '  [',
+      '    "Information Disclosure",',
+      '    "Remote Code Execution",',
+      '    "Privilege Escalation",',
+      '  ]',
+      '---',
+      '',
+      '# Body',
+      '',
+    ].join('\n');
+
+    const { data } = parseFrontmatter(text);
+
+    expect(data.tags).toEqual([
+      'Information Disclosure',
+      'Remote Code Execution',
+      'Privilege Escalation',
+    ]);
+  });
+
+  it('normalizes a YAML date timestamp to a "YYYY-MM-DD" string', () => {
+    const { data } = parseFrontmatter('---\ntitle: "D"\ndate: 2026-09-15\n---\nbody\n');
+
+    expect(data.date).toBe('2026-09-15');
+    expect(typeof data.date).toBe('string');
+  });
+
+  it('throws an Error starting with "Invalid YAML frontmatter" on invalid YAML', () => {
+    const text = '---\ntitle: [unterminated\n---\nbody\n';
+
+    expect(() => parseFrontmatter(text)).toThrowError(/^Invalid YAML frontmatter/);
+  });
+
+  it('returns empty data when the frontmatter block contains only comments', () => {
+    const text = '---\n# just a comment\n---\nbody stays\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe('body stays\n');
+  });
+
+  it('returns empty data when the frontmatter block parses to a scalar', () => {
+    const text = '---\njust a plain scalar\n---\nbody stays\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe('body stays\n');
+  });
+
+  it('returns empty data when the frontmatter block is a bare date scalar', () => {
+    const text = '---\n2026-01-02\n---\nbody stays\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe('body stays\n');
+  });
+});
