@@ -41,6 +41,16 @@ const allWriteupFiles: WriteupFile[] = collectMarkdownFiles(writeupsDir).map((ab
   };
 });
 
+// Resolves the index entries for a single writeup file. Lookups go by `path`
+// (`/writeups/<platform>/<file>`), which is unique by construction; the bare `slug`
+// is only the filename and can collide across platforms.
+function entriesFor(
+  index: WriteupIndexItem[],
+  file: Pick<WriteupFile, 'slug' | 'expectedPath'>
+): WriteupIndexItem[] {
+  return index.filter((entry) => entry.path === file.expectedPath);
+}
+
 // generateIndex() deliberately skips `draft: true`, so drafts must NOT appear in the index.
 const writeupFiles: WriteupFile[] = allWriteupFiles.filter((file) => file.data.draft !== true);
 const draftFiles: WriteupFile[] = allWriteupFiles.filter((file) => file.data.draft === true);
@@ -56,16 +66,16 @@ describe('public/index.json drift', () => {
 
   it.each(writeupFiles)(
     'writeup $rel has exactly one index entry with matching metadata',
-    ({ expectedPath, slug, data }) => {
-      const matches = index.filter((entry) => entry.slug === slug);
+    (file) => {
+      const matches = entriesFor(index, file);
       expect(matches).toHaveLength(1);
 
       const [entry] = matches;
-      expect(entry.path).toBe(expectedPath);
-      expect(entry.title).toBe(data.title);
-      expect(entry.date).toBe(data.date);
-      expect(entry.level).toBe(data.level);
-      expect(entry.tags).toEqual(data.tags);
+      expect(entry.path).toBe(file.expectedPath);
+      expect(entry.title).toBe(file.data.title);
+      expect(entry.date).toBe(file.data.date);
+      expect(entry.level).toBe(file.data.level);
+      expect(entry.tags).toEqual(file.data.tags);
     }
   );
 
@@ -78,4 +88,40 @@ describe('public/index.json drift', () => {
   it.each(draftFiles)('draft writeup $rel is excluded from the index', ({ expectedPath }) => {
     expect(index.some((entry) => entry.path === expectedPath)).toBe(false);
   });
+});
+
+describe('index entry lookup', () => {
+  // Synthetic index: two platforms can ship a machine with the same filename, so a bare
+  // slug is ambiguous while `/writeups/<platform>/<file>` stays unique by construction.
+  const syntheticIndex: WriteupIndexItem[] = [
+    {
+      title: 'Wave (HackMyVM)',
+      date: '2026-01-01',
+      slug: 'wave',
+      platform: 'hackmyvm',
+      path: '/writeups/hackmyvm/wave.md',
+    },
+    {
+      title: 'Wave (HackTheBox)',
+      date: '2026-01-02',
+      slug: 'wave',
+      platform: 'hackthebox',
+      path: '/writeups/hackthebox/wave.md',
+    },
+  ];
+  const sharedSlugFiles = [
+    { slug: 'wave', expectedPath: '/writeups/hackmyvm/wave.md', expectedPlatform: 'hackmyvm' },
+    { slug: 'wave', expectedPath: '/writeups/hackthebox/wave.md', expectedPlatform: 'hackthebox' },
+  ];
+
+  it.each(sharedSlugFiles)(
+    'resolves exactly one entry for $expectedPath when two platforms share a slug',
+    ({ slug, expectedPath, expectedPlatform }) => {
+      const matches = entriesFor(syntheticIndex, { slug, expectedPath });
+
+      expect(matches).toHaveLength(1);
+      expect(matches[0].path).toBe(expectedPath);
+      expect(matches[0].platform).toBe(expectedPlatform);
+    }
+  );
 });

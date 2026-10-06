@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,11 +20,33 @@ function writeWriteup(
   filename: string,
   frontmatterLines: string[],
   body = '# Writeup body'
-): void {
+): string {
   const platformDir = path.join(root, platform);
   fs.mkdirSync(platformDir, { recursive: true });
+  const filePath = path.join(platformDir, filename);
   const file = ['---', ...frontmatterLines, '---', '', body, ''].join('\n');
-  fs.writeFileSync(path.join(platformDir, filename), file);
+  fs.writeFileSync(filePath, file);
+  return filePath;
+}
+
+// Writes a markdown file with no frontmatter block at all.
+function writeRawWriteup(root: string, platform: string, filename: string, text: string): string {
+  const platformDir = path.join(root, platform);
+  fs.mkdirSync(platformDir, { recursive: true });
+  const filePath = path.join(platformDir, filename);
+  fs.writeFileSync(filePath, text);
+  return filePath;
+}
+
+const cliModuleUrl = new URL('../scripts/generate-index.js', import.meta.url).href;
+
+// Runs the CLI entry point in a child process so exit codes and stderr are observable.
+function runCliInChildProcess(writeupsDir: string, outputFile: string) {
+  const code = [
+    `import { runCli } from ${JSON.stringify(cliModuleUrl)};`,
+    `runCli(${JSON.stringify(writeupsDir)}, ${JSON.stringify(outputFile)});`,
+  ].join('');
+  return spawnSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8' });
 }
 
 afterEach(() => {
@@ -95,5 +118,105 @@ describe('generateIndex', () => {
     const root = makeTempWriteupsDir();
 
     expect(generateIndex(root)).toEqual([]);
+  });
+
+  it('throws with the file path when a writeup has no frontmatter', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeRawWriteup(root, 'hackmyvm', 'bare.md', '# Just a body, no frontmatter\n');
+
+    expect(() => generateIndex(root)).toThrow(filePath);
+  });
+
+  it('throws with the file path when the frontmatter YAML is invalid', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeWriteup(root, 'hackmyvm', 'invalid.md', ['title: "Broken"', 'tags: [unclosed']);
+
+    expect(() => generateIndex(root)).toThrow(filePath);
+  });
+
+  it('rejects a non-draft writeup missing title while skipping a draft missing title', () => {
+    const root = makeTempWriteupsDir();
+    // The draft sorts first: it must be skipped before validation, not rejected.
+    const draftPath = writeWriteup(root, 'hackmyvm', 'a-draft.md', ['draft: true']);
+    const livePath = writeWriteup(root, 'hackmyvm', 'b-live.md', ['date: 2026-01-02']);
+
+    let thrown: unknown;
+    try {
+      generateIndex(root);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(Error);
+    const message = (thrown as Error).message;
+    expect(message).toContain(livePath);
+    expect(message).toContain('title');
+    expect(message).not.toContain(draftPath);
+
+    // A draft missing every field is still just skipped.
+    const draftOnlyRoot = makeTempWriteupsDir();
+    writeWriteup(draftOnlyRoot, 'hackmyvm', 'draft-only.md', ['draft: true']);
+    expect(generateIndex(draftOnlyRoot)).toEqual([]);
+  });
+
+  it('names every missing required field in the error message', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeWriteup(root, 'hackmyvm', 'nofields.md', ['description: "No title, no date"']);
+
+    let message = '';
+    try {
+      generateIndex(root);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('title');
+    expect(message).toContain('date');
+  });
+
+  it('treats empty required fields as missing', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeWriteup(root, 'hackmyvm', 'empty-title.md', ['title: ""', 'date: 2026-01-01']);
+
+    let message = '';
+    try {
+      generateIndex(root);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('title');
+    expect(message).not.toContain('date');
+  });
+});
+
+describe('generate-index CLI', () => {
+  it('writes the index and prints the generated count', () => {
+    const root = makeTempWriteupsDir();
+    writeWriteup(root, 'hackmyvm', 'one.md', ['title: "One"', 'date: 2026-01-01']);
+    writeWriteup(root, 'hackmyvm', 'two.md', ['title: "Two"', 'date: 2026-01-02']);
+    const outputFile = path.join(root, 'index.json');
+
+    const result = runCliInChildProcess(root, outputFile);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe('Generated index.json with 2 writeups.');
+    expect(JSON.parse(fs.readFileSync(outputFile, 'utf8'))).toHaveLength(2);
+  });
+
+  it('prints a one-line error to stderr and exits 1 on invalid metadata', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeWriteup(root, 'hackmyvm', 'broken.md', ['date: 2026-01-01']);
+    const outputFile = path.join(root, 'index.json');
+
+    const result = runCliInChildProcess(root, outputFile);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(filePath);
+    // Clean failure: exactly one stderr line, no stack trace, no half-written index.
+    expect(result.stderr.trim().split('\n')).toHaveLength(1);
+    expect(fs.existsSync(outputFile)).toBe(false);
   });
 });

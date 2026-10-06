@@ -27,10 +27,28 @@ export function generateIndex(writeupsDir) {
         const filePath = path.join(platformPath, file);
         const content = fs.readFileSync(filePath, "utf8");
 
-        const { data } = parseFrontmatter(content);
+        let data;
+        try {
+          ({ data } = parseFrontmatter(content));
+        } catch (error) {
+          // Re-lanzamos con el path: sin contexto no se sabe qué archivo rompe el índice
+          const reason = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to parse ${filePath}: ${reason}`);
+        }
 
-        // skip drafts reales
+        // skip drafts reales (antes de validar: un draft sin publicar no necesita metadata)
         if (data.draft === true) return;
+
+        // Todo writeup publicado necesita título y fecha; sin ellos la entrada llega vacía a la UI
+        const missing = ["title", "date"].filter((field) => {
+          const value = data[field];
+          return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+        });
+        if (missing.length > 0) {
+          throw new Error(
+            `Missing required frontmatter field(s) in ${filePath}: ${missing.join(", ")}`
+          );
+        }
 
         index.push({
           ...data,
@@ -48,10 +66,21 @@ export function generateIndex(writeupsDir) {
 }
 
 // CLI: node scripts/generate-index.js → escribe public/index.json
+// runCli queda exportada para poder ejercitar el camino de error sin tocar public/
+export function runCli(writeupsDir = WRITEUPS_DIR, outputFile = OUTPUT_FILE) {
+  try {
+    const index = generateIndex(writeupsDir);
+
+    fs.writeFileSync(outputFile, JSON.stringify(index, null, 2));
+
+    console.log(`Generated index.json with ${index.length} writeups.`);
+  } catch (error) {
+    // Fallo limpio: una sola línea en stderr y exit 1, sin stack trace
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const index = generateIndex(WRITEUPS_DIR);
-
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(index, null, 2));
-
-  console.log(`Generated index.json with ${index.length} writeups.`);
+  runCli();
 }
