@@ -190,6 +190,26 @@ describe('generateIndex', () => {
     expect(message).toContain('title');
     expect(message).not.toContain('date');
   });
+
+  it('rejects an array title even though it is present (R3-002)', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeWriteup(root, 'hackmyvm', 'array-title.md', [
+      'title: ["not", "a", "string"]',
+      'date: 2026-09-15',
+    ]);
+
+    expect(() => generateIndex(root)).toThrow(filePath);
+  });
+
+  it('rejects a numeric title even though it is present (R3-002)', () => {
+    const root = makeTempWriteupsDir();
+    const filePath = writeWriteup(root, 'hackmyvm', 'numeric-title.md', [
+      'title: 123',
+      'date: 2026-09-15',
+    ]);
+
+    expect(() => generateIndex(root)).toThrow(filePath);
+  });
 });
 
 describe('generate-index CLI', () => {

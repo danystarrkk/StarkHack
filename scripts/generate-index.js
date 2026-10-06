@@ -39,10 +39,12 @@ export function generateIndex(writeupsDir) {
         // skip drafts reales (antes de validar: un draft sin publicar no necesita metadata)
         if (data.draft === true) return;
 
-        // Todo writeup publicado necesita título y fecha; sin ellos la entrada llega vacía a la UI
+        // Todo writeup publicado necesita título y fecha en formato texto;
+        // un valor presente pero no-string (array, número, booleano) también es
+        // inválido: React no lo puede renderizar como texto.
         const missing = ["title", "date"].filter((field) => {
           const value = data[field];
-          return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+          return typeof value !== "string" || value.trim() === "";
         });
         if (missing.length > 0) {
           throw new Error(

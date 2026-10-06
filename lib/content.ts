@@ -68,9 +68,12 @@ export const fetchWriteup = async (platform: string, slug: string): Promise<Writ
     const { data, content } = parseFrontmatter<Partial<WriteupContent>>(text);
 
     return {
+      // El spread va primero: lo que el frontmatter aporte llena el resto,
+      // pero slug y content se declaran después para que una clave `slug:` o
+      // `content:` escrita en el YAML no pueda pisar el id ni el cuerpo real.
+      ...data,
       slug,
       content,
-      ...data,
       // Required metadata is guaranteed on every path: fall back to the slug
       // and to today's date when the frontmatter leaves either field unset.
       title: data.title ?? slug,

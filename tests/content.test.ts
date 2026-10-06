@@ -213,4 +213,16 @@ describe('fetchWriteup metadata guarantees (R3-04)', () => {
     expect(result?.title).toBe('wave');
     expect(result?.date).toBe('2026-09-15');
   });
+
+  it('does not let frontmatter override the slug or the markdown body (R3-001)', async () => {
+    fetchMock.mockResolvedValue(
+      textResponse('---\ntitle: "Wave"\nslug: evil\ncontent: corrupto\n---\nbody\n'),
+    );
+
+    const result = await fetchWriteup('hackmyvm', 'wave');
+
+    expect(result?.slug).toBe('wave');
+    expect(result?.content).toBe('body\n');
+    expect(result?.title).toBe('Wave');
+  });
 });

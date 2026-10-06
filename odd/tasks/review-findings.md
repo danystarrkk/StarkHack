@@ -101,3 +101,27 @@ Corrección: `parseFrontmatter` genérico y unificar los dos branches de
   admisibles nuevos (R3-001..R3-003), pendientes de decisión del humano.
 - Checks no ejecutados: no hay e2e/navegador; Engram sigue caído (127.0.0.1:7437)
   por lo que el mirror `odd/review-findings/tasks` no se pudo guardar.
+
+## Segundo ciclo: R3-001 y R3-002 (sugerencias)
+
+Review `review-cea004a52c906627` → approved y quemado. Dos hallazgos
+admisibles sobre el código recién escrito, ambos corregidos por decisión del
+humano («vamos con las correcciones»):
+
+### R3-001 · SUGGESTION · `lib/content.ts:68` → corregido
+El spread iba antes que `slug`/`content`, así que una clave `slug:` o
+`content:` escrita en el frontmatter pisaba el id real y el cuerpo markdown.
+Latente hoy: ningún writeup trae esas claves. Arreglo: el spread va primero
+y `slug`/`content` se declaran después.
+
+### R3-002 · SUGGESTION · `scripts/generate-index.js:45` → corregido
+La validación chequeaba presencia/vacío pero no el tipo: `title: [a, b]` o
+title: 123` pasaban y llegaban a React (array ⇒ crash de render). Arreglo:
+un valor no-string cuenta como campo faltante.
+
+Evidencia: RED observado en los 3 tests nuevos (`expected 'evil' to be
+'wave'` y dos «did not throw») → corrección → 77/77 tests, `tsc --noEmit`
+exit 0, `npm run build` exit 0, `public/index.json` byte idéntico.
+
+No se abrió un tercer ciclo de review para este candidato: el usuario pidió
+cerrar sin más ceremonia RDD. Queda registrado acá por si querés correrlo.
