@@ -82,3 +82,14 @@ que proteja el pipeline de contenido (markdown → index.json → UI).
 - Advertencia preexistente: `caniuse-lite` desactualizado (no bloquea).
 - Pendiente fuera de alcance: `gray-matter` figura en `package.json` pero
   ningún archivo lo importa (candidato a `npm uninstall`).
+
+## Review nativo (RDD)
+
+- Lineage: `review-fe24803f47452ed7` · tier medium · lente `review-reliability`.
+- Resultado: **approved**, acknowledge ejecutado, autoridad consumida
+  (`gentle-ai.review-acknowledged/v1`). Entrega pendiente de decisión humana.
+- Hallazgos admisibles (no bloqueantes, informativos):
+  - `R3-01` WARNING — `scripts/generate-index.js:30`
+  - `R3-02` SUGGESTION — `tests/sync.test.ts:60`
+  - `R3-03` SUGGESTION — `lib/content.ts:66`
+  Ninguno abrió corrección ni reabre esta revisión; van como trabajo aparte.
