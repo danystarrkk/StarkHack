@@ -27,5 +27,8 @@ Thumbs.db
 # Cache
 .cache/
 
+# Vitest
+.vitest/
+
 # Images PNG
 temp/
