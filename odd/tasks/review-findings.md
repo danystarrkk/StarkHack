@@ -1,7 +1,7 @@
 # Feature: corrección de hallazgos del review R3
 
 - Rama: `fix/review-reliability-findings` (apilada sobre `chore/cleanup-and-tests`)
-- Estado: completado (T1–T6); T7 en curso
+- Estado: completado (T1–T7)
 - Commits: `ce01dad` (R3-01, R3-02) · `43cf2b7` (R3-03, R3-04)
 - Candidato previo: lineage `review-8a8ddd857fb68cd8` → approved, 4 hallazgos
   admisibles informativos (ninguno bloqueó ni reabre).
@@ -64,7 +64,17 @@ Corrección: `parseFrontmatter` genérico y unificar los dos branches de
       `tsc --noEmit`. Cobertura movida a `tests/content.test.ts`.
 - [x] T6. Verificación final: 74/74 tests, `tsc` exit 0, `build` exit 0,
       `index.json` byte idéntico, sin `any`, sin lookups por `slug` suelto.
-- [ ] T7. Preflight de review del nuevo candidato.
+- [x] T7. Preflight y transición completa del nuevo candidato.
+  - `inspect` → `start` → `status` → captura del lente `review-reliability`.
+  - El primer intento de ejecución del reviewer **falló por transporte**
+    (`pi-host-relay-transport-failure`, `terminated` a los ~10 min, sin mutación);
+    se repitió con STATUS fresco y el mismo binding reofrecido exactamente.
+  - Resultado: **approved**, ack ejecutado, autoridad consumida
+    (`gentle-ai.review-acknowledged/v1`).
+  - Nuevos hallazgos admisibles (no bloqueantes):
+    - `R3-001` WARNING — `scripts/generate-index.js:45`
+    - `R3-002` WARNING — `tests/sync.test.ts:75`
+    - `R3-003` SUGGESTION — `scripts/generate-index.js:84`
 
 ## Evidencia de commits
 
@@ -84,4 +94,10 @@ Corrección: `parseFrontmatter` genérico y unificar los dos branches de
 
 ## Cierre
 
-- (pendiente)
+- Verificación final: 74/74 tests, `tsc --noEmit` exit 0, `npm run build`
+  exit 0, `public/index.json` byte idéntico, cero `any` en `lib/content.ts`,
+  cero lookups por `slug` suelto en `tests/`.
+- Review: `review-703d2d4d1445438a` → approved y quemado. Tres hallazgos
+  admisibles nuevos (R3-001..R3-003), pendientes de decisión del humano.
+- Checks no ejecutados: no hay e2e/navegador; Engram sigue caído (127.0.0.1:7437)
+  por lo que el mirror `odd/review-findings/tasks` no se pudo guardar.
