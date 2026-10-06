@@ -1,7 +1,8 @@
 # Feature: limpieza de artefactos y suite de tests
 
 - Rama: `chore/cleanup-and-tests`
-- Estado: en curso
+- Estado: completado (T1–T10)
+- Rama: `chore/cleanup-and-tests` (5 commits, árbol limpio)
 - Creado: 2026-XX (sesión actual)
 
 ## Objetivo
@@ -40,29 +41,44 @@ que proteja el pipeline de contenido (markdown → index.json → UI).
 
 ## Tareas
 
-- [ ] T1. Limpieza de `vite.config.ts`: eliminar `define` de API_KEY/GEMINI_API_KEY y
+- [x] T1. Limpieza de `vite.config.ts`: eliminar `define` de API_KEY/GEMINI_API_KEY y
       el `loadEnv` que quedó sin uso. Verificar que no queden referencias.
-- [ ] T2. Eliminar el contador de vistas de `components/Layout.tsx` (estado, effect,
+- [x] T2. Eliminar el contador de vistas de `components/Layout.tsx` (estado, effect,
       bloque del footer e imports huérfanos).
-- [ ] T3. Unificar el parseo de frontmatter en `lib/frontmatter.js`; migrar
+- [x] T3. Unificar el parseo de frontmatter en `lib/frontmatter.js`; migrar
       `scripts/generate-index.js` y `lib/content.ts`.
-- [ ] T4. Regenerar `public/index.json` y confirmar que no cambia respecto del
+- [x] T4. Regenerar `public/index.json` y confirmar que no cambia respecto del
       actual (prueba de no-regresión del pipeline de contenido).
-- [ ] T5. Instalar y configurar Vitest + script `npm test`.
-- [ ] T6. Tests del parser de frontmatter (RED → GREEN): frontmatter válido, sin
-      frontmatter, fechas, arrays multilínea, drafts, CRLF.
-- [ ] T7. Tests de `generateIndex`: excluye drafts, ordena por fecha descendente,
-      completa `platform`/`slug`/`path`, tolera directorios no-dataset.
-- [ ] T8. Tests de `lib/content.ts` con `fetch` mockeado: `getPlatforms`,
-      `getMachinesByPlatform`, `getRecentWriteups`, `fetchWriteup`.
-- [ ] T9. Test de sincronía: cada `.md` publicado parsea y coincide con lo que
-      declara `public/index.json` (detecta "olvidé regenerar el índice").
-- [ ] T10. Verificación final: `npm run build` + suite completa en verde.
+- [x] T5. Instalar y configurar Vitest + script `npm test`.
+- [x] T6. Tests del parser de frontmatter: 9 pruebas (sin RED previa: la
+      implementación ya existía → tests de caracterización).
+- [x] T7. Tests de `generateIndex`: 6 pruebas con fixtures en tmp.
+- [x] T8. Tests de `lib/content.ts` con `fetch` mockeado: 11 pruebas.
+- [x] T9. Test de sincronía: 33 pruebas + prueba RED/GREEN real (entrada falsa
+      en `index.json` → falla → restaurar → verde). Ampliado con la regla
+      `draft: true` → excluido del índice.
+- [x] T10. Verificación final: `npm test` 59/59, `tsc --noEmit` exit 0,
+      `npm run build` exit 0, árbol limpio, sin rastros de API key ni contador.
 
 ## Evidencia de commits
 
-- (pendiente)
+| Commit | Tarea |
+|---|---|
+| `77a752e` chore: eliminar inyección muerta de API_KEY/GEMINI_API_KEY en vite.config.ts | T1 |
+| `f40e3fb` chore: eliminar el contador de vistas externo del layout | T2 |
+| `61a3d64` refactor: unificar el parseo de frontmatter en lib/frontmatter.js | T3, T4 |
+| `28a253f` test: incorporar vitest como runner de pruebas | T5 |
+| `acfb08f` test: cubrir el pipeline de contenido con 59 pruebas | T6–T9 |
 
 ## Cierre
 
-- (pendiente)
+- Verificación final (T10): `npm test` → 4 archivos / 59 pruebas en verde;
+  `npx tsc --noEmit` → exit 0; `npm run build` → exit 0 (211 módulos);
+  `git status --short` vacío; grep sin rastros de API key ni contador.
+- Bundle bajó de 420.62 kB a 411.32 kB (gzip 132.14 → 128.62 kB) al quitar
+  la inyección muerta y el contador.
+- Checks no ejecutados: no hay e2e ni navegador; la verificación es de
+  compilación, build y suite unitaria.
+- Advertencia preexistente: `caniuse-lite` desactualizado (no bloquea).
+- Pendiente fuera de alcance: `gray-matter` figura en `package.json` pero
+  ningún archivo lo importa (candidato a `npm uninstall`).
