@@ -1,4 +1,4 @@
-import jsYaml from 'js-yaml';
+import { parseFrontmatter } from './frontmatter.js';
 import { WriteupIndexItem, WriteupContent, PlatformStats } from '../types';
 
 const INDEX_URL = '/index.json';
@@ -61,11 +61,12 @@ export const fetchWriteup = async (platform: string, slug: string): Promise<Writ
     if (!response.ok) throw new Error("File not found");
     const text = await response.text();
     
-    // Parse Frontmatter using Regex to separate YAML from Body
-    const match = text.match(/^---\n([\s\S]+?)\n---\n([\s\S]*)$/);
+    // Parse Frontmatter with the shared implementation (lib/frontmatter.js)
+    // (cast `as any`, same as the old jsYaml.load call: the spread must be able to fill title/date)
+    const { data, content } = parseFrontmatter(text) as { data: any; content: string };
     
-    if (!match) {
-      // No frontmatter found
+    if (content === text) {
+      // No frontmatter found: the parser returns the raw text untouched
       return {
         slug,
         content: text,
@@ -75,21 +76,10 @@ export const fetchWriteup = async (platform: string, slug: string): Promise<Writ
       };
     }
 
-    const yamlRaw = match[1];
-    const content = match[2];
-    
-    const frontmatter = jsYaml.load(yamlRaw) as any;
-
-    // Fix: js-yaml parses dates as Date objects, but React children cannot be objects.
-    // Convert date to string if it is a Date object.
-    if (frontmatter.date instanceof Date) {
-        frontmatter.date = frontmatter.date.toISOString().split('T')[0];
-    }
-
     return {
       slug,
       content,
-      ...frontmatter,
+      ...data,
       platform // Ensure platform is consistent
     };
 

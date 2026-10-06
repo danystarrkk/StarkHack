@@ -1,100 +1,57 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { parseFrontmatter } from "../lib/frontmatter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// FRONTMATTER PARSER ROBUSTO
-function parseFrontmatter(content) {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-
-  if (!match) return {};
-
-  const attributes = {};
-  let currentKey = null;
-  let currentValue = "";
-
-  const saveCurrentAttribute = () => {
-    if (!currentKey) return;
-    let value = currentValue.trim();
-
-    // quitar comillas simples de toda la cadena
-    if (/^["'].*["']$/.test(value) && !value.includes("\n")) {
-      value = value.slice(1, -1);
-    }
-
-    // arrays (soporta formato en una línea o multilínea)
-    if (value.startsWith("[") && value.endsWith("]")) {
-      value = value
-        .slice(1, -1)
-        .split(",")
-        .map((s) => s.trim().replace(/^["']|["']$/g, "")) // limpia espacios y comillas internas
-        .filter((s) => s.length > 0); // ignora vacíos si existe una coma final (ej. "Privilege Escalation", ])
-    } else {
-      // boolean auto parse
-      if (value === "true") value = true;
-      if (value === "false") value = false;
-    }
-
-    attributes[currentKey] = value;
-  };
-
-  match[1].split(/\r?\n/).forEach((line) => {
-    // Si la línea no tiene espacios al inicio y contiene ':', asumimos que es una nueva clave
-    if (!/^\s/.test(line) && line.includes(":")) {
-      saveCurrentAttribute(); // Guardar la clave que se estaba acumulando anteriormente
-      const i = line.indexOf(":");
-      currentKey = line.slice(0, i).trim();
-      currentValue = line.slice(i + 1);
-    } else if (currentKey) {
-      // Si está indentada o no tiene ':', pertenece al valor de la clave actual (multilínea)
-      currentValue += "\n" + line;
-    }
-  });
-
-  // Asegurarnos de guardar el último atributo procesado
-  saveCurrentAttribute();
-
-  return attributes;
-}
-
 const WRITEUPS_DIR = path.join(__dirname, "../public/writeups");
 const OUTPUT_FILE = path.join(__dirname, "../public/index.json");
 
-const index = [];
+// Recorre writeupsDir por plataforma y devuelve el array índice de writeups
+export function generateIndex(writeupsDir) {
+  const index = [];
 
-if (fs.existsSync(WRITEUPS_DIR)) {
-  const platforms = fs.readdirSync(WRITEUPS_DIR);
+  if (fs.existsSync(writeupsDir)) {
+    const platforms = fs.readdirSync(writeupsDir);
 
-  platforms.forEach((platform) => {
-    const platformPath = path.join(WRITEUPS_DIR, platform);
+    platforms.forEach((platform) => {
+      const platformPath = path.join(writeupsDir, platform);
 
-    if (!fs.statSync(platformPath).isDirectory()) return;
+      if (!fs.statSync(platformPath).isDirectory()) return;
 
-    const files = fs.readdirSync(platformPath).filter((f) => f.endsWith(".md"));
+      const files = fs.readdirSync(platformPath).filter((f) => f.endsWith(".md"));
 
-    files.forEach((file) => {
-      const filePath = path.join(platformPath, file);
-      const content = fs.readFileSync(filePath, "utf8");
+      files.forEach((file) => {
+        const filePath = path.join(platformPath, file);
+        const content = fs.readFileSync(filePath, "utf8");
 
-      const meta = parseFrontmatter(content);
+        const { data } = parseFrontmatter(content);
 
-      // skip drafts reales
-      if (meta.draft === true) return;
+        // skip drafts reales
+        if (data.draft === true) return;
 
-      index.push({
-        ...meta,
-        platform,
-        slug: file.replace(/\.md$/, ""),
-        path: `/writeups/${platform}/${file}`,
+        index.push({
+          ...data,
+          platform,
+          slug: file.replace(/\.md$/, ""),
+          path: `/writeups/${platform}/${file}`,
+        });
       });
     });
-  });
+  }
+
+  index.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  return index;
 }
 
-index.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+// CLI: node scripts/generate-index.js → escribe public/index.json
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const index = generateIndex(WRITEUPS_DIR);
 
-fs.writeFileSync(OUTPUT_FILE, JSON.stringify(index, null, 2));
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(index, null, 2));
 
-console.log(`Generated index.json with ${index.length} writeups.`);
+  console.log(`Generated index.json with ${index.length} writeups.`);
+}
