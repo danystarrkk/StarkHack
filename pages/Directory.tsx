@@ -26,6 +26,7 @@ const DirectoryPage: React.FC = () => {
   const [platforms, setPlatforms] = useState<PlatformStats[]>([]);
   const [allWriteups, setAllWriteups] = useState<WriteupIndexItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,8 +54,28 @@ const DirectoryPage: React.FC = () => {
     }
   };
 
+  // Derived tag options (unique tags in the index, alphabetically sorted, with
+  // writeup counts). The index generator validates tags against the closed
+  // taxonomy, so deriving from data keeps the filter in sync and never empty.
+  const tagOptions = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of allWriteups) {
+      for (const tag of new Set(safeTags(item.tags))) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts, ([tag, count]) => ({ tag, count })).sort(
+      (a, b) => a.tag.localeCompare(b.tag),
+    );
+  }, [allWriteups]);
+
   const filteredResults = allWriteups.filter((item) => {
-    if (!searchQuery) return false;
+    // Tag filter: exact, case-sensitive equality (never substring)
+    const tags = safeTags(item.tags);
+    if (activeTag !== null && !tags.includes(activeTag)) return false;
+
+    // No query means the tag filter alone decides the match
+    if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
 
     // Check various fields
@@ -73,6 +94,14 @@ const DirectoryPage: React.FC = () => {
       inTitle || inPlatform || inLevel || inSlug || inTags || inDescription
     );
   });
+
+  // Label describing the active filters, used by the empty-state block
+  const filterLabel = [
+    searchQuery ? `query "${searchQuery}"` : "",
+    activeTag ? `tag "${activeTag}"` : "",
+  ]
+    .filter(Boolean)
+    .join(" + ");
 
   return (
     <main className="flex flex-1 justify-center py-10 px-4 md:px-10 lg:px-40">
@@ -126,8 +155,40 @@ const DirectoryPage: React.FC = () => {
             </div>
           ) : (
             <>
+              {/* Tag Filter */}
+              <div className="mb-8">
+                <div className="flex items-center gap-2 pb-3">
+                  <span className="material-symbols-outlined text-nord7 text-sm">
+                    sell
+                  </span>
+                  <span className="text-nord3 text-[10px] font-black uppercase tracking-[0.2em]">
+                    Filter by tag
+                  </span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 whitespace-nowrap">
+                  <button
+                    onClick={() => setActiveTag(null)}
+                    className={`shrink-0 px-3 py-1.5 rounded border text-xs font-black uppercase tracking-widest transition-colors ${activeTag === null ? "bg-nord7 text-deep-bg border-nord7" : "text-nord4/60 border-nord3/20 hover:border-nord7/40 hover:text-nord7"}`}
+                  >
+                    All
+                  </button>
+                  {tagOptions.map(({ tag, count }) => (
+                    <button
+                      key={tag}
+                      onClick={() =>
+                        setActiveTag(activeTag === tag ? null : tag)
+                      }
+                      className={`shrink-0 px-3 py-1.5 rounded border text-xs font-bold capitalize transition-colors ${activeTag === tag ? "bg-nord7 text-deep-bg border-nord7" : "text-nord4/60 border-nord3/20 hover:border-nord7/40 hover:text-nord7"}`}
+                    >
+                      {tag}{" "}
+                      <span className="opacity-60 font-mono">{count}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Conditional View: Search Results OR Platform Grid */}
-              {searchQuery ? (
+              {searchQuery || activeTag ? (
                 // SEARCH RESULTS VIEW
                 <div>
                   <div className="flex items-center gap-3 pb-6 pt-2">
@@ -217,7 +278,7 @@ const DirectoryPage: React.FC = () => {
                           search_off
                         </span>
                         <p className="font-mono text-lg">
-                          No assets found matching query "{searchQuery}"
+                          No assets found matching {filterLabel}
                         </p>
                         <p className="text-sm mt-2">
                           Try different keywords or tags.
