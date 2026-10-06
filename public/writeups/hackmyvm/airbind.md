@@ -6,12 +6,11 @@ description: "Writeup de la máquina Airbind en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Exposed Database",
-    "Default Credentials",
-    "Authenticated Remote Code Execution",
-    "Sudo Misconfiguration",
+    "Container Escape",
+    "Credential Exposure",
+    "Information Disclosure",
     "Privilege Escalation",
-    "Container Breakout",
+    "Remote Code Execution",
   ]
 image: "/images/Airbind.webp"
 level: Medium

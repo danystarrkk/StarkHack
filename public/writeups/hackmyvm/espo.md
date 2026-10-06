@@ -5,14 +5,13 @@ description: "Writeup de la máquina Espo en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
+    "Credential Exposure",
+    "Information Disclosure",
     "Path Traversal",
-    "Exposed Backup Files",
-    "Credential Disclosure",
-    "CVE-2023-5965",
-    "Authenticated Remote Code Execution",
-    "Sudo Misconfiguration",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
+cve: CVE-2023-5965
 image: "/images/espo.webp"
 level: Medium
 ---

@@ -5,6 +5,7 @@ export interface Frontmatter {
   description?: string;
   categories?: string[];
   tags?: string[];
+  cve?: string; // CVE identifier, moved out of tags into its own key
   image?: string;
   level?: 'Easy' | 'Medium' | 'Hard';
   platform?: string; // Often inferred from folder, but can be explicit

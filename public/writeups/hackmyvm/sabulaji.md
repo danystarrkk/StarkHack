@@ -6,14 +6,11 @@ description: "Writeup de la máquina Sabulaji en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Exposed Rsync Service",
-    "Rsync Weak Credentials",
-    "Credential Disclosure in Document",
-    "Password Reuse",
-    "Insecure Sudo Script",
-    "Path Traversal Logic Bypass",
-    "Mlocate Database Information Disclosure",
-    "Sudo Rsync Privilege Escalation",
+    "Credential Exposure",
+    "Exposed Service",
+    "Information Disclosure",
+    "Path Traversal",
+    "Privilege Escalation",
   ]
 image: "/images/sabulaji.webp"
 level: Medium

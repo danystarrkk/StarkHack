@@ -6,12 +6,11 @@ description: "Writeup de la máquina Console en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Remote Command Execution",
-    "Exposed Source Code",
-    "Credential Disclosure",
-    "SSH Port Forwarding",
-    "Sudo Misconfiguration",
+    "Credential Exposure",
+    "Information Disclosure",
+    "Pivoting",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
 image: "/images/console.webp"
 level: Medium

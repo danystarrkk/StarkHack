@@ -6,11 +6,10 @@ description: "Writeup de la máquina Birdeye en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Server-Side Request Forgery (SSRF)",
-    "Exposed Administrative Credentials",
-    "Authenticated Remote Code Execution",
-    "Sudo Misconfiguration",
+    "Credential Exposure",
     "Privilege Escalation",
+    "Remote Code Execution",
+    "Server-Side Request Forgery",
   ]
 image: "/images/Birdeye.webp"
 level: Medium

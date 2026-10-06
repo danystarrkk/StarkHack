@@ -5,14 +5,13 @@ description: "Writeup de la máquina Flossy en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Insecure Direct Object Reference",
-    "GraphQL Introspection Enabled",
+    "Access Control Bypass",
+    "Information Disclosure",
+    "Privilege Escalation",
+    "Remote Code Execution",
     "Server-Side Request Forgery",
-    "CVE-2021-4034",
-    "Unauthenticated Remote Code Execution",
-    "Cron Job Misconfiguration",
-    "Local Privilege Escalation",
   ]
+cve: CVE-2021-4034
 image: "/images/flossy.webp"
 level: Medium
 ---

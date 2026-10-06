@@ -6,13 +6,12 @@ description: "Writeup de la máquina SilentDev en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Hidden Path Disclosure",
-    "Weak Credentials",
-    "JWT Secret Brute Force",
-    "JWT Privilege Escalation",
-    "Unrestricted File Upload",
-    "Apache .htaccess Abuse",
-    "LD_PRELOAD Privilege Escalation",
+    "Credential Exposure",
+    "File Upload",
+    "Information Disclosure",
+    "JWT Attack",
+    "Misconfiguration",
+    "Privilege Escalation",
   ]
 image: "/images/tryharder.webp"
 level: Medium

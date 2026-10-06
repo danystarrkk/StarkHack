@@ -6,12 +6,11 @@ description: "Writeup de la máquina Wave en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
+    "File Upload",
     "Information Disclosure",
-    "Remote Code Execution",
-    "Arbitrary File Upload",
-    "Misconfigured Service",
-    "Sudo Misconfiguration",
+    "Misconfiguration",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
 image: "/images/wave.webp"
 level: Medium

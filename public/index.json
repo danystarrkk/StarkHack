@@ -8,12 +8,11 @@
       "HackMyVM"
     ],
     "tags": [
+      "File Upload",
       "Information Disclosure",
-      "Remote Code Execution",
-      "Arbitrary File Upload",
-      "Misconfigured Service",
-      "Sudo Misconfiguration",
-      "Privilege Escalation"
+      "Misconfiguration",
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
     "image": "/images/wave.webp",
     "level": "Medium",
@@ -30,13 +29,10 @@
       "HackMyVM"
     ],
     "tags": [
+      "Access Control Bypass",
       "Information Disclosure",
-      "Broken Access Control",
-      "Remote Code Execution",
-      "Sudo Misconfiguration",
-      "SUID Misconfiguration",
-      "Path Hijacking",
-      "Privilege Escalation"
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
     "image": "/images/krustykrab.webp",
     "level": "Medium",
@@ -52,14 +48,13 @@
       "HackMyVM"
     ],
     "tags": [
-      "Insecure Direct Object Reference",
-      "GraphQL Introspection Enabled",
-      "Server-Side Request Forgery",
-      "CVE-2021-4034",
-      "Unauthenticated Remote Code Execution",
-      "Cron Job Misconfiguration",
-      "Local Privilege Escalation"
+      "Access Control Bypass",
+      "Information Disclosure",
+      "Privilege Escalation",
+      "Remote Code Execution",
+      "Server-Side Request Forgery"
     ],
+    "cve": "CVE-2021-4034",
     "image": "/images/flossy.webp",
     "level": "Medium",
     "platform": "hackmyvm",
@@ -75,12 +70,11 @@
       "HackMyVM"
     ],
     "tags": [
-      "Exposed Database",
-      "Default Credentials",
-      "Authenticated Remote Code Execution",
-      "Sudo Misconfiguration",
+      "Container Escape",
+      "Credential Exposure",
+      "Information Disclosure",
       "Privilege Escalation",
-      "Container Breakout"
+      "Remote Code Execution"
     ],
     "image": "/images/Airbind.webp",
     "level": "Medium",
@@ -97,11 +91,11 @@
       "HackMyVM"
     ],
     "tags": [
-      "Broken Access Control",
-      "Brute Force",
-      "XML External Entity (XXE)",
+      "Access Control Bypass",
+      "Credential Exposure",
       "Information Disclosure",
-      "Privilege Escalation"
+      "Privilege Escalation",
+      "XML External Entity"
     ],
     "image": "/images/gitdwn.webp",
     "level": "Medium",
@@ -118,14 +112,11 @@
       "HackMyVM"
     ],
     "tags": [
-      "Exposed Rsync Service",
-      "Rsync Weak Credentials",
-      "Credential Disclosure in Document",
-      "Password Reuse",
-      "Insecure Sudo Script",
-      "Path Traversal Logic Bypass",
-      "Mlocate Database Information Disclosure",
-      "Sudo Rsync Privilege Escalation"
+      "Credential Exposure",
+      "Exposed Service",
+      "Information Disclosure",
+      "Path Traversal",
+      "Privilege Escalation"
     ],
     "image": "/images/sabulaji.webp",
     "level": "Medium",
@@ -142,13 +133,12 @@
       "HackMyVM"
     ],
     "tags": [
-      "Hidden Path Disclosure",
-      "Weak Credentials",
-      "JWT Secret Brute Force",
-      "JWT Privilege Escalation",
-      "Unrestricted File Upload",
-      "Apache .htaccess Abuse",
-      "LD_PRELOAD Privilege Escalation"
+      "Credential Exposure",
+      "File Upload",
+      "Information Disclosure",
+      "JWT Attack",
+      "Misconfiguration",
+      "Privilege Escalation"
     ],
     "image": "/images/tryharder.webp",
     "level": "Medium",
@@ -165,14 +155,13 @@
       "HackMyVM"
     ],
     "tags": [
-      "CVE-2020-35234",
-      "Exposed Debug Logs",
-      "User Enumeration",
-      "Authenticated Remote Code Execution",
-      "SUID Privilege Escalation",
-      "Docker Socket Misconfiguration",
-      "Container Escape"
+      "Broken Authentication",
+      "Container Escape",
+      "Information Disclosure",
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
+    "cve": "CVE-2020-35234",
     "image": "/images/realsaga.webp",
     "level": "Medium",
     "platform": "hackmyvm",
@@ -187,14 +176,13 @@
       "HackMyVM"
     ],
     "tags": [
+      "Credential Exposure",
+      "Information Disclosure",
       "Path Traversal",
-      "Exposed Backup Files",
-      "Credential Disclosure",
-      "CVE-2023-5965",
-      "Authenticated Remote Code Execution",
-      "Sudo Misconfiguration",
-      "Privilege Escalation"
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
+    "cve": "CVE-2023-5965",
     "image": "/images/espo.webp",
     "level": "Medium",
     "platform": "hackmyvm",
@@ -210,13 +198,12 @@
       "HackMyVM"
     ],
     "tags": [
-      "Local File Inclusion",
-      "Remote Command Execution",
-      "Insecure Cryptographic Logic",
-      "Hardcoded Credentials",
-      "Sudo Misconfiguration",
-      "Abuse of Legitimate Functionality",
-      "Privilege Escalation"
+      "Business Logic",
+      "Credential Exposure",
+      "File Inclusion",
+      "Misconfiguration",
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
     "image": "/images/pycrt.webp",
     "level": "Medium",
@@ -233,13 +220,12 @@
       "HackMyVM"
     ],
     "tags": [
-      "IP Restriction Bypass",
-      "Sensitive File Disclosure",
-      "Credential Disclosure",
-      "Insecure VPN Configuration",
-      "Sudo Misconfiguration",
-      "Privilege Escalation",
-      "Buffer Overflow"
+      "Access Control Bypass",
+      "Buffer Overflow",
+      "Credential Exposure",
+      "Information Disclosure",
+      "Misconfiguration",
+      "Privilege Escalation"
     ],
     "image": "/images/homelab.webp",
     "level": "Medium",
@@ -256,12 +242,11 @@
       "HackMyVM"
     ],
     "tags": [
-      "Remote Command Execution",
-      "Exposed Source Code",
-      "Credential Disclosure",
-      "SSH Port Forwarding",
-      "Sudo Misconfiguration",
-      "Privilege Escalation"
+      "Credential Exposure",
+      "Information Disclosure",
+      "Pivoting",
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
     "image": "/images/console.webp",
     "level": "Medium",
@@ -278,13 +263,11 @@
       "HackMyVM"
     ],
     "tags": [
-      "Directory Listing Exposure",
-      "Sensitive File Disclosure",
-      "WordPress Vulnerability",
-      "Time-Based SQL Injection",
-      "Credential Reuse",
-      "Sudo Misconfiguration",
-      "SUID Abuse"
+      "Credential Exposure",
+      "Information Disclosure",
+      "Privilege Escalation",
+      "SQL Injection",
+      "Vulnerable Component"
     ],
     "image": "/images/ximai.webp",
     "level": "Medium",
@@ -301,13 +284,11 @@
       "HackMyVM"
     ],
     "tags": [
-      "Exposed Debug Endpoint",
-      "Remote Command Execution",
-      "User Enumeration",
-      "Credential Disclosure",
-      "Token Decoding",
-      "Sudo Misconfiguration",
-      "Privilege Escalation"
+      "Broken Authentication",
+      "Credential Exposure",
+      "Information Disclosure",
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
     "image": "/images/Griffin.webp",
     "level": "Medium",
@@ -324,11 +305,10 @@
       "HackMyVM"
     ],
     "tags": [
-      "Server-Side Request Forgery (SSRF)",
-      "Exposed Administrative Credentials",
-      "Authenticated Remote Code Execution",
-      "Sudo Misconfiguration",
-      "Privilege Escalation"
+      "Credential Exposure",
+      "Privilege Escalation",
+      "Remote Code Execution",
+      "Server-Side Request Forgery"
     ],
     "image": "/images/Birdeye.webp",
     "level": "Medium",
@@ -345,13 +325,10 @@
       "HackMyVM"
     ],
     "tags": [
-      "Unrestricted File Upload",
-      "Content-Type Bypass",
-      "Remote Command Execution",
-      "Wildcard Injection",
-      "Cron Job Abuse",
-      "Sudo Misconfiguration",
-      "Privilege Escalation"
+      "Access Control Bypass",
+      "File Upload",
+      "Privilege Escalation",
+      "Remote Code Execution"
     ],
     "image": "/images/silentdev.webp",
     "level": "Medium",

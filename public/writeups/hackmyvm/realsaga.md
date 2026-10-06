@@ -6,14 +6,13 @@ description: "Writeup de la máquina SilentDev en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "CVE-2020-35234",
-    "Exposed Debug Logs",
-    "User Enumeration",
-    "Authenticated Remote Code Execution",
-    "SUID Privilege Escalation",
-    "Docker Socket Misconfiguration",
+    "Broken Authentication",
     "Container Escape",
+    "Information Disclosure",
+    "Privilege Escalation",
+    "Remote Code Execution",
   ]
+cve: CVE-2020-35234
 image: "/images/realsaga.webp"
 level: Medium
 ---

@@ -6,13 +6,10 @@ description: "Writeup de la máquina SilentDev en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Unrestricted File Upload",
-    "Content-Type Bypass",
-    "Remote Command Execution",
-    "Wildcard Injection",
-    "Cron Job Abuse",
-    "Sudo Misconfiguration",
+    "Access Control Bypass",
+    "File Upload",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
 image: "/images/silentdev.webp"
 level: Medium

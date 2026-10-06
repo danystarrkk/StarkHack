@@ -6,13 +6,10 @@ description: "Writeup de la máquina KrustyKrab en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
+    "Access Control Bypass",
     "Information Disclosure",
-    "Broken Access Control",
-    "Remote Code Execution",
-    "Sudo Misconfiguration",
-    "SUID Misconfiguration",
-    "Path Hijacking",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
 image: "/images/krustykrab.webp"
 level: Medium

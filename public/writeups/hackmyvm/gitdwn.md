@@ -6,11 +6,11 @@ description: "Writeup de la máquina Gitdwn en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Broken Access Control",
-    "Brute Force",
-    "XML External Entity (XXE)",
+    "Access Control Bypass",
+    "Credential Exposure",
     "Information Disclosure",
     "Privilege Escalation",
+    "XML External Entity",
   ]
 image: "/images/gitdwn.webp"
 level: Medium

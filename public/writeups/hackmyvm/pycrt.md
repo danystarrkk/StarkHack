@@ -6,13 +6,12 @@ description: "Writeup de la máquina PyCrt en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Local File Inclusion",
-    "Remote Command Execution",
-    "Insecure Cryptographic Logic",
-    "Hardcoded Credentials",
-    "Sudo Misconfiguration",
-    "Abuse of Legitimate Functionality",
+    "Business Logic",
+    "Credential Exposure",
+    "File Inclusion",
+    "Misconfiguration",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
 image: "/images/pycrt.webp"
 level: Medium

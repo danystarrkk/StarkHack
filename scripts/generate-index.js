@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { parseFrontmatter } from "../lib/frontmatter.js";
+import { assertValidTags } from "../lib/taxonomy.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,6 +39,9 @@ export function generateIndex(writeupsDir) {
 
         // skip drafts reales (antes de validar: un draft sin publicar no necesita metadata)
         if (data.draft === true) return;
+
+        // Taxonomía cerrada: todo tag publicado debe ser canónico (lib/taxonomy.js)
+        assertValidTags(data.tags, filePath);
 
         // Todo writeup publicado necesita título y fecha en formato texto;
         // un valor presente pero no-string (array, número, booleano) también es

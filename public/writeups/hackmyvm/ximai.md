@@ -6,13 +6,11 @@ description: "Writeup de la máquina Ximai en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Directory Listing Exposure",
-    "Sensitive File Disclosure",
-    "WordPress Vulnerability",
-    "Time-Based SQL Injection",
-    "Credential Reuse",
-    "Sudo Misconfiguration",
-    "SUID Abuse",
+    "Credential Exposure",
+    "Information Disclosure",
+    "Privilege Escalation",
+    "SQL Injection",
+    "Vulnerable Component",
   ]
 image: "/images/ximai.webp"
 level: Medium

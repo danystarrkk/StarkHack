@@ -6,13 +6,11 @@ description: "Writeup de la máquina Griffin en HackMyVM."
 categories: ["HackMyVM"]
 tags:
   [
-    "Exposed Debug Endpoint",
-    "Remote Command Execution",
-    "User Enumeration",
-    "Credential Disclosure",
-    "Token Decoding",
-    "Sudo Misconfiguration",
+    "Broken Authentication",
+    "Credential Exposure",
+    "Information Disclosure",
     "Privilege Escalation",
+    "Remote Code Execution",
   ]
 image: "/images/Griffin.webp"
 level: Medium
