@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 interface LayoutProps {
@@ -7,28 +7,6 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
-
-  // Estado para el contador. Inicia en null para mostrar un texto de carga.
-  const [views, setViews] = useState<number | null>(null);
-
-  useEffect(() => {
-    // Función que llama a la API gratuita para sumar 1 y obtener el total
-    const fetchAndIncrementViews = async () => {
-      try {
-        // NOTA: Cambia "starkhack-tu-nombre-unico" por algo único para que no se mezcle con otros
-        const response = await fetch(
-          "https://api.counterapi.dev/v1/starkhack-35GH3-1C4B50-1A34/pageviews/up",
-        );
-        const data = await response.json();
-        setViews(data.count);
-      } catch (error) {
-        console.error("Error al cargar las vistas:", error);
-        setViews(0); // Si falla el internet, mostramos 0
-      }
-    };
-
-    fetchAndIncrementViews();
-  }, []); // El array vacío asegura que solo sume +1 cuando la persona entra a la web
 
   const getLinkClass = (path: string) => {
     const isActive =
@@ -99,14 +77,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
             <div>UPTIME: 142D 04H 21M</div>
             <div className="hidden sm:block">KERNEL: Linux </div>
-
-            {/* Contador de vistas con lógica funcional */}
-            <div className="hidden sm:block text-nord8">
-              VIEWS:{" "}
-              {views !== null
-                ? String(views).padStart(6, "0")
-                : "CONNECTING..."}
-            </div>
           </div>
           <div className="text-nord3 text-[10px] font-mono font-bold uppercase tracking-[0.2em]">
             © 2024 StarkHack
