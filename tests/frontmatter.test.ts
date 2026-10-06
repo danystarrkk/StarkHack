@@ -11,6 +11,33 @@ describe('parseFrontmatter', () => {
     expect(content).toBe('\n# Heading\n\nBody text.\n');
   });
 
+  it('parses frontmatter preceded by a UTF-8 BOM (R3-03)', () => {
+    const text = '\uFEFF---\ntitle: X\n---\nbody';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data.title).toBe('X');
+    expect(content).toBe('body');
+  });
+
+  it('parses BOM + CRLF frontmatter', () => {
+    const text = '\uFEFF---\r\ntitle: "Bom CRLF"\r\n---\r\nbody\r\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data.title).toBe('Bom CRLF');
+    expect(content).toBe('body\r\n');
+  });
+
+  it('keeps a BOM-prefixed text unchanged when frontmatter is missing', () => {
+    const text = '\uFEFF# Just a body\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe(text);
+  });
+
   it('returns the text unchanged when frontmatter is missing', () => {
     const text = '# Just a body\n\nNo frontmatter here.\n';
 

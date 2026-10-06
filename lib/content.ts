@@ -61,25 +61,20 @@ export const fetchWriteup = async (platform: string, slug: string): Promise<Writ
     if (!response.ok) throw new Error("File not found");
     const text = await response.text();
     
-    // Parse Frontmatter with the shared implementation (lib/frontmatter.js)
-    // (cast `as any`, same as the old jsYaml.load call: the spread must be able to fill title/date)
-    const { data, content } = parseFrontmatter(text) as { data: any; content: string };
-    
-    if (content === text) {
-      // No frontmatter found: the parser returns the raw text untouched
-      return {
-        slug,
-        content: text,
-        title: slug,
-        date: new Date().toISOString().split('T')[0],
-        platform
-      };
-    }
+    // Parse Frontmatter with the shared implementation (lib/frontmatter.js).
+    // The generic narrows `data` to the writeup shape without asserting: when
+    // there is no frontmatter block the parser returns the raw text untouched
+    // and empty data, so both cases share the construction below.
+    const { data, content } = parseFrontmatter<Partial<WriteupContent>>(text);
 
     return {
       slug,
       content,
       ...data,
+      // Required metadata is guaranteed on every path: fall back to the slug
+      // and to today's date when the frontmatter leaves either field unset.
+      title: data.title ?? slug,
+      date: data.date ?? new Date().toISOString().split('T')[0],
       platform // Ensure platform is consistent
     };
 

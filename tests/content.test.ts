@@ -178,3 +178,39 @@ describe('fetchWriteup', () => {
     await expect(fetchWriteup('hackmyvm', 'missing')).resolves.toBeNull();
   });
 });
+
+describe('fetchWriteup metadata guarantees (R3-04)', () => {
+  it('falls back to slug title and today date when the frontmatter omits both', async () => {
+    fetchMock.mockResolvedValue(textResponse('---\nlevel: Medium\n---\nbody\n'));
+
+    const result = await fetchWriteup('hackmyvm', 'wave');
+
+    expect(result).toEqual({
+      slug: 'wave',
+      content: 'body\n',
+      level: 'Medium',
+      title: 'wave',
+      date: new Date().toISOString().split('T')[0],
+      platform: 'hackmyvm',
+    });
+  });
+
+  it('keeps a present title but falls back for a missing date', async () => {
+    fetchMock.mockResolvedValue(textResponse('---\ntitle: "Wave"\n---\nbody\n'));
+
+    const result = await fetchWriteup('hackmyvm', 'wave');
+
+    expect(result?.title).toBe('Wave');
+    expect(result?.date).toBe(new Date().toISOString().split('T')[0]);
+    expect(result?.platform).toBe('hackmyvm');
+  });
+
+  it('keeps a present date but falls back for a missing title', async () => {
+    fetchMock.mockResolvedValue(textResponse('---\ndate: 2026-09-15\n---\nbody\n'));
+
+    const result = await fetchWriteup('hackmyvm', 'wave');
+
+    expect(result?.title).toBe('wave');
+    expect(result?.date).toBe('2026-09-15');
+  });
+});
