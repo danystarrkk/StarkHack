@@ -143,3 +143,20 @@ public/writeups/hackmyvm/
 - Cada unidad cerró con su commit y con RED observado antes de la corrección
   (tags: 86 ocurrencias fuera de lista; imágenes: 713 refs fuera de la
   convención).
+
+## Review nativo de esta feature: NO EJECUTADO (decisión humana)
+
+- Preflight del candidato (814 archivos: 788 renames binarios +
+  `package-lock.json` + 16 writeups) → falla en `review.start` con
+  **`lens_context_budget_exceeded`**. El proveedor reportó
+  `mutation_performed: false`, `next_action: stop` y `retry_safe: true`:
+  **no se creó autoridad de review**, no hay nada que reparar ni abandonar,
+  y reintentar este mismo candidato no puede funcionar (la evidencia
+  congelada nunca se trunca).
+- Opción indicada por el proveedor: dividir el alcance en transacciones más
+  chicas (slices encadenados con `baseRef` explícito) o `D`.
+- **Decisión del humano: dejarlo sin revisar.** La rama queda respaldada por
+  91/91 tests, `tsc` y `build` en verde, `index.json` byte idéntico,
+  migración idempotente y sweep sin referencias vivas a `/images/`.
+- Los recordatorios de review los controla el dueño del repo:
+  `gentle-ai review mode disable --scope clone` apaga el interruptor.
