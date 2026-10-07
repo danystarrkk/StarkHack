@@ -86,6 +86,16 @@ describe('fetchIndex', () => {
     await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
   });
 
+  it('rejects with a ContentIndexError when the index JSON is not an array', async () => {
+    // JSON válido no implica índice válido: sin validación de forma, el filtro
+    // el filtro de abajo revienta con un TypeError sin el hint (R3-001).
+    fetchMock.mockResolvedValue(jsonResponse({ not: 'an array' }));
+
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(fetchIndex()).rejects.toThrow('expected an array');
+    await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
+  });
+
   it('still resolves [] for a legitimately empty index', async () => {
     fetchMock.mockResolvedValue(jsonResponse([]));
 

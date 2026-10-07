@@ -48,14 +48,27 @@ const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
   if (!response.ok) {
     throw new ContentIndexError(`Index not found. ${INDEX_HINT}`);
   }
+  let data: unknown;
   try {
-    return (await response.json()) as ContentIndexItem[];
+    data = await response.json();
   } catch (error) {
     throw new ContentIndexError(
       `Failed to parse content index: ${error instanceof Error ? error.message : String(error)}. ${INDEX_HINT}`,
       { cause: error }
     );
   }
+
+  // JSON válido no implica índice válido: si no es array, un cast mentiría y
+  // el filtro de abajo revienta con un TypeError sin el hint. Fallamos acá,
+  // con el mismo error tipado (R3-001).
+  if (!Array.isArray(data)) {
+    throw new ContentIndexError(
+      `Invalid content index: expected an array, got ${typeof data}. ${INDEX_HINT}`,
+      { cause: data }
+    );
+  }
+
+  return data as ContentIndexItem[];
 };
 
 // Raw accessor: every index entry of one content kind, in index order.
