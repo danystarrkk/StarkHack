@@ -1,8 +1,8 @@
 # Feature: actualización a versiones estables más recientes
 
 - Rama: `chore/upgrade-latest` (apilada sobre `feat/content-kinds`)
-- Estado: completado (T1–T6). Dos hallazgos preexistentes quedan como
-  decisión pendiente del humano (ver Cierre).
+- Estado: completado (T1–T6). Decisión humana registrada sobre las clases
+  huérfanas (ver Cierre).
 - Decisión humana: **todo a latest estable**, incluidos los saltos mayores.
 
 ## Inventario medido (`npm outdated`, Node 24.21.0 / npm 11.19.0)
@@ -86,11 +86,12 @@ Gate por tramo: `npm test` (169) + `npx tsc --noEmit` + `npm run build`.
 - Verificación final PASS: 169/169 tests · `tsc` 0 · `build` 0 ·
   `index.json` byte idéntico · CSS compilada sin directivas v3, con paleta
   Nord y clases utilitarias presentes · árbol limpio.
-- **Pendiente (decisión humana): `scanline` (Layout.tsx:24) y `frosty-glow`
-  (Directory.tsx:322) no tienen definición CSS en ningún archivo del repo**
-  — huérfanas **antes** de la migración (verificado contra el build v3
-  previo: tampoco estaban). Definirlas es un cambio visual y solo el
-  humano decide si el efecto debe existir y cómo luce.
+- **`scanline` (Layout.tsx:24) y `frosty-glow` (Directory.tsx:322) no tienen
+  definición CSS en ningún archivo del repo** — huérfanas **antes** de la
+  migración (verificado contra el build v3 previo: tampoco estaban, así que
+  no es un daño de la actualización). **Decisión del humano: dejarlas como
+  están**, sin definir. Cero cambio visual; si algún día se quieren, es
+  trabajo nuevo.
 - **Deuda documentada**: `tsconfig.json` con `strict: false` explícito
   (semántica TS5.8 preservada); activar `strict` + `@types/react` es
   trabajo propio de la fase del frontend. `vite.config.ts` dejó de usar
