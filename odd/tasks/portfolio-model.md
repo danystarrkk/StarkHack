@@ -1,7 +1,8 @@
 # Feature: modelo de contenido para portfolio (Fase 1)
 
 - Rama: `feat/content-kinds` (apilada sobre `feat/normalization`)
-- Estado: en curso
+- Estado: **Fase 1 completada** (T1–T8). Fase 2 detenida a la espera del
+  código de frontend que provee el humano.
 - Alcance: **solo modelo de contenido y API. Cero cambios de UI en esta fase.**
 
 ## Decisiones tomadas por el humano
@@ -86,20 +87,25 @@ exactamente sus campos actuales, más `kind`.
 
 ## Tareas
 
-- [ ] T1. Rama, documento de feature, `todo` y mirror Engram.
-- [ ] T2. `lib/content-kinds.js` + tests de su contrato.
-- [ ] T3. Generador generalizado a 3 raíces + validación de campos por kind
-      (RED observado con fixtures: proyecto sin `image`, certificado sin
-      `order`, `order` duplicado).
-- [ ] T4. `index.json` con `kind` + regeneración + verificación de
-      no-regresión de las 16 entradas de writeups.
-- [ ] T5. `lib/content.ts`: filtro `kind` en las APIs existentes (sin regresión
-      de la UI) + `getProjects`/`getCertificates`/`fetchProject`/`fetchCertificate`
-      con tests.
-- [ ] T6. `types.ts` ampliado y tests de deriva de imágenes extendidos a
-      `public/projects/` y `public/certificates/`.
-- [ ] T7. Verificación final completa.
-- [ ] T8. Cierre con commits por unidad de trabajo.
+- [x] T1. Rama, documento de feature, `todo` y mirror Engram (mirror fallido:
+      servidor Engram caído, documentado).
+- [x] T2. `lib/content-kinds.js` (KINDS + `missingFields`) — RED A: módulo
+      inexistente.
+- [x] T3. Generador a 3 raíces + validación por kind — RED B: 12 fallos
+      (project sin `image`, certificado sin `order`, `order` string/decimal/
+      duplicado, writeup sin `title`, archivo sin frontmatter).
+- [x] T4. `index.json` con `kind` + no-regresión: **diff de 16 líneas
+      agregadas y 0 borradas**.
+- [x] T5. `lib/content.ts`: `fetchIndex()` solo-writeups por contrato +
+      `fetchIndexByKind`, `getProjects`, `getCertificates`, `fetchProject`,
+      `fetchCertificate` — RED C: 9 fallos.
+- [x] T6. `types.ts` con `ContentKind` y deriva de sync/media sobre las
+      3 raíces vía `KINDS`.
+- [x] T7. Verificación final: **PASS en las 9 verificaciones** (126/126,
+      `tsc` 0, `build` 0, regeneración byte idéntica, cero archivos UI
+      tocados, 16 entradas `kind: writeup` todas con `platform`, raíces
+      ausentes toleradas en doble corrida).
+- [x] T8. Cierre con commits por unidad de trabajo.
 
 ## Fuera de alcance de esta fase
 
@@ -110,8 +116,33 @@ exactamente sus campos actuales, más `kind`.
 
 ## Evidencia de commits
 
-- (pendiente)
+| Commit | Tareas |
+|---|---|
+| `e1049dc` docs: plan de la fase 1 del modelo de contenido para portfolio | T1 |
+| `7834191` feat: modelo de contenido con 3 kinds (writeup, project, certificate) | T2–T6 |
+| _(este commit)_ docs: cierre de la fase 1 | T7, T8 |
+
+### Decisiones de implementación registradas
+
+- Orden del índice: fechas parseables descendentes primero; sin fecha al
+  final; dentro del mismo fecha, los certificados usan `order` ascendente.
+  `getCertificates()` ordena por `order` para la vista.
+- `fetchIndex()` devuelve **solo writeups por contrato** — así la UI actual
+  (sin tocar) no empieza a listar proyectos como máquinas.
+- `assertValidTags` sigue siendo de writeups: los tags cerrados son del
+  sistema de writeups; proyectos/certificados pueden traer otros labels.
+- Drafts se saltean antes de validar en **todos** los kinds.
+- Log del índice renombrado a `Failed to fetch content index:` (servía a
+  los 3 kinds).
 
 ## Cierre
 
-- (pendiente)
+- **Fase 1 terminada**: la rama `feat/content-kinds` tiene el pipeline
+  generalizado a 3 kinds con **126/126 tests**, `tsc` y `build` en verde,
+  `index.json` byte idéntico salvo el `kind` agregado, y **cero archivos
+  UI modificados** (verificado con `git show` sobre el commit).
+- **Siguiente paso**: Fase 2 — el humano entrega el código del frontend
+  nuevo; el orquestador lo analiza, verifica e implementa de a poco
+  reemplazando el viejo. Ahí se detiene para afinar.
+- Fase 3 pendiente: contenido real de proyectos y certificados siguiendo
+  la convención ya validada (`.md` + `media/` + campos requeridos por kind).
