@@ -85,6 +85,60 @@ solo en `kind: 'writeup'`. `path` conserva el formato actual por kind.
 `public/index.json` regenerado: las 16 entradas de writeups deben conservar
 exactamente sus campos actuales, más `kind`.
 
+### Clasificadores y etiquetas por kind (extensión aprobada)
+
+Aclaración clave: **`group` y `tags` no son lo mismo**, y cada kind declara
+sus **propias** listas cerradas. Ninguna taxonomía comparte constantes con
+otra.
+
+| | `group` (clasificador, **1 por entrada**) | `tags` (**1..N**, vocabulario propio) |
+|---|---|---|
+| writeup | — (tiene `platform`) | 20 existentes en `lib/taxonomy.js` |
+| project | `PROJECT_GROUPS` (3) | `PROJECT_TAGS` (11) |
+| certificate | `CERTIFICATE_GROUPS` | `CERTIFICATE_TAGS` (8) |
+
+**Listas aprobadas por el humano:**
+
+```js
+// lib/content-kinds.js — estructura del kind
+export const PROJECT_GROUPS     = ['scripts', 'automatizaciones', 'herramientas'];
+export const CERTIFICATE_GROUPS = ['universidad', 'hack4u', 'cisco'];   // emisor/plataforma
+
+// lib/taxonomy.js — vocabularios de etiquetas (junto a TAGS de writeups)
+export const PROJECT_TAGS = [
+  'CLI Utilities', 'Recon', 'OSINT', 'Scanning', 'Networking', 'Web',
+  'Cryptography', 'Parsers', 'Integrations', 'Reporting', 'Databases',
+];
+export const CERTIFICATE_TAGS = [
+  'Networking', 'Cloud', 'Forensics', 'Web Security', 'Cryptography',
+  'Systems', 'Incident Response', 'Auditing',
+];
+```
+
+**Reglas de validación** (fail-loud con `filePath`, igual que todo lo demás):
+
+```
+project     → group ∈ PROJECT_GROUPS (obligatorio)   tags ≥1, ⊆ PROJECT_TAGS
+certificate → group ∈ CERTIFICATE_GROUPS (oblig.)    tags ≥1, ⊆ CERTIFICATE_TAGS
+writeup     → sin cambios (20 tags, hoy opcionales)
+```
+
+**API nueva** (`lib/content.ts`): `getProjects(group?)`,
+`getProjectGroups()` y `getCertificateGroups()` devuelven los grupos **en
+orden canónico incluidos los vacíos** para que el frontend pinte secciones
+estables, y `getCertificates()` sigue ordenado por `order`.
+
+Todo esto se implementa **antes del frontend** para que la Fase 2 no tenga
+que inventar la forma de los datos.
+
+**Decisiones abiertas (no implementadas sin que las definas):**
+
+1. ¿Los tags de writeups pasan a ser obligatorios ≥1? Hoy son opcionales
+   aunque los 16 actuales traen 4–6. Se deja **sin cambio** por ahora.
+2. `CERTIFICATE_GROUPS` usa el criterio **emisor/plataforma** (opción (a)
+   del borrador). Si más adelante querés el «tipo de estudio» como campo
+   aparte, se agrega como campo nuevo, no mezclando la lista.
+
 ## Tareas
 
 - [x] T1. Rama, documento de feature, `todo` y mirror Engram (mirror fallido:
@@ -106,6 +160,19 @@ exactamente sus campos actuales, más `kind`.
       tocados, 16 entradas `kind: writeup` todas con `platform`, raíces
       ausentes toleradas en doble corrida).
 - [x] T8. Cierre con commits por unidad de trabajo.
+- [ ] T9. Vocabularios: `PROJECT_TAGS` y `CERTIFICATE_TAGS` en
+      `lib/taxonomy.js`; `PROJECT_GROUPS` y `CERTIFICATE_GROUPS` en
+      `lib/content-kinds.js` + tests de su contrato (orden, sin duplicados,
+      contenido exacto).
+- [ ] T10. Validación en el generador (RED con fixtures): proyecto sin
+      `group`, `group` fuera de la lista, sin tags, tag desconocido;
+      certificado sin `group`, sin tags, tag desconocido.
+- [ ] T11. API: `getProjects(group?)`, `getProjectGroups()`,
+      `getCertificateGroups()` con tests (orden canónico, conteos,
+      grupo vacío, filtrado).
+- [ ] T12. Deriva extendida: todo contenido real cumple group + tags por
+      kind.
+- [ ] T13. Verificación final y cierre de la extensión.
 
 ## Fuera de alcance de esta fase
 
