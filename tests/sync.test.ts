@@ -3,13 +3,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseFrontmatter } from '../lib/frontmatter.js';
-import type { WriteupIndexItem } from '../types';
+import { KINDS } from '../lib/content-kinds.js';
+import type { ContentIndexItem, ContentKind, WriteupIndexItem } from '../types';
 
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
-const writeupsDir = path.join(publicDir, 'writeups');
+const repoRoot = path.resolve(publicDir, '..');
 const indexJsonPath = path.join(publicDir, 'index.json');
 
-interface WriteupFile {
+interface ContentFile {
+  kind: ContentKind;
   rel: string;
   expectedPath: string;
   slug: string;
@@ -29,63 +31,98 @@ function collectMarkdownFiles(dir: string): string[] {
   return found;
 }
 
-// Every markdown writeup on disk, parsed with the same frontmatter parser as the generator.
-const allWriteupFiles: WriteupFile[] = collectMarkdownFiles(writeupsDir).map((abs) => {
-  const rel = path.relative(writeupsDir, abs).split(path.sep).join('/');
-  const { data } = parseFrontmatter(fs.readFileSync(abs, 'utf8'));
-  return {
-    rel,
-    expectedPath: `/writeups/${rel}`,
-    slug: path.basename(abs).replace(/\.md$/, ''),
-    data,
-  };
+// Every markdown content file on disk, for all three kinds. The roots come from
+// the KINDS registry (lib/content-kinds.js) — never hardcoded — and absent roots
+// contribute no files. Platformed kinds (writeups) are scanned like the
+// generator's two-level <root>/<platform>/*.md walk; flat kinds scan <root>/*.md.
+const allContentFiles: ContentFile[] = Object.entries(KINDS).flatMap(([kind, spec]) => {
+  const rootDir = path.join(repoRoot, spec.root);
+  if (!fs.existsSync(rootDir)) return [];
+
+  const absFiles = spec.platformed
+    ? collectMarkdownFiles(rootDir)
+    : fs
+        .readdirSync(rootDir, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+        .map((entry) => path.join(rootDir, entry.name));
+
+  const urlRoot = `/${spec.root.replace(/^public\//, '')}`;
+  return absFiles.map((abs) => {
+    const rel = path.relative(rootDir, abs).split(path.sep).join('/');
+    const { data } = parseFrontmatter(fs.readFileSync(abs, 'utf8'));
+    return {
+      kind: kind as ContentKind,
+      rel,
+      // Site paths mirror the registry roots: /writeups/<platform>/<file>,
+      // /projects/<file>, /certificates/<file>.
+      expectedPath: `${urlRoot}/${rel}`,
+      slug: path.basename(abs).replace(/\.md$/, ''),
+      data,
+    };
+  });
 });
 
-// Resolves the index entries for a single writeup file. Lookups go by `path`
-// (`/writeups/<platform>/<file>`), which is unique by construction; the bare `slug`
-// is only the filename and can collide across platforms.
+// Resolves the index entries for a single content file. Lookups go by `path`,
+// which is unique by construction; the bare `slug` is only the filename and can
+// collide across platforms.
 function entriesFor(
-  index: WriteupIndexItem[],
-  file: Pick<WriteupFile, 'slug' | 'expectedPath'>
-): WriteupIndexItem[] {
+  index: ContentIndexItem[],
+  file: Pick<ContentFile, 'slug' | 'expectedPath'>
+): ContentIndexItem[] {
   return index.filter((entry) => entry.path === file.expectedPath);
 }
 
 // generateIndex() deliberately skips `draft: true`, so drafts must NOT appear in the index.
-const writeupFiles: WriteupFile[] = allWriteupFiles.filter((file) => file.data.draft !== true);
-const draftFiles: WriteupFile[] = allWriteupFiles.filter((file) => file.data.draft === true);
+const contentFiles: ContentFile[] = allContentFiles.filter((file) => file.data.draft !== true);
+const draftFiles: ContentFile[] = allContentFiles.filter((file) => file.data.draft === true);
 
 // The committed, generated index that must stay in sync with the markdown files.
-const index: WriteupIndexItem[] = JSON.parse(fs.readFileSync(indexJsonPath, 'utf8'));
+const index: ContentIndexItem[] = JSON.parse(fs.readFileSync(indexJsonPath, 'utf8'));
 
 describe('public/index.json drift', () => {
-  it('keeps one index entry per markdown writeup file', () => {
-    expect(writeupFiles.length).toBeGreaterThan(0);
-    expect(index).toHaveLength(writeupFiles.length);
+  it('keeps one index entry per markdown content file, per kind', () => {
+    expect(contentFiles.length).toBeGreaterThan(0);
+    expect(index).toHaveLength(contentFiles.length);
+    for (const kind of Object.keys(KINDS)) {
+      expect(index.filter((entry) => entry.kind === kind)).toHaveLength(
+        contentFiles.filter((file) => file.kind === kind).length
+      );
+    }
   });
 
-  it.each(writeupFiles)(
-    'writeup $rel has exactly one index entry with matching metadata',
+  it.each(contentFiles)(
+    '$kind $rel has exactly one index entry with matching metadata',
     (file) => {
       const matches = entriesFor(index, file);
       expect(matches).toHaveLength(1);
 
       const [entry] = matches;
+      expect(entry.kind).toBe(file.kind);
       expect(entry.path).toBe(file.expectedPath);
       expect(entry.title).toBe(file.data.title);
       expect(entry.date).toBe(file.data.date);
       expect(entry.level).toBe(file.data.level);
       expect(entry.tags).toEqual(file.data.tags);
+      expect(entry.image).toBe(file.data.image);
+      expect(entry.description).toBe(file.data.description);
+      expect(entry.order).toBe(file.data.order);
+      if (file.kind === 'writeup') {
+        // Writeups are platformed: the platform comes from the directory name.
+        expect(entry.platform).toBe(file.rel.split('/')[0]);
+      } else {
+        // Flat kinds must not carry a platform key at all.
+        expect(entry).not.toHaveProperty('platform');
+      }
     }
   );
 
   it.each(index)('index entry $path has a backing markdown file', (entry) => {
-    const expectedPaths = new Set(writeupFiles.map((file) => file.expectedPath));
+    const expectedPaths = new Set(contentFiles.map((file) => file.expectedPath));
     expect(expectedPaths.has(entry.path)).toBe(true);
   });
 
   // A draft on disk is fine; a draft in the index is a generator contract violation.
-  it.each(draftFiles)('draft writeup $rel is excluded from the index', ({ expectedPath }) => {
+  it.each(draftFiles)('draft $kind $rel is excluded from the index', ({ expectedPath }) => {
     expect(index.some((entry) => entry.path === expectedPath)).toBe(false);
   });
 });
@@ -95,6 +132,7 @@ describe('index entry lookup', () => {
   // slug is ambiguous while `/writeups/<platform>/<file>` stays unique by construction.
   const syntheticIndex: WriteupIndexItem[] = [
     {
+      kind: 'writeup',
       title: 'Wave (HackMyVM)',
       date: '2026-01-01',
       slug: 'wave',
@@ -102,6 +140,7 @@ describe('index entry lookup', () => {
       path: '/writeups/hackmyvm/wave.md',
     },
     {
+      kind: 'writeup',
       title: 'Wave (HackTheBox)',
       date: '2026-01-02',
       slug: 'wave',

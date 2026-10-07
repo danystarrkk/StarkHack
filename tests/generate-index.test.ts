@@ -38,6 +38,29 @@ function writeRawWriteup(root: string, platform: string, filename: string, text:
   return filePath;
 }
 
+// --- Multi-kind sources (Phase 1: writeup | project | certificate) -----------
+
+// A fresh temp base holding all three content roots. The roots may not exist on
+// disk: generateIndex must tolerate absent roots exactly like a missing writeups
+// root (no crash, no entries).
+function makeTempSource(): { writeup: string; project: string; certificate: string } {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'starkhack-generate-index-'));
+  tempDirs.push(base);
+  return {
+    writeup: path.join(base, 'writeups'),
+    project: path.join(base, 'projects'),
+    certificate: path.join(base, 'certificates'),
+  };
+}
+
+// Flat content root (projects/certificates): <root>/*.md, no platform level.
+function writeFlat(root: string, filename: string, frontmatterLines: string[], body = '# Body'): string {
+  fs.mkdirSync(root, { recursive: true });
+  const filePath = path.join(root, filename);
+  fs.writeFileSync(filePath, ['---', ...frontmatterLines, '---', '', body, ''].join('\n'));
+  return filePath;
+}
+
 const cliModuleUrl = new URL('../scripts/generate-index.js', import.meta.url).href;
 
 // Runs the CLI entry point in a child process so exit codes and stderr are observable.
@@ -209,6 +232,235 @@ describe('generateIndex', () => {
     ]);
 
     expect(() => generateIndex(root)).toThrow(filePath);
+  });
+});
+
+describe('generateIndex multi-kind sources', () => {
+  it('throws with the file path when a project lacks image', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.project, 'no-image.md', ['title: "No Image"', 'date: 2026-01-01']);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('image');
+  });
+
+  it('throws with the file path when a certificate lacks order', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.certificate, 'no-order.md', [
+      'title: "No Order"',
+      'image: "/certificates/no-order/media/cover.webp"',
+      'description: "Missing order"',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('order');
+  });
+
+  it('rejects a string certificate order ("3")', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.certificate, 'string-order.md', [
+      'title: "String Order"',
+      'order: "3"',
+      'image: "/x.webp"',
+      'description: "d"',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('order');
+  });
+
+  it('rejects a fractional certificate order (2.5)', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.certificate, 'fractional-order.md', [
+      'title: "Fractional"',
+      'order: 2.5',
+      'image: "/x.webp"',
+      'description: "d"',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('order');
+  });
+
+  it('rejects two certificates that share an order', () => {
+    const source = makeTempSource();
+    const first = writeFlat(source.certificate, 'aaa-first.md', [
+      'title: "First"',
+      'order: 7',
+      'image: "/a.webp"',
+      'description: "a"',
+    ]);
+    const second = writeFlat(source.certificate, 'bbb-second.md', [
+      'title: "Second"',
+      'order: 7',
+      'image: "/b.webp"',
+      'description: "b"',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    // The error is a hard failure naming both the offending file and the file
+    // that already owns the order (whichever the scan saw first).
+    expect(message).toContain(first);
+    expect(message).toContain(second);
+    expect(message).toContain('7');
+  });
+
+  it('throws with the file path when a writeup lacks title', () => {
+    const source = makeTempSource();
+    const filePath = writeWriteup(source.writeup, 'hackmyvm', 'no-title.md', ['date: 2026-01-01']);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('title');
+  });
+
+  it('throws with the file path when a flat-root markdown file has no frontmatter', () => {
+    const source = makeTempSource();
+    fs.mkdirSync(source.project, { recursive: true });
+    const filePath = path.join(source.project, 'bare.md');
+    fs.writeFileSync(filePath, '# Just a body, no frontmatter\n');
+
+    expect(() => generateIndex(source)).toThrow(filePath);
+  });
+
+  it("tags writeup entries with kind: 'writeup' and keeps today's shape", () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'machine-one.md', ['title: "Machine One"', 'date: 2026-01-01']);
+
+    const index = generateIndex(source);
+
+    expect(index).toHaveLength(1);
+    expect(index[0]).toEqual({
+      title: 'Machine One',
+      date: '2026-01-01',
+      kind: 'writeup',
+      platform: 'hackmyvm',
+      slug: 'machine-one',
+      path: '/writeups/hackmyvm/machine-one.md',
+    });
+  });
+
+  it('builds project entries with kind, no platform key, and a /projects path', () => {
+    const source = makeTempSource();
+    writeFlat(source.project, 'portfolio.md', [
+      'title: "Portfolio"',
+      'date: 2026-02-02',
+      'image: "/projects/portfolio/media/cover.webp"',
+    ]);
+
+    const index = generateIndex(source);
+
+    expect(index).toHaveLength(1);
+    expect(index[0].kind).toBe('project');
+    expect(index[0].slug).toBe('portfolio');
+    expect(index[0].path).toBe('/projects/portfolio.md');
+    expect(index[0]).not.toHaveProperty('platform');
+  });
+
+  it('builds certificate entries with kind, integer order, and a /certificates path', () => {
+    const source = makeTempSource();
+    writeFlat(source.certificate, 'oscp.md', [
+      'title: "OSCP"',
+      'order: 4',
+      'image: "/certificates/oscp/media/cover.webp"',
+      'description: "Offensive Security Certified Professional"',
+    ]);
+
+    const index = generateIndex(source);
+
+    expect(index).toHaveLength(1);
+    expect(index[0].kind).toBe('certificate');
+    expect(index[0].slug).toBe('oscp');
+    expect(index[0].path).toBe('/certificates/oscp.md');
+    expect(index[0].order).toBe(4);
+    expect(index[0]).not.toHaveProperty('platform');
+  });
+
+  it('tolerates absent project and certificate roots', () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'one.md', ['title: "One"', 'date: 2026-01-01']);
+
+    expect(generateIndex(source)).toHaveLength(1);
+    expect(generateIndex({})).toEqual([]);
+  });
+
+  it('sorts dated entries newest first, undated entries last, certificates by ascending order', () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'old.md', ['title: "Old"', 'date: 2024-01-01']);
+    writeWriteup(source.writeup, 'hackmyvm', 'new.md', ['title: "New"', 'date: 2025-01-01']);
+    writeFlat(source.project, 'dated-project.md', ['title: "Dated"', 'date: 2026-06-06', 'image: "/p.webp"']);
+    // Certificates are the only kind that may omit `date`.
+    writeFlat(source.certificate, 'cert-3.md', ['title: "Three"', 'order: 3', 'image: "/3.webp"', 'description: "d3"']);
+    writeFlat(source.certificate, 'cert-1.md', ['title: "One"', 'order: 1', 'image: "/1.webp"', 'description: "d1"']);
+
+    const slugs = generateIndex(source).map((item) => item.slug);
+
+    // Documented ordering rule: (1) dated entries first, newest first;
+    // (2) entries without a date sort last; (3) certificates use `order` as
+    // their stable secondary key, so the undated tail reads cert-1, cert-3.
+    expect(slugs).toEqual(['dated-project', 'new', 'old', 'cert-1', 'cert-3']);
+  });
+
+  it('sorts dated certificates among the dated entries by date, not by order', () => {
+    const source = makeTempSource();
+    writeFlat(source.certificate, 'cert-a.md', [
+      'title: "A"',
+      'order: 1',
+      'date: 2026-01-01',
+      'image: "/a.webp"',
+      'description: "a"',
+    ]);
+    writeFlat(source.certificate, 'cert-b.md', [
+      'title: "B"',
+      'order: 2',
+      'date: 2025-01-01',
+      'image: "/b.webp"',
+      'description: "b"',
+    ]);
+
+    const slugs = generateIndex(source).map((item) => item.slug);
+
+    expect(slugs).toEqual(['cert-a', 'cert-b']);
   });
 });
 

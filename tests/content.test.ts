@@ -24,6 +24,7 @@ function notOkResponse(): Response {
 
 function makeItem(overrides: Partial<WriteupIndexItem> = {}): WriteupIndexItem {
   return {
+    kind: 'writeup',
     title: 'Writeup',
     date: '2026-01-01',
     platform: 'hackmyvm',

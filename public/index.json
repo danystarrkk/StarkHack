@@ -16,6 +16,7 @@
     ],
     "image": "/writeups/hackmyvm/wave/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "wave",
     "path": "/writeups/hackmyvm/wave.md"
@@ -36,6 +37,7 @@
     ],
     "image": "/writeups/hackmyvm/krustykrab/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "krustykrab",
     "path": "/writeups/hackmyvm/krustykrab.md"
@@ -57,6 +59,7 @@
     "cve": "CVE-2021-4034",
     "image": "/writeups/hackmyvm/flossy/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "flossy",
     "path": "/writeups/hackmyvm/flossy.md"
@@ -78,6 +81,7 @@
     ],
     "image": "/writeups/hackmyvm/airbind/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "airbind",
     "path": "/writeups/hackmyvm/airbind.md"
@@ -99,6 +103,7 @@
     ],
     "image": "/writeups/hackmyvm/gitdwn/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "gitdwn",
     "path": "/writeups/hackmyvm/gitdwn.md"
@@ -120,6 +125,7 @@
     ],
     "image": "/writeups/hackmyvm/sabulaji/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "sabulaji",
     "path": "/writeups/hackmyvm/sabulaji.md"
@@ -142,6 +148,7 @@
     ],
     "image": "/writeups/hackmyvm/tryharder/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "tryharder",
     "path": "/writeups/hackmyvm/tryharder.md"
@@ -164,6 +171,7 @@
     "cve": "CVE-2020-35234",
     "image": "/writeups/hackmyvm/realsaga/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "realsaga",
     "path": "/writeups/hackmyvm/realsaga.md"
@@ -185,6 +193,7 @@
     "cve": "CVE-2023-5965",
     "image": "/writeups/hackmyvm/espo/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "espo",
     "path": "/writeups/hackmyvm/espo.md"
@@ -207,6 +216,7 @@
     ],
     "image": "/writeups/hackmyvm/pycrt/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "pycrt",
     "path": "/writeups/hackmyvm/pycrt.md"
@@ -229,6 +239,7 @@
     ],
     "image": "/writeups/hackmyvm/homelab/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "homelab",
     "path": "/writeups/hackmyvm/homelab.md"
@@ -250,6 +261,7 @@
     ],
     "image": "/writeups/hackmyvm/console/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "console",
     "path": "/writeups/hackmyvm/console.md"
@@ -271,6 +283,7 @@
     ],
     "image": "/writeups/hackmyvm/ximai/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "ximai",
     "path": "/writeups/hackmyvm/ximai.md"
@@ -292,6 +305,7 @@
     ],
     "image": "/writeups/hackmyvm/griffin/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "griffin",
     "path": "/writeups/hackmyvm/griffin.md"
@@ -312,6 +326,7 @@
     ],
     "image": "/writeups/hackmyvm/birdeye/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "birdeye",
     "path": "/writeups/hackmyvm/birdeye.md"
@@ -332,6 +347,7 @@
     ],
     "image": "/writeups/hackmyvm/silentdev/media/cover.webp",
     "level": "Medium",
+    "kind": "writeup",
     "platform": "hackmyvm",
     "slug": "silentdev",
     "path": "/writeups/hackmyvm/silentdev.md"
