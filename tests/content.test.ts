@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  ContentIndexError,
   fetchIndex,
+  fetchIndexByKind,
   fetchWriteup,
+  getCertificates,
   getMachinesByPlatform,
   getPlatforms,
+  getProjects,
   getRecentWriteups,
 } from '../lib/content';
 import type { WriteupIndexItem } from '../types';
@@ -53,16 +57,54 @@ describe('fetchIndex', () => {
     expect(fetchMock).toHaveBeenCalledWith('/index.json');
   });
 
-  it('returns an empty list when the index response is not ok', async () => {
+  // CONTRACT CHANGE (R3-index-kind-silent-empty): the old contract resolved [] on
+  // a failed response, indistinguishable from "this kind has no entries". The
+  // index accessors now REJECT with ContentIndexError so callers can tell a
+  // broken deployment from empty content.
+  it('rejects with a ContentIndexError when the index response is not ok', async () => {
     fetchMock.mockResolvedValue(notOkResponse());
 
-    await expect(fetchIndex()).resolves.toEqual([]);
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
   });
 
-  it('returns an empty list when the request rejects', async () => {
+  it('rejects with a ContentIndexError when the request rejects', async () => {
     fetchMock.mockRejectedValue(new Error('network down'));
 
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+  });
+
+  it('rejects with a ContentIndexError when the index body is not parseable', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => {
+        throw new SyntaxError('Unexpected token < in JSON');
+      },
+    } as unknown as Response);
+
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
+  });
+
+  it('still resolves [] for a legitimately empty index', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([]));
+
     await expect(fetchIndex()).resolves.toEqual([]);
+    await expect(getPlatforms()).resolves.toEqual([]);
+    await expect(getRecentWriteups()).resolves.toEqual([]);
+  });
+});
+
+describe('index accessors reject on infrastructure failure (R3-index-kind-silent-empty)', () => {
+  it('fetchIndexByKind, getPlatforms, getMachinesByPlatform, getRecentWriteups, getProjects and getCertificates reject instead of resolving []', async () => {
+    fetchMock.mockResolvedValue(notOkResponse());
+
+    await expect(fetchIndexByKind('writeup')).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getPlatforms()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getMachinesByPlatform('hackmyvm')).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getRecentWriteups()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getProjects()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getCertificates()).rejects.toBeInstanceOf(ContentIndexError);
   });
 });
 

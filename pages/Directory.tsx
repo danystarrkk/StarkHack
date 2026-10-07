@@ -30,11 +30,20 @@ const DirectoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch both platforms stats and the full index for searching
+    // Fetch both platforms stats and the full index for searching.
+    // On infrastructure failure (missing/unreadable index.json) log and leave
+    // the lists empty so the page's existing error/empty branch renders
+    // instead of spinning forever (R3-index-kind-silent-empty).
     Promise.all([getPlatforms(), fetchIndex()]).then(
       ([platformsData, indexData]) => {
         setPlatforms(Array.isArray(platformsData) ? platformsData : []);
         setAllWriteups(Array.isArray(indexData) ? indexData : []);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Failed to load directory data:", error);
+        setPlatforms([]);
+        setAllWriteups([]);
         setLoading(false);
       },
     );

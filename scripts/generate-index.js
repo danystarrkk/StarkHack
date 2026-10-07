@@ -21,12 +21,19 @@ const DEFAULT_ROOTS = Object.fromEntries(
 
 // Writeups: barrido exacto de dos niveles <root>/<platform>/*.md, como siempre.
 // Las entradas sueltas en la raíz (no directorios) se ignoran.
+// El orden de `readdirSync` no está garantizado por POSIX: ordenamos siempre
+// por nombre (ascendente) antes de iterar, así el índice depende solo de los
+// nombres y las fechas, nunca del orden del sistema de archivos (byte-estable).
 function platformedFiles(rootDir) {
   const out = [];
-  for (const platform of fs.readdirSync(rootDir)) {
+  for (const platform of fs.readdirSync(rootDir).sort()) {
     const platformPath = path.join(rootDir, platform);
     if (!fs.statSync(platformPath).isDirectory()) continue;
-    for (const fileName of fs.readdirSync(platformPath).filter((f) => f.endsWith(".md"))) {
+    const fileNames = fs
+      .readdirSync(platformPath)
+      .filter((f) => f.endsWith(".md"))
+      .sort();
+    for (const fileName of fileNames) {
       out.push({ filePath: path.join(platformPath, fileName), platform, fileName });
     }
   }
@@ -34,10 +41,13 @@ function platformedFiles(rootDir) {
 }
 
 // Tipos planos (projects, certificates): <root>/*.md, sin nivel de plataforma.
+// Igual que arriba: la lista se ordena por nombre antes de iterar para que la
+// salida sea independiente del orden de readdirSync.
 function flatFiles(rootDir) {
   return fs
     .readdirSync(rootDir)
     .filter((f) => f.endsWith(".md") && fs.statSync(path.join(rootDir, f)).isFile())
+    .sort()
     .map((fileName) => ({ filePath: path.join(rootDir, fileName), fileName }));
 }
 
@@ -85,9 +95,10 @@ function validateCertificateOrder(order, filePath, orderOwners) {
 //   3. Clave secundaria dentro de la misma fecha: los certificados usan su
 //      `order` (ascendente), así la cola sin fecha queda en orden de
 //      visualización; el resto de tipos comparte una clave secundaria constante
-//      y por tanto conserva el orden de escaneo (Array#sort es estable). Dos
-//      writeups con la misma fecha nunca se reordenan, así que regenerar el
-//      índice es byte-estable.
+//      y por tanto conserva el orden de escaneo (Array#sort es estable) — que
+//      es orden de nombre de archivo ascendente, porque la lista de archivos se
+//      ordena explícitamente antes de iterar (readdirSync no garantiza orden).
+//      Así regenerar el índice es byte-estable en cualquier máquina.
 function dateKey(entry) {
   if (typeof entry.date !== "string" || entry.date.trim() === "") return null;
   const time = new Date(entry.date).getTime();

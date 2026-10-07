@@ -14,23 +14,52 @@ import {
 
 const INDEX_URL = '/index.json';
 
-// Raw fetch of the generated index (every content kind, exactly as generated).
-const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
-  try {
-    const response = await fetch(INDEX_URL);
-    if (!response.ok) {
-      console.error("Index not found. Did you run 'node scripts/generate-index.js'?");
-      return [];
+// Actionable hint kept verbatim from the old console-only path: without a
+// generated index the fix is always to run the generator.
+const INDEX_HINT = "Did you run 'node scripts/generate-index.js'?";
+
+// Infrastructure failure while loading the generated content index (missing or
+// unreadable public/index.json). Thrown instead of resolving [] so callers can
+// tell a broken deployment apart from "this kind legitimately has no entries"
+// (R3-index-kind-silent-empty).
+export class ContentIndexError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message);
+    this.name = 'ContentIndexError';
+    if (options !== undefined && options.cause !== undefined) {
+      (this as Error & { cause?: unknown }).cause = options.cause;
     }
-    const data = await response.json();
-    return data;
+  }
+}
+
+// Raw fetch of the generated index (every content kind, exactly as generated).
+// REJECTS with ContentIndexError when the response is not ok, the body cannot
+// be parsed, or the request itself fails — never a silent [].
+const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
+  let response: Response;
+  try {
+    response = await fetch(INDEX_URL);
   } catch (error) {
-    console.error("Failed to fetch content index:", error);
-    return [];
+    throw new ContentIndexError(
+      `Failed to fetch content index: ${error instanceof Error ? error.message : String(error)}. ${INDEX_HINT}`,
+      { cause: error }
+    );
+  }
+  if (!response.ok) {
+    throw new ContentIndexError(`Index not found. ${INDEX_HINT}`);
+  }
+  try {
+    return (await response.json()) as ContentIndexItem[];
+  } catch (error) {
+    throw new ContentIndexError(
+      `Failed to parse content index: ${error instanceof Error ? error.message : String(error)}. ${INDEX_HINT}`,
+      { cause: error }
+    );
   }
 };
 
 // Raw accessor: every index entry of one content kind, in index order.
+// Rejects with ContentIndexError on infrastructure failure (R3-index-kind-silent-empty).
 export const fetchIndexByKind = async (kind: ContentKind): Promise<ContentIndexItem[]> => {
   const index = await fetchRawIndex();
   return index.filter((item) => item.kind === kind);

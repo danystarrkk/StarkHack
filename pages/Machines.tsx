@@ -13,13 +13,22 @@ const MachineListingsPage: React.FC = () => {
   useEffect(() => {
     if (platformId) {
       setLoading(true);
-      getMachinesByPlatform(platformId).then((data) => {
-        const sortedData = data.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-        );
-        setMachines(sortedData);
-        setLoading(false);
-      });
+      // On infrastructure failure log and clear loading so the existing
+      // "No writeups found" branch renders instead of spinning (R3-index-kind-silent-empty).
+      getMachinesByPlatform(platformId).then(
+        (data) => {
+          const sortedData = data.sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          );
+          setMachines(sortedData);
+          setLoading(false);
+        },
+        (error) => {
+          console.error(`Failed to load machines for ${platformId}:`, error);
+          setMachines([]);
+          setLoading(false);
+        },
+      );
     }
   }, [platformId]);
 
