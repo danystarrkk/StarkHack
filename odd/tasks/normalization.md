@@ -161,5 +161,8 @@ public/writeups/hackmyvm/
   de imágenes (814 archivos) no cabe y todo rango que lo incluye tampoco.
   **El tramo `e62b6c2`→`8bcadb3` queda aceptado sin acuse de review por
   decisión del dueño** (waiver de gestión, no un review aprobado).
+- Ese tramo queda respaldado por 91/91 tests (luego 126/126 con la fase 1),
+  `tsc` y `build` en verde, `index.json` byte idéntico, migración idempotente
+  y sweep sin referencias vivas a `/images/`.
 - Los recordatorios de review los controla el dueño del repo:
   `gentle-ai review mode disable --scope clone` apaga el interruptor.
