@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseFrontmatter } from '../lib/frontmatter.js';
-import { KINDS } from '../lib/content-kinds.js';
+import { CERTIFICATE_GROUPS, KINDS } from '../lib/content-kinds.js';
+import { CERTIFICATE_TAGS, PROJECT_TAGS } from '../lib/taxonomy.js';
 import type { ContentIndexItem, ContentKind, WriteupIndexItem } from '../types';
 
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
@@ -103,6 +104,7 @@ describe('public/index.json drift', () => {
       expect(entry.date).toBe(file.data.date);
       expect(entry.level).toBe(file.data.level);
       expect(entry.tags).toEqual(file.data.tags);
+      expect(entry.group).toBe(file.data.group);
       expect(entry.image).toBe(file.data.image);
       expect(entry.description).toBe(file.data.description);
       expect(entry.order).toBe(file.data.order);
@@ -124,6 +126,51 @@ describe('public/index.json drift', () => {
   // A draft on disk is fine; a draft in the index is a generator contract violation.
   it.each(draftFiles)('draft $kind $rel is excluded from the index', ({ expectedPath }) => {
     expect(index.some((entry) => entry.path === expectedPath)).toBe(false);
+  });
+});
+
+describe('real project/certificate group + tag drift', () => {
+  // The generator enforces these rules at build time; this suite re-checks the
+  // REAL content roots so a stale index or a hand-edited file cannot drift.
+  // With public/projects/ and public/certificates/ absent there are no files to
+  // check and both tests pass vacuously, exactly like the writeup drift checks.
+  const filesOfKind = (kind: ContentKind): ContentFile[] =>
+    allContentFiles.filter((file) => file.kind === kind);
+
+  it('every real project has a group of PROJECT_GROUPS and 1+ tags of PROJECT_TAGS', () => {
+    const problems: string[] = [];
+    for (const file of filesOfKind('project')) {
+      const { group, tags } = file.data;
+      if (typeof group !== 'string' || !KINDS.project.groups.includes(group)) {
+        problems.push(`${file.kind} ${file.rel}: invalid group ${JSON.stringify(group)}`);
+      }
+      if (!Array.isArray(tags) || tags.length < 1) {
+        problems.push(`${file.kind} ${file.rel}: tags must hold 1+ entries, got ${JSON.stringify(tags)}`);
+      } else {
+        for (const tag of tags) {
+          if (!PROJECT_TAGS.includes(tag)) problems.push(`${file.kind} ${file.rel}: off-vocabulary tag ${JSON.stringify(tag)}`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('every real certificate has a group of CERTIFICATE_GROUPS and 1+ tags of CERTIFICATE_TAGS', () => {
+    const problems: string[] = [];
+    for (const file of filesOfKind('certificate')) {
+      const { group, tags } = file.data;
+      if (typeof group !== 'string' || !CERTIFICATE_GROUPS.includes(group)) {
+        problems.push(`${file.kind} ${file.rel}: invalid group ${JSON.stringify(group)}`);
+      }
+      if (!Array.isArray(tags) || tags.length < 1) {
+        problems.push(`${file.kind} ${file.rel}: tags must hold 1+ entries, got ${JSON.stringify(tags)}`);
+      } else {
+        for (const tag of tags) {
+          if (!CERTIFICATE_TAGS.includes(tag)) problems.push(`${file.kind} ${file.rel}: off-vocabulary tag ${JSON.stringify(tag)}`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
   });
 });
 

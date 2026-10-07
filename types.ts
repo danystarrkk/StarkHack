@@ -7,6 +7,7 @@ export interface Frontmatter {
   description?: string;
   categories?: string[];
   tags?: string[];
+  group?: string; // Projects/certificates: one classifier of the kind's closed group list
   cve?: string; // CVE identifier, moved out of tags into its own key
   image?: string;
   level?: 'Easy' | 'Medium' | 'Hard';
@@ -47,6 +48,14 @@ export interface ContentDoc extends Frontmatter {
 export interface PlatformStats {
   id: string;
   name: string;
+  count: number;
+}
+
+// One canonical group of a content kind with its entry count. Groups come in
+// the kind's canonical order and include the empty ones (count 0), so the
+// frontend can render stable sections.
+export interface GroupStats {
+  id: string;
   count: number;
 }
 

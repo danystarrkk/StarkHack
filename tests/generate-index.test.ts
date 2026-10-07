@@ -61,6 +61,12 @@ function writeFlat(root: string, filename: string, frontmatterLines: string[], b
   return filePath;
 }
 
+// Valid taxonomy baseline for flat kinds: from the approved extension on,
+// every project and certificate needs a `group` of its kind and >=1 tag of its
+// kind's vocabulary. Fixtures spread these so each test breaks exactly one rule.
+const projectTaxonomy = ['group: "scripts"', 'tags: ["CLI Utilities", "Recon"]'];
+const certificateTaxonomy = ['group: "hack4u"', 'tags: ["Networking", "Cloud"]'];
+
 const cliModuleUrl = new URL('../scripts/generate-index.js', import.meta.url).href;
 
 // Runs the CLI entry point in a child process so exit codes and stderr are observable.
@@ -238,7 +244,7 @@ describe('generateIndex', () => {
 describe('generateIndex multi-kind sources', () => {
   it('throws with the file path when a project lacks image', () => {
     const source = makeTempSource();
-    const filePath = writeFlat(source.project, 'no-image.md', ['title: "No Image"', 'date: 2026-01-01']);
+    const filePath = writeFlat(source.project, 'no-image.md', ['title: "No Image"', 'date: 2026-01-01', ...projectTaxonomy]);
 
     let message = '';
     try {
@@ -257,6 +263,7 @@ describe('generateIndex multi-kind sources', () => {
       'title: "No Order"',
       'image: "/certificates/no-order/media/cover.webp"',
       'description: "Missing order"',
+      ...certificateTaxonomy,
     ]);
 
     let message = '';
@@ -277,6 +284,7 @@ describe('generateIndex multi-kind sources', () => {
       'order: "3"',
       'image: "/x.webp"',
       'description: "d"',
+      ...certificateTaxonomy,
     ]);
 
     let message = '';
@@ -297,6 +305,7 @@ describe('generateIndex multi-kind sources', () => {
       'order: 2.5',
       'image: "/x.webp"',
       'description: "d"',
+      ...certificateTaxonomy,
     ]);
 
     let message = '';
@@ -317,12 +326,14 @@ describe('generateIndex multi-kind sources', () => {
       'order: 7',
       'image: "/a.webp"',
       'description: "a"',
+      ...certificateTaxonomy,
     ]);
     const second = writeFlat(source.certificate, 'bbb-second.md', [
       'title: "Second"',
       'order: 7',
       'image: "/b.webp"',
       'description: "b"',
+      ...certificateTaxonomy,
     ]);
 
     let message = '';
@@ -386,6 +397,7 @@ describe('generateIndex multi-kind sources', () => {
       'title: "Portfolio"',
       'date: 2026-02-02',
       'image: "/projects/portfolio/media/cover.webp"',
+      ...projectTaxonomy,
     ]);
 
     const index = generateIndex(source);
@@ -404,6 +416,7 @@ describe('generateIndex multi-kind sources', () => {
       'order: 4',
       'image: "/certificates/oscp/media/cover.webp"',
       'description: "Offensive Security Certified Professional"',
+      ...certificateTaxonomy,
     ]);
 
     const index = generateIndex(source);
@@ -428,10 +441,10 @@ describe('generateIndex multi-kind sources', () => {
     const source = makeTempSource();
     writeWriteup(source.writeup, 'hackmyvm', 'old.md', ['title: "Old"', 'date: 2024-01-01']);
     writeWriteup(source.writeup, 'hackmyvm', 'new.md', ['title: "New"', 'date: 2025-01-01']);
-    writeFlat(source.project, 'dated-project.md', ['title: "Dated"', 'date: 2026-06-06', 'image: "/p.webp"']);
+    writeFlat(source.project, 'dated-project.md', ['title: "Dated"', 'date: 2026-06-06', 'image: "/p.webp"', ...projectTaxonomy]);
     // Certificates are the only kind that may omit `date`.
-    writeFlat(source.certificate, 'cert-3.md', ['title: "Three"', 'order: 3', 'image: "/3.webp"', 'description: "d3"']);
-    writeFlat(source.certificate, 'cert-1.md', ['title: "One"', 'order: 1', 'image: "/1.webp"', 'description: "d1"']);
+    writeFlat(source.certificate, 'cert-3.md', ['title: "Three"', 'order: 3', 'image: "/3.webp"', 'description: "d3"', ...certificateTaxonomy]);
+    writeFlat(source.certificate, 'cert-1.md', ['title: "One"', 'order: 1', 'image: "/1.webp"', 'description: "d1"', ...certificateTaxonomy]);
 
     const slugs = generateIndex(source).map((item) => item.slug);
 
@@ -449,6 +462,7 @@ describe('generateIndex multi-kind sources', () => {
       'date: 2026-01-01',
       'image: "/a.webp"',
       'description: "a"',
+      ...certificateTaxonomy,
     ]);
     writeFlat(source.certificate, 'cert-b.md', [
       'title: "B"',
@@ -456,11 +470,295 @@ describe('generateIndex multi-kind sources', () => {
       'date: 2025-01-01',
       'image: "/b.webp"',
       'description: "b"',
+      ...certificateTaxonomy,
     ]);
 
     const slugs = generateIndex(source).map((item) => item.slug);
 
     expect(slugs).toEqual(['cert-a', 'cert-b']);
+  });
+});
+
+describe('generateIndex project/certificate group and tag validation', () => {
+  it('throws with the file path when a project has no group', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.project, 'no-group.md', [
+      'title: "No Group"',
+      'date: 2026-01-01',
+      'image: "/x.webp"',
+      'tags: ["CLI Utilities"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('group');
+  });
+
+  it('throws naming the offending group value and the valid options (project)', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.project, 'bad-group.md', [
+      'title: "Bad Group"',
+      'date: 2026-01-01',
+      'image: "/x.webp"',
+      'group: "otro"',
+      'tags: ["CLI Utilities"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('otro');
+    expect(message).toContain('scripts');
+    expect(message).toContain('automatizaciones');
+    expect(message).toContain('herramientas');
+  });
+
+  it('throws when a project has no tags or an empty tags list', () => {
+    const source = makeTempSource();
+    const noTagsPath = writeFlat(source.project, 'no-tags.md', [
+      'title: "No Tags"',
+      'date: 2026-01-01',
+      'image: "/x.webp"',
+      'group: "scripts"',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(noTagsPath);
+
+    const emptyTagsRoot = makeTempSource();
+    const emptyTagsPath = writeFlat(emptyTagsRoot.project, 'empty-tags.md', [
+      'title: "Empty Tags"',
+      'date: 2026-01-01',
+      'image: "/x.webp"',
+      'group: "scripts"',
+      'tags: []',
+    ]);
+
+    let emptyMessage = '';
+    try {
+      generateIndex(emptyTagsRoot);
+    } catch (error) {
+      emptyMessage = (error as Error).message;
+    }
+
+    expect(emptyMessage).toContain(emptyTagsPath);
+  });
+
+  it('throws naming the file and the offending tag when a project tag is outside PROJECT_TAGS', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.project, 'bad-tag.md', [
+      'title: "Bad Tag"',
+      'date: 2026-01-01',
+      'image: "/x.webp"',
+      'group: "scripts"',
+      'tags: ["Not A Project Tag"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('Not A Project Tag');
+  });
+
+  it('throws with the file path when a certificate has no group', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.certificate, 'no-group.md', [
+      'title: "No Group"',
+      'order: 1',
+      'image: "/x.webp"',
+      'description: "d"',
+      'tags: ["Networking"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('group');
+  });
+
+  it('throws naming the offending group value and the valid options (certificate)', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.certificate, 'bad-group.md', [
+      'title: "Bad Group"',
+      'order: 1',
+      'image: "/x.webp"',
+      'description: "d"',
+      'group: "otro"',
+      'tags: ["Networking"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('otro');
+    expect(message).toContain('universidad');
+    expect(message).toContain('hack4u');
+    expect(message).toContain('cisco');
+  });
+
+  it('throws when a certificate has no tags or an empty tags list', () => {
+    const source = makeTempSource();
+    const noTagsPath = writeFlat(source.certificate, 'no-tags.md', [
+      'title: "No Tags"',
+      'order: 1',
+      'image: "/x.webp"',
+      'description: "d"',
+      'group: "hack4u"',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(noTagsPath);
+
+    const emptyTagsRoot = makeTempSource();
+    const emptyTagsPath = writeFlat(emptyTagsRoot.certificate, 'empty-tags.md', [
+      'title: "Empty Tags"',
+      'order: 1',
+      'image: "/x.webp"',
+      'description: "d"',
+      'group: "hack4u"',
+      'tags: []',
+    ]);
+
+    let emptyMessage = '';
+    try {
+      generateIndex(emptyTagsRoot);
+    } catch (error) {
+      emptyMessage = (error as Error).message;
+    }
+
+    expect(emptyMessage).toContain(emptyTagsPath);
+  });
+
+  it('throws naming the file and the offending tag when a certificate tag is outside CERTIFICATE_TAGS', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.certificate, 'bad-tag.md', [
+      'title: "Bad Tag"',
+      'order: 1',
+      'image: "/x.webp"',
+      'description: "d"',
+      'group: "hack4u"',
+      'tags: ["Not A Certificate Tag"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('Not A Certificate Tag');
+  });
+
+  it('rejects a project tag from the certificate vocabulary (vocabularies are per-kind)', () => {
+    const source = makeTempSource();
+    const filePath = writeFlat(source.project, 'cert-tag.md', [
+      'title: "Cert Tag"',
+      'date: 2026-01-01',
+      'image: "/x.webp"',
+      'group: "scripts"',
+      'tags: ["Incident Response"]',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('Incident Response');
+  });
+
+  it('indexes a fully valid project carrying its group and tags', () => {
+    const source = makeTempSource();
+    writeFlat(source.project, 'recon-tool.md', [
+      'title: "Recon Tool"',
+      'date: 2026-03-03',
+      'image: "/projects/recon-tool/media/cover.webp"',
+      'group: "herramientas"',
+      'tags:',
+      '  - Recon',
+      '  - OSINT',
+    ]);
+
+    const index = generateIndex(source);
+
+    expect(index).toHaveLength(1);
+    expect(index[0].kind).toBe('project');
+    expect(index[0].group).toBe('herramientas');
+    expect(index[0].tags).toEqual(['Recon', 'OSINT']);
+    expect(index[0].slug).toBe('recon-tool');
+  });
+
+  it('indexes a fully valid certificate carrying its group and tags', () => {
+    const source = makeTempSource();
+    writeFlat(source.certificate, 'oscp.md', [
+      'title: "OSCP"',
+      'order: 1',
+      'image: "/certificates/oscp/media/cover.webp"',
+      'description: "Offensive Security"',
+      'group: "hack4u"',
+      'tags:',
+      '  - Web Security',
+      '  - Systems',
+    ]);
+
+    const index = generateIndex(source);
+
+    expect(index).toHaveLength(1);
+    expect(index[0].kind).toBe('certificate');
+    expect(index[0].group).toBe('hack4u');
+    expect(index[0].tags).toEqual(['Web Security', 'Systems']);
+    expect(index[0].slug).toBe('oscp');
+  });
+
+  it('skips drafts before validating group and tags (a draft needs no metadata)', () => {
+    const source = makeTempSource();
+    writeFlat(source.project, 'a-draft-project.md', ['draft: true', 'group: "otro"', 'tags: []']);
+    writeFlat(source.certificate, 'b-draft-certificate.md', ['draft: true']);
+
+    expect(generateIndex(source)).toEqual([]);
   });
 });
 

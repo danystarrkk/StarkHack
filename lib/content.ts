@@ -1,9 +1,11 @@
 import { parseFrontmatter } from './frontmatter.js';
+import { CERTIFICATE_GROUPS, PROJECT_GROUPS } from './content-kinds.js';
 import {
   ContentDoc,
   ContentIndexItem,
   ContentKind,
   Frontmatter,
+  GroupStats,
   WriteupIndexItem,
   WriteupContent,
   PlatformStats,
@@ -46,10 +48,34 @@ export const fetchIndex = async (): Promise<WriteupIndexItem[]> => {
   return (await fetchIndexByKind('writeup')) as WriteupIndexItem[];
 };
 
-// All project entries (flat kind: /projects/<slug>.md, no platform level).
-export const getProjects = async (): Promise<ContentIndexItem[]> => {
-  return fetchIndexByKind('project');
+// All project entries (flat kind: /projects/<slug>.md, no platform level),
+// optionally filtered to exactly one project group.
+export const getProjects = async (group?: string): Promise<ContentIndexItem[]> => {
+  const projects = await fetchIndexByKind('project');
+  return group === undefined ? projects : projects.filter((item) => item.group === group);
 };
+
+// Group stats of one content kind, in the kind's canonical group order and
+// INCLUDING groups with count 0: the frontend renders one stable section per
+// canonical group regardless of which groups currently hold content.
+const groupStats = async (
+  kind: ContentKind,
+  canonicalGroups: readonly string[]
+): Promise<GroupStats[]> => {
+  const items = await fetchIndexByKind(kind);
+  return canonicalGroups.map((id) => ({
+    id,
+    count: items.filter((item) => item.group === id).length,
+  }));
+};
+
+// All project groups in PROJECT_GROUPS canonical order, with counts.
+export const getProjectGroups = async (): Promise<GroupStats[]> =>
+  groupStats('project', PROJECT_GROUPS);
+
+// All certificate groups in CERTIFICATE_GROUPS canonical order, with counts.
+export const getCertificateGroups = async (): Promise<GroupStats[]> =>
+  groupStats('certificate', CERTIFICATE_GROUPS);
 
 // All certificate entries, sorted ascending by `order` (the display order).
 export const getCertificates = async (): Promise<ContentIndexItem[]> => {

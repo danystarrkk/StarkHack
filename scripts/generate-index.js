@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { parseFrontmatter } from "../lib/frontmatter.js";
-import { assertValidTags } from "../lib/taxonomy.js";
-import { KINDS, missingFields } from "../lib/content-kinds.js";
+import { assertRequiredTags, assertValidTags } from "../lib/taxonomy.js";
+import { KINDS, assertValidGroup, missingFields } from "../lib/content-kinds.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -147,9 +147,17 @@ export function generateIndex(source) {
       // skip drafts reales (antes de validar: un draft sin publicar no necesita metadata)
       if (data.draft === true) continue;
 
-      // Taxonomía cerrada de tags: por ahora solo los writeups la llevan
-      // (lib/taxonomy.js la define para writeups).
-      if (kind === "writeup") assertValidTags(data.tags, filePath);
+      // Taxonomías cerradas por kind (fail-loud con filePath, después del
+      // skip de drafts: un draft sin publicar no necesita metadata):
+      // - writeup: tags opcionales, ⊆ TAGS.
+      // - project/certificate: `group` obligatorio de la lista del kind y
+      //   tags ≥1 del vocabulario propio del kind.
+      if (kind === "writeup") {
+        assertValidTags(data.tags, filePath);
+      } else {
+        assertValidGroup(data.group, kind, filePath);
+        assertRequiredTags(data.tags, kind, filePath);
+      }
 
       const missing = missingFields(data, kind);
       if (missing.length > 0) {

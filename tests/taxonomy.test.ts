@@ -4,7 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { parseFrontmatter } from '../lib/frontmatter.js';
-import { assertValidTags, TAGS } from '../lib/taxonomy.js';
+import { assertValidTags, CERTIFICATE_TAGS, PROJECT_TAGS, TAGS } from '../lib/taxonomy.js';
+import { CERTIFICATE_GROUPS, KINDS, PROJECT_GROUPS } from '../lib/content-kinds.js';
 import { generateIndex } from '../scripts/generate-index.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -164,6 +165,117 @@ describe('assertValidTags', () => {
     expect(() => assertValidTags('SQL Injection', 'ctx')).toThrow(Error);
     expect(() => assertValidTags([''], 'ctx')).toThrow(Error);
     expect(() => assertValidTags([' SQL Injection'], 'ctx')).toThrow(Error);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-kind classifiers and tag vocabularies (approved extension).
+//
+// Groups are kind STRUCTURE and live in lib/content-kinds.js; tag vocabularies
+// live in lib/taxonomy.js next to the writeup TAGS. Every list below is the
+// approved vocabulary VERBATIM (approved order, not alphabetical).
+// ---------------------------------------------------------------------------
+
+const APPROVED_PROJECT_TAGS = [
+  'CLI Utilities',
+  'Recon',
+  'OSINT',
+  'Scanning',
+  'Networking',
+  'Web',
+  'Cryptography',
+  'Parsers',
+  'Integrations',
+  'Reporting',
+  'Databases',
+];
+
+const APPROVED_CERTIFICATE_TAGS = [
+  'Networking',
+  'Cloud',
+  'Forensics',
+  'Web Security',
+  'Cryptography',
+  'Systems',
+  'Incident Response',
+  'Auditing',
+];
+
+const APPROVED_PROJECT_GROUPS = ['scripts', 'automatizaciones', 'herramientas'];
+const APPROVED_CERTIFICATE_GROUPS = ['universidad', 'hack4u', 'cisco'];
+
+const NEW_LISTS: Array<[string, readonly string[]]> = [
+  ['PROJECT_TAGS', PROJECT_TAGS],
+  ['CERTIFICATE_TAGS', CERTIFICATE_TAGS],
+  ['PROJECT_GROUPS', PROJECT_GROUPS],
+  ['CERTIFICATE_GROUPS', CERTIFICATE_GROUPS],
+];
+
+const valuesInCommon = (a: readonly string[], b: readonly string[]): string[] =>
+  a.filter((value) => b.includes(value));
+
+describe('per-kind group lists and tag vocabularies', () => {
+  it('holds exactly the approved values, in the approved order', () => {
+    expect(PROJECT_TAGS).toEqual(APPROVED_PROJECT_TAGS);
+    expect(CERTIFICATE_TAGS).toEqual(APPROVED_CERTIFICATE_TAGS);
+    expect(PROJECT_GROUPS).toEqual(APPROVED_PROJECT_GROUPS);
+    expect(CERTIFICATE_GROUPS).toEqual(APPROVED_CERTIFICATE_GROUPS);
+  });
+
+  it.each(NEW_LISTS)('%s has no duplicates, empty or whitespace-padded entries', (_name, list) => {
+    expect(new Set(list).size).toBe(list.length);
+    expect(list.filter((entry) => entry.trim() === '' || entry !== entry.trim())).toEqual([]);
+    expect(list.every((entry) => typeof entry === 'string')).toBe(true);
+  });
+
+  it('keeps every group list disjoint from every tag vocabulary and from the other group list', () => {
+    // The two group lists are different classifiers (project categories vs.
+    // certificate issuers): project groups are NOT certificate groups.
+    expect(valuesInCommon(PROJECT_GROUPS, CERTIFICATE_GROUPS)).toEqual([]);
+    expect(PROJECT_GROUPS).not.toEqual(CERTIFICATE_GROUPS);
+
+    // Groups never double as tags, and the writeup TAGS never leak into the
+    // other kinds' vocabularies.
+    const tagVocabularies: Array<[string, readonly string[]]> = [
+      ['TAGS', TAGS],
+      ['PROJECT_TAGS', PROJECT_TAGS],
+      ['CERTIFICATE_TAGS', CERTIFICATE_TAGS],
+    ];
+    for (const groups of [PROJECT_GROUPS, CERTIFICATE_GROUPS]) {
+      for (const [, tags] of tagVocabularies) {
+        expect(valuesInCommon(groups, tags)).toEqual([]);
+      }
+    }
+    expect(valuesInCommon(TAGS, PROJECT_TAGS)).toEqual([]);
+    expect(valuesInCommon(TAGS, CERTIFICATE_TAGS)).toEqual([]);
+  });
+
+  it('keeps PROJECT_TAGS and CERTIFICATE_TAGS as independent vocabularies', () => {
+    // NOTE: the two approved vocabularies legitimately share the words
+    // 'Networking' and 'Cryptography'; that overlap is pinned verbatim below.
+    // They are still independent lists (own order, own length, own identity).
+    expect(valuesInCommon(PROJECT_TAGS, CERTIFICATE_TAGS)).toEqual(['Networking', 'Cryptography']);
+    expect(PROJECT_TAGS).not.toEqual(CERTIFICATE_TAGS);
+    expect(PROJECT_TAGS).not.toBe(CERTIFICATE_TAGS);
+  });
+});
+
+describe('KINDS wiring of groups and tag vocabularies', () => {
+  it('declares each kind\'s own group list and tag vocabulary', () => {
+    expect(KINDS.writeup.tags).toEqual([...TAGS]);
+    expect(KINDS.writeup.groups).toBeNull();
+    expect(KINDS.project.groups).toEqual(APPROVED_PROJECT_GROUPS);
+    expect(KINDS.project.tags).toEqual(APPROVED_PROJECT_TAGS);
+    expect(KINDS.certificate.groups).toEqual(APPROVED_CERTIFICATE_GROUPS);
+    expect(KINDS.certificate.tags).toEqual(APPROVED_CERTIFICATE_TAGS);
+  });
+
+  it('shares no list between kinds (distinct arrays, no cross-kind reuse)', () => {
+    expect(KINDS.project.groups).not.toBe(KINDS.certificate.groups);
+    expect(KINDS.project.tags).not.toBe(KINDS.certificate.tags);
+    expect(KINDS.writeup.tags).not.toBe(KINDS.project.tags);
+    expect(KINDS.writeup.tags).not.toBe(KINDS.certificate.tags);
+    expect(KINDS.project.groups).not.toEqual(KINDS.certificate.groups);
   });
 });
 
