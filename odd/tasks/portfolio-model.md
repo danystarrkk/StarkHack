@@ -146,3 +146,19 @@ exactamente sus campos actuales, más `kind`.
   reemplazando el viejo. Ahí se detiene para afinar.
 - Fase 3 pendiente: contenido real de proyectos y certificados siguiendo
   la convención ya validada (`.md` + `media/` + campos requeridos por kind).
+
+## Review nativo de esta fase: NO EJECUTADO (decisión humana)
+
+- Preflight fallido en `review.start` con **`lens_context_budget_exceeded`**
+  (`mutation_performed: false`, `next_action: stop`, `retry_safe: true`):
+  no se creó autoridad de review, no hay nada que reparar.
+- **Causa estructural**: el candidato se mide contra `base_ref = main`, así
+  que mientras la pila no se fusione cada review incluye los 788 renames de
+  imagen, `package-lock.json` y todo lo acumulado. Repetir el intento falla
+  siempre igual.
+- Opciones ofrecidas: slice con `baseRef` explícito (solo esta fase, 11
+  archivos), dejarlo sin revisar, o fusionar a main para reducir el
+  candidato futuro.
+- **Decisión del humano: dejarlo sin revisar.** Respaldado por 126/126
+  tests, `tsc` y `build` en verde, `index.json` byte idéntico salvo `kind`,
+  y cero archivos UI tocados.
