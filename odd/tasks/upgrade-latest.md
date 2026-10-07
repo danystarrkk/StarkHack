@@ -96,3 +96,22 @@ Gate por tramo: `npm test` (169) + `npx tsc --noEmit` + `npm run build`.
   (semántica TS5.8 preservada); activar `strict` + `@types/react` es
   trabajo propio de la fase del frontend. `vite.config.ts` dejó de usar
   `__dirname` (aviso de Vite 8 resuelto).
+
+## Review de la actualización: APPROVED
+
+- Slice con `baseRef = 8bcadb3` (24 archivos, sin imágenes) → linaje
+  `review-5ce910236858d553`, target `sha256:81f00070…`, **`approved`**,
+  autoridad quemada (`gentle-ai.review-acknowledged/v1`).
+- Tres hallazgos admisibles y su disposición (**decisión humana: atacar 1 y
+  2, dejar strict como deuda**):
+  1. `R3-blank-frontmatter-guard-untested` (WARNING) — el comportamiento
+     ya era correcto (verificado antes de tocar nada); faltaba cobertura
+     del bloque `---\n\n---`. Test añadido. **Sin RED: era un hueco de
+     cobertura, no un bug, y no se inventa evidencia.**
+  2. `R3-js-yaml-pin-removed` (SUGGESTIÓN) — el pin exacto de `js-yaml`
+     (antes `4.1.0` sin caret) se había perdido al pasar a `^5.4.3`.
+     Repineado a `5.4.3` exacto: es el parser de todo el frontmatter.
+  3. `R3-strict-false-ts7` (WARNING) — decisión propia documentada arriba;
+     **se mantiene como deuda de la Fase 2** por orden humana.
+- Resultado: **170/170 tests**, `tsc` 0, `build` 0, `npm audit` → **0
+  vulnerabilidades** (las mejoras de versión limpiaron las 10 previas).

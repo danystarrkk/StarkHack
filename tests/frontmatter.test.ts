@@ -104,6 +104,15 @@ describe('parseFrontmatter', () => {
     expect(content).toBe('body stays\n');
   });
 
+  it('returns empty data when the frontmatter block is completely empty', () => {
+    const text = '---\n\n---\nbody stays\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe('body stays\n');
+  });
+
   it('returns empty data when the frontmatter block parses to a scalar', () => {
     const text = '---\njust a plain scalar\n---\nbody stays\n';
 
