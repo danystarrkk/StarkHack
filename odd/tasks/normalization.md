@@ -106,13 +106,40 @@ public/writeups/hackmyvm/
       = "nothing to migrate"). Los 4 sitios de código actualizados.
 - [x] T7. Tests de deriva de imágenes (`tests/media.test.ts`, 6 casos, RED
       previo) + `index.json` regenerado con las portadas nuevas.
-- [ ] T8. Verificación final completa.
-- [ ] T9. Cierre: commits por unidad de trabajo y evidencia.
+- [x] T8. Verificación final completa:
+      `npm test` 91/91 · `tsc --noEmit` exit 0 · `npm run build` exit 0 ·
+      `generate-index` + `git diff --exit-code public/index.json` exit 0
+      (byte idéntico) · dry-run del migrador exit 0 · conteos 713/2/73 y
+      `public/images` GONE · exactamente los 20 tags canónicos y 4–6 tags por
+      writeup · sweep de `/images/` = **cero referencias vivas** (los únicos
+      hits son el propio `scripts/migrate-images.js`, que debe nombrar el
+      prefijo viejo para migrarlo, y la prosa histórica de este documento).
+- [x] T9. Cierre con commits por unidad de trabajo.
 
 ## Evidencia de commits
 
-- (pendiente)
+| Commit | Tareas |
+|---|---|
+| `e62b6c2` docs: plan estructural aprobado para tags e imagenes | T1 |
+| `c57dabd` feat: taxonomia cerrada de 20 tags con validacion en el generador | T2, T3 |
+| `8bfbf3d` feat: filtro por tags en el Directory | T4 |
+| `546ab32` feat: imagenes por writeup en media/ | T5, T6, T7 |
+| _(este commit)_ docs: cierre de la feature de normalizacion | T8, T9 |
+
+### Deudas / notas registradas
+
+- `tsconfig.json` sigue sin `strict`/`strictNullChecks` (deuda previa).
+- Engram caído todo el ciclo: los mirrors `odd/*/tasks` no se guardaron.
+- No hay entorno DOM para tests de componente: el filtro de tags del
+  Directory se verificó con `tsc` + `build`, no con un test de UI.
+- Pendiente humano: preview visual de 3 writeups y del Directory.
 
 ## Cierre
 
-- (pendiente)
+- Los dos cambios estructurales quedaron implementados en rama
+  `feat/normalization` (árbol limpio) con **91/91 tests**, `tsc` y `build` en
+  verde, `index.json` byte idéntico al regenerarlo y migración demostrada
+  idempotente.
+- Cada unidad cerró con su commit y con RED observado antes de la corrección
+  (tags: 86 ocurrencias fuera de lista; imágenes: 713 refs fuera de la
+  convención).
