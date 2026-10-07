@@ -1,6 +1,7 @@
 import { parseFrontmatter } from './frontmatter.js';
 import { CERTIFICATE_GROUPS, PROJECT_GROUPS } from './content-kinds.js';
 import {
+  CertificateDoc,
   ContentDoc,
   ContentIndexItem,
   ContentKind,
@@ -50,7 +51,19 @@ export const fetchIndex = async (): Promise<WriteupIndexItem[]> => {
 
 // All project entries (flat kind: /projects/<slug>.md, no platform level),
 // optionally filtered to exactly one project group.
+//
+// Fail-loud: a `group` outside PROJECT_GROUPS rejects with an Error naming the
+// offending value and every valid option (same wording family as
+// assertValidGroup), so a caller typo never looks like "this group is empty".
+// Passing undefined / omitting the argument is not a group: it returns all
+// projects (R3-unknown-group-silent-empty).
 export const getProjects = async (group?: string): Promise<ContentIndexItem[]> => {
+  if (group !== undefined && !PROJECT_GROUPS.includes(group)) {
+    const listed = PROJECT_GROUPS.map((entry) => JSON.stringify(entry)).join(', ');
+    throw new Error(
+      `Invalid project group: expected one of ${listed}, got ${JSON.stringify(group)}.`
+    );
+  }
   const projects = await fetchIndexByKind('project');
   return group === undefined ? projects : projects.filter((item) => item.group === group);
 };
@@ -121,16 +134,25 @@ export const getRecentWriteups = async (limit: number = 3): Promise<WriteupIndex
 };
 
 // Shared loader for one markdown document: fetch, parse the frontmatter with the
-// shared implementation (lib/frontmatter.js) and guarantee `slug`, `content`,
-// `title` and `date` on every path (missing title falls back to the slug, missing
-// date to today). Used by fetchWriteup, fetchProject and fetchCertificate so the
-// three fetchers cannot drift apart; fetchWriteup's observable behaviour is
-// unchanged.
+// shared implementation (lib/frontmatter.js) and guarantee `slug`, `content` and
+// `title` on every path. Used by fetchWriteup, fetchProject and fetchCertificate
+// so the three fetchers cannot drift apart.
+//
+// Date policy deliberately lives in the fetchers, not here (R3-cert-date-fabricated):
+// `date` is REQUIRED for writeups and projects, so those fetchers keep the
+// today fallback (unreachable for validated content, pinned by tests); it is
+// OPTIONAL for certificates, so fetchCertificate must never invent one.
+//
+// The title -> slug fallback STAYS for every kind, certificates included:
+// `title` is required for all three kinds, so the fallback is unreachable for
+// validated content and cannot fabricate user-supplied metadata the way a date
+// could. It keeps the shared loader uniform and `title: string` honest (a value
+// derived from the user-supplied slug always exists).
 async function fetchMarkdownDoc(
   filePath: string,
   slug: string,
   label: string
-): Promise<ContentDoc | null> {
+): Promise<CertificateDoc | null> {
   try {
     const response = await fetch(filePath);
     if (!response.ok) throw new Error("File not found");
@@ -145,10 +167,11 @@ async function fetchMarkdownDoc(
       ...data,
       slug,
       content,
-      // Required metadata is guaranteed on every path: fall back to the slug
-      // and to today's date when the frontmatter leaves either field unset.
+      // `title` is required for every kind: falling back to the slug can never
+      // fabricate metadata on validated content (see the note above).
       title: data.title ?? slug,
-      date: data.date ?? new Date().toISOString().split('T')[0],
+      // `date` is NOT set here: present frontmatter dates arrive via ...data;
+      // absent ones stay absent and the dated fetchers apply their fallback.
     };
 
   } catch (error) {
@@ -157,20 +180,30 @@ async function fetchMarkdownDoc(
   }
 }
 
+// Today's date (UTC, YYYY-MM-DD): the documented fallback for the `date` field
+// the writeup/project kinds require and validated content always supplies.
+const today = (): string => new Date().toISOString().split('T')[0];
+
 // Fetch and parse a specific writeup markdown file
 export const fetchWriteup = async (platform: string, slug: string): Promise<WriteupContent | null> => {
   const doc = await fetchMarkdownDoc(`/writeups/${platform}/${slug}.md`, slug, 'writeup');
   // platform se aplica al final: la plataforma pedida manda sobre cualquier
   // `platform:` del frontmatter (comportamiento histórico de fetchWriteup).
-  return doc ? { ...doc, platform } : null;
+  // date es obligatorio para writeups: se completa con hoy si el frontmatter no
+  // lo trae (fallback histórico, sin cambios).
+  return doc ? { ...doc, date: doc.date ?? today(), platform } : null;
 };
 
 // Fetch and parse a project markdown file (flat: /projects/<slug>.md)
 export const fetchProject = async (slug: string): Promise<ContentDoc | null> => {
-  return fetchMarkdownDoc(`/projects/${slug}.md`, slug, 'project');
+  const doc = await fetchMarkdownDoc(`/projects/${slug}.md`, slug, 'project');
+  // date es obligatorio para projects: mismo fallback de hoy que fetchWriteup.
+  return doc ? { ...doc, date: doc.date ?? today() } : null;
 };
 
-// Fetch and parse a certificate markdown file (flat: /certificates/<slug>.md)
-export const fetchCertificate = async (slug: string): Promise<ContentDoc | null> => {
+// Fetch and parse a certificate markdown file (flat: /certificates/<slug>.md).
+// Certificates do not require `date`: this NEVER fabricates one — a certificate
+// without a date in its frontmatter is returned without a date (R3-cert-date-fabricated).
+export const fetchCertificate = async (slug: string): Promise<CertificateDoc | null> => {
   return fetchMarkdownDoc(`/certificates/${slug}.md`, slug, 'certificate');
 };

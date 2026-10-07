@@ -37,12 +37,21 @@ export interface WriteupContent extends Frontmatter {
   content: string; // The raw markdown body
 }
 
-// A parsed markdown document of any kind (fetchProject / fetchCertificate).
-// The shared loader guarantees title and date exactly the way fetchWriteup does.
+// A parsed markdown document whose `date` is guaranteed (fetchWriteup /
+// fetchProject): `date` is REQUIRED for those kinds, so their fetchers keep the
+// today fallback and the required `date` here is honest.
 export interface ContentDoc extends Frontmatter {
   slug: string;
   content: string; // The raw markdown body
   order?: number; // Certificates only
+}
+
+// A parsed certificate document (fetchCertificate). Certificates do NOT require
+// `date`, and the fetcher must never invent one, so `date` is honestly optional
+// here: when the frontmatter omits it, the document carries no date at all and
+// the UI renders nothing (R3-cert-date-fabricated).
+export interface CertificateDoc extends Omit<ContentDoc, 'date'> {
+  date?: string;
 }
 
 export interface PlatformStats {

@@ -136,6 +136,51 @@ describe('getProjects / getCertificates', () => {
   });
 });
 
+describe('getCertificates ordering contract (R3-order-fallback-unproved)', () => {
+  // Deliberately interleaved, with ties and entries that carry no `order`.
+  // Contract: valid integer orders ascending; no `order` sorts after every
+  // ordered entry; ties (equal order, or several unordered) keep input order.
+  const orderingIndex: ContentIndexItem[] = [
+    { kind: 'certificate', title: 'Unordered 1', slug: 'n1', path: '/certificates/n1.md' },
+    { kind: 'certificate', title: 'Order 2', slug: 'b', path: '/certificates/b.md', order: 2 },
+    { kind: 'certificate', title: 'Order 1 first', slug: 'a1', path: '/certificates/a1.md', order: 1 },
+    { kind: 'certificate', title: 'Unordered 2', slug: 'n2', path: '/certificates/n2.md' },
+    { kind: 'certificate', title: 'Order 0', slug: 'c', path: '/certificates/c.md', order: 0 },
+    { kind: 'certificate', title: 'Order 1 second', slug: 'a2', path: '/certificates/a2.md', order: 1 },
+    { kind: 'certificate', title: 'Unordered 3', slug: 'n3', path: '/certificates/n3.md' },
+  ];
+
+  it('returns valid integer orders strictly ascending', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([
+      orderingIndex[1], orderingIndex[4], orderingIndex[2],
+    ]));
+
+    const certificates = await getCertificates();
+
+    expect(certificates.map((item) => item.slug)).toEqual(['c', 'a1', 'b']);
+    expect(certificates.map((item) => item.order)).toEqual([0, 1, 2]);
+  });
+
+  it('sorts an entry with no order after every ordered entry', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([
+      orderingIndex[0], orderingIndex[1], orderingIndex[3], orderingIndex[2],
+    ]));
+
+    const certificates = await getCertificates();
+
+    expect(certificates.map((item) => item.slug)).toEqual(['a1', 'b', 'n1', 'n2']);
+  });
+
+  it('keeps stable input order for ties and for the unordered run', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(orderingIndex));
+
+    const certificates = await getCertificates();
+
+    // a1 before a2 (equal order, input order) and n1, n2, n3 in input order.
+    expect(certificates.map((item) => item.slug)).toEqual(['c', 'a1', 'a2', 'b', 'n1', 'n2', 'n3']);
+  });
+});
+
 describe('getProjects(group?) / getProjectGroups() / getCertificateGroups()', () => {
   // Deliberately NOT in canonical order: the group accessors must impose the
   // approved canonical order (PROJECT_GROUPS / CERTIFICATE_GROUPS) themselves,
@@ -234,6 +279,20 @@ describe('getProjects(group?) / getProjectGroups() / getCertificateGroups()', ()
     expect(projects.map((item) => item.slug)).toEqual(['proj-h', 'proj-s1', 'proj-s2']);
   });
 
+  it('getProjects(unknown group) rejects loudly, naming the value and the valid options (R3-unknown-group-silent-empty)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(groupedIndex));
+
+    // A typo must never look like "this group is empty".
+    await expect(getProjects('nope')).rejects.toThrow(/nope/);
+    await expect(getProjects('nope')).rejects.toThrow(/"scripts", "automatizaciones", "herramientas"/);
+  });
+
+  it('getProjects(undefined) is not treated as an unknown group', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(groupedIndex));
+
+    await expect(getProjects(undefined)).resolves.toHaveLength(3);
+  });
+
   it('getProjectGroups() returns all 3 canonical groups in order, counts included, zero counted', async () => {
     fetchMock.mockResolvedValue(jsonResponse(groupedIndex));
 
@@ -298,6 +357,40 @@ describe('fetchProject / fetchCertificate', () => {
     expect(result?.order).toBe(3);
     expect(result?.content).toBe('\nbody\n');
     expect(result?.slug).toBe('oscp');
+  });
+
+  it('fetchCertificate never fabricates a date: no date in frontmatter means no date on the document (R3-cert-date-fabricated)', async () => {
+    const markdown =
+      '---\ntitle: "OSCP"\norder: 3\nimage: "/certificates/oscp/media/cover.webp"\ndescription: "Offensive Security"\n---\n\nbody\n';
+    fetchMock.mockResolvedValue(textResponse(markdown));
+
+    const result = await fetchCertificate('oscp');
+
+    // Certificates do not require `date`, so a document without one must carry
+    // NO date at all: the UI renders nothing instead of today's date dressed up
+    // as user-supplied metadata.
+    expect(result).not.toBeNull();
+    expect(result?.date).toBeUndefined();
+    expect(result && 'date' in result).toBe(false);
+  });
+
+  it('fetchCertificate keeps an explicit date when the frontmatter supplies one', async () => {
+    const markdown =
+      '---\ntitle: "OSCP"\ndate: 2026-04-04\norder: 3\nimage: "/certificates/oscp/media/cover.webp"\ndescription: "Offensive Security"\n---\n\nbody\n';
+    fetchMock.mockResolvedValue(textResponse(markdown));
+
+    const result = await fetchCertificate('oscp');
+
+    expect(result?.date).toBe('2026-04-04');
+  });
+
+  it('fetchProject keeps its date fallback (date is REQUIRED for projects)', async () => {
+    const markdown = '---\ntitle: "Tool"\nimage: "/projects/tool/media/cover.webp"\n---\n\nbody\n';
+    fetchMock.mockResolvedValue(textResponse(markdown));
+
+    const result = await fetchProject('tool');
+
+    expect(result?.date).toBe(new Date().toISOString().split('T')[0]);
   });
 
   it('fetchProject returns null when the response is not ok', async () => {
