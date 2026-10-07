@@ -160,19 +160,16 @@ que inventar la forma de los datos.
       tocados, 16 entradas `kind: writeup` todas con `platform`, raíces
       ausentes toleradas en doble corrida).
 - [x] T8. Cierre con commits por unidad de trabajo.
-- [ ] T9. Vocabularios: `PROJECT_TAGS` y `CERTIFICATE_TAGS` en
+- [x] T9. Vocabularios: `PROJECT_TAGS` (11) y `CERTIFICATE_TAGS` (8) en
       `lib/taxonomy.js`; `PROJECT_GROUPS` y `CERTIFICATE_GROUPS` en
-      `lib/content-kinds.js` + tests de su contrato (orden, sin duplicados,
-      contenido exacto).
-- [ ] T10. Validación en el generador (RED con fixtures): proyecto sin
-      `group`, `group` fuera de la lista, sin tags, tag desconocido;
-      certificado sin `group`, sin tags, tag desconocido.
-- [ ] T11. API: `getProjects(group?)`, `getProjectGroups()`,
-      `getCertificateGroups()` con tests (orden canónico, conteos,
-      grupo vacío, filtrado).
-- [ ] T12. Deriva extendida: todo contenido real cumple group + tags por
-      kind.
-- [ ] T13. Verificación final y cierre de la extensión.
+      `lib/content-kinds.js` + tests de contrato — RED A: 9 fallos.
+- [x] T10. Validación en el generador — RED B: 9 fallos (project sin
+      `group`, `group` desconocido, sin tags, tag ajeno; ídem certificados).
+- [x] T11. API `getProjects(group?)`, `getProjectGroups()`,
+      `getCertificateGroups()` — RED C: 5 fallos.
+- [x] T12. Deriva: `sync` exige `group` válido y `tags` ≥1 en las raíces
+      nuevas (vacua hoy: no hay contenido real todavía).
+- [x] T13. Verificación final: **PASS en las 8 verificaciones**.
 
 ## Fuera de alcance de esta fase
 
@@ -187,7 +184,9 @@ que inventar la forma de los datos.
 |---|---|
 | `e1049dc` docs: plan de la fase 1 del modelo de contenido para portfolio | T1 |
 | `7834191` feat: modelo de contenido con 3 kinds (writeup, project, certificate) | T2–T6 |
-| _(este commit)_ docs: cierre de la fase 1 | T7, T8 |
+| `9fe1278` docs: cierre de la fase 1 | T7, T8 |
+| `1f386a5` feat: grupos y tags propios por kind | T9–T12 |
+| _(este commit)_ docs: cierre de la extensión | T13 |
 
 ### Decisiones de implementación registradas
 
@@ -204,10 +203,16 @@ que inventar la forma de los datos.
 
 ## Cierre
 
-- **Fase 1 terminada**: la rama `feat/content-kinds` tiene el pipeline
-  generalizado a 3 kinds con **126/126 tests**, `tsc` y `build` en verde,
-  `index.json` byte idéntico salvo el `kind` agregado, y **cero archivos
-  UI modificados** (verificado con `git show` sobre el commit).
+- **Fase 1 + extensión de grupos/tags terminadas**: `feat/content-kinds`
+  con el pipeline de 3 kinds, vocabularios y grupos propios por kind,
+  **155/155 tests**, `tsc` y `build` en verde, `index.json` byte idéntico y
+  cero archivos UI modificados.
+- **Review**: slice A `approved` y quemado (recibo arriba); slice B con
+  imágenes aceptado por excepción humana de presupuesto (waiver, no acuse).
+
+- **Fase 1 terminada** y luego extendida: la rama `feat/content-kinds`
+  tiene el pipeline generalizado a 3 kinds (verificado con `git show` sobre
+  el commit: cero archivos UI modificados) y la extensión de grupos/tags.
 - **Siguiente paso**: Fase 2 — el humano entrega el código del frontend
   nuevo; el orquestador lo analiza, verifica e implementa de a poco
   reemplazando el viejo. Ahí se detiene para afinar.
