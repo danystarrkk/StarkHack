@@ -153,10 +153,13 @@ public/writeups/hackmyvm/
   **no se creó autoridad de review**, no hay nada que reparar ni abandonar,
   y reintentar este mismo candidato no puede funcionar (la evidencia
   congelada nunca se trunca).
-- Opción indicada por el proveedor: dividir el alcance en transacciones más
-  chicas (slices encadenados con `baseRef` explícito) o `D`.
-- **Decisión del humano: dejarlo sin revisar.** La rama queda respaldada por
-  91/91 tests, `tsc` y `build` en verde, `index.json` byte idéntico,
-  migración idempotente y sweep sin referencias vivas a `/images/`.
+- Opción ofrecida por el proveedor: dividir en transacciones más chicas
+  (slices encadenados con `baseRef` explícito) o `D`.
+- **Decisión del humano: dejarlo sin revisar**, y luego **excepción de
+  presupuesto concedida** para avanzar. Se intentó el slice con
+  `baseRef = cfe2741` → `lens_context_budget_exceeded` de nuevo: el commit
+  de imágenes (814 archivos) no cabe y todo rango que lo incluye tampoco.
+  **El tramo `e62b6c2`→`8bcadb3` queda aceptado sin acuse de review por
+  decisión del dueño** (waiver de gestión, no un review aprobado).
 - Los recordatorios de review los controla el dueño del repo:
   `gentle-ai review mode disable --scope clone` apaga el interruptor.

@@ -229,3 +229,21 @@ que inventar la forma de los datos.
 - **Decisión del humano: dejarlo sin revisar.** Respaldado por 126/126
   tests, `tsc` y `build` en verde, `index.json` byte idéntico salvo `kind`,
   y cero archivos UI tocados.
+
+## Excepción de presupuesto concedida (decisión humana)
+
+- Posteriormente el humano ordenó correr el RDD de todos modos. Se ejecutó
+  un review por slices con `baseRef` explícito:
+  - **Slice A** (`baseRef = 8bcadb3`, 13 archivos: esta fase + docs) →
+    **`approved`**, linaje `review-99d9c39dce010d50`, target
+    `sha256:1bc47ddb…`, autoridad quemada (`gentle-ai.review-acknowledged/v1`).
+    Hallazgos admisibles: `R3-flat-kind-platform-key` (WARNING,
+    `scripts/generate-index.js:163-170`), `R3-order-fallback-untested`
+    (SUGGESTIÓN, `lib/content.ts:57-61`), `R3-samedate-scan-order-tiebreak`
+    (SUGGESTIÓN, `scripts/generate-index.js:104-118`).
+  - **Slice B** (`baseRef = cfe2741`, incluye la migración de imágenes) →
+    `lens_context_budget_exceeded`, sin autoridad creada.
+- **El humano concedió excepción de presupuesto y ordenó avanzar.** El tramo
+  `e62b6c2`→`8bcadb3` (normalización + imágenes) queda **aceptado sin acuse
+  de review** por decisión del dueño del repo. Esto NO es un acuse: es un
+  waiver de gestión, y ningún documento debe citarlo como review aprobado.
