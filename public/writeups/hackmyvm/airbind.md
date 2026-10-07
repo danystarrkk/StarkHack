@@ -12,7 +12,7 @@ tags:
     "Privilege Escalation",
     "Remote Code Execution",
   ]
-image: "/images/Airbind.webp"
+image: "/writeups/hackmyvm/airbind/media/cover.webp"
 level: Medium
 ---
 
@@ -24,7 +24,7 @@ Comenzamos con la identificación de la máquina víctima mediante la herramient
 sudo arp-scan -I eth0 --localnet --ignoredups
 ```
 
-![img1](/images/Pasted%20image%2020260528080837.webp)
+![img1](/writeups/hackmyvm/airbind/media/01.webp)
 
 Podemos observar la IP de la máquina víctima, en este punto con ayuda de la herramienta ping vamos a intentar intuir el dispositivo verificando el valor de su `ttl` de la siguiente forma:
 
@@ -32,7 +32,7 @@ Podemos observar la IP de la máquina víctima, en este punto con ayuda de la he
 ping -c 1 192.168.100.111
 ```
 
-![img2](/images/Pasted%20image%2020260528081037.webp)
+![img2](/writeups/hackmyvm/airbind/media/02.webp)
 
 Tenemos un `ttl=64` esto nos dice que el sistema operativo que se está implementando posiblemente sea de base Unix.
 
@@ -42,7 +42,7 @@ Comenzamos con el escaneo con la ayuda de la herramienta **nmap**, esto para pod
 sudo nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.100.111 -oG allPorts
 ```
 
-![img3](/images/Pasted%20image%2020260528081346.webp)
+![img3](/writeups/hackmyvm/airbind/media/03.webp)
 
 Observamos en el resultado el puerto 80 abierto con el servicio `httpd` esto quiere decir una posible web. Vamos a realizar un escaneo algo más puntual contra este puerto, el objetivo es descubrir la mayor cantidad de información sobre el mismo:
 
@@ -50,7 +50,7 @@ Observamos en el resultado el puerto 80 abierto con el servicio `httpd` esto qui
 sudo nmap -p80 -sCV 192.168.100.111 -oN target
 ```
 
-![img4](/images/Pasted%20image%2020260528081805.webp)
+![img4](/writeups/hackmyvm/airbind/media/04.webp)
 
 Ya tenemos versiones más puntuales del servicio que se está implementando, así intentando buscar una vulnerabilidad conocida.
 
@@ -60,13 +60,13 @@ Iniciaremos intentando obtener información de la web con ayuda de **Whatweb** d
 whatweb http://192.168.100.111
 ```
 
-![img5](/images/Pasted%20image%2020260528082331.webp)
+![img5](/writeups/hackmyvm/airbind/media/05.webp)
 
 Podemos observar cómo la versión de Apache coincide, además tenemos el `PHPSESSID` en las cookies donde si no tiene la protección de `HttpOnly` se puede llegar a realizar un robo de credenciales, además vemos que la web tiene extensión PHP y nos especifica luego el lenguaje en realidad que es PHP esto es un punto clave a tener en cuenta si buscamos realizar algún tipo de conexión, además vemos un `PasswordField` eso quiere decir que tiene un input para contraseña por lo que se trate posiblemente de una página de login.
 
 Con esta información inicial vamos a visitar la web y ver qué nos encontramos en ella:
 
-![img6](/images/Pasted%20image%2020260528082844.webp)
+![img6](/writeups/hackmyvm/airbind/media/06.webp)
 
 Como se estaba intuyendo, es una web de tipo login y su extensión es de tipo PHP, por lo tanto, es su lenguaje por defecto. Lo primero que yo intentaría son ataques a bases de datos como SQL Injection, pero no funcionaron, así que procedemos a hacer un fuzzing de la web para intentar obtener todos los directorios expuestos, esto con ayuda de la herramienta de **Gobuster**:
 
@@ -74,12 +74,12 @@ Como se estaba intuyendo, es una web de tipo login y su extensión es de tipo PH
 gobuster dir -u http://192.168.100.111/ -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
 ```
 
-![img7](/images/Pasted%20image%2020260528083227.webp)
+![img7](/writeups/hackmyvm/airbind/media/07.webp)
 
 Podemos observar varios directorios los cuales se procedió a revisar y lo interesante está en 2 de ellos: uno es `/images` y el otro es `/db`.
 Dentro de `/images` tenemos varios directorios como veremos en la imagen pero lo más interesante es el sub directorio `/uploads`:
 
-![img8](/images/Pasted%20image%2020260528083519.webp)
+![img8](/writeups/hackmyvm/airbind/media/08.webp)
 
 Este directorio me hace pensar que dentro de la plataforma de Wallos nosotros podemos subir archivos, donde debido a la carpeta principal me hace pensar que pueden ser imágenes.
 
@@ -87,17 +87,17 @@ Este directorio me hace pensar que dentro de la plataforma de Wallos nosotros po
 
 Dentro de `/uploads` vamos a encontrar los siguientes directorios:
 
-![img9](/images/Pasted%20image%2020260528083830.webp)
+![img9](/writeups/hackmyvm/airbind/media/09.webp)
 
 Dentro de `/icons` al parecer tenemos en realidad iconos que pueden estar siendo usados en la interfaz y lo que es en `/logos` está vacío, podemos pensar que las imágenes se suben directamente a esta raíz o en cualquiera de los dos directorios.
 
 Bueno podemos pasar a `/db` para ver qué contiene su directorio:
 
-![img10](/images/Pasted%20image%2020260528084218.webp)
+![img10](/writeups/hackmyvm/airbind/media/10.webp)
 
 Como podemos observar tenemos otro archivo referente a una base de datos así que nos lo descargamos para analizarlo:
 
-![img11](/images/Pasted%20image%2020260528084450.webp)
+![img11](/writeups/hackmyvm/airbind/media/11.webp)
 
 Como vemos ya tenemos el archivo para analizarlo y con ayuda del comando `file` sacamos un poco de información de lo que es y nos detalla en realidad que es un archivo de SQLite 3 por lo tanto vamos a abrirlo para poder ver qué tiene:
 
@@ -105,7 +105,7 @@ Como vemos ya tenemos el archivo para analizarlo y con ayuda del comando `file` 
 sqlite3 wallos.db
 ```
 
-![img12](/images/Pasted%20image%2020260528084555.webp)
+![img12](/writeups/hackmyvm/airbind/media/12.webp)
 
 Procedamos a listar las tablas de la base de datos de la siguiente manera:
 
@@ -113,7 +113,7 @@ Procedamos a listar las tablas de la base de datos de la siguiente manera:
 .table
 ```
 
-![img13](/images/Pasted%20image%2020260528084709.webp)
+![img13](/writeups/hackmyvm/airbind/media/13.webp)
 
 Podemos ver todas las tablas existentes donde la de `user` llama nuestra atención por lo que procedemos de forma directa a analizarla y sacar toda su información.
 
@@ -123,13 +123,13 @@ Podemos ver todas las tablas existentes donde la de `user` llama nuestra atenci�
 select * from user;
 ```
 
-![img14](/images/Pasted%20image%2020260528084912.webp)
+![img14](/writeups/hackmyvm/airbind/media/14.webp)
 
 lo que nos interesa en este punto es observar el usuario y su contraseña que al parecer por motivos de seguridad se encuentra cifrada por lo que tenemos 2 caminos en realidad: hacer directamente un ataque de fuerza bruta al panel o a la contraseña en este caso yo realizaré primero a la contraseña usando un diccionario de contraseñas por defecto o usuales, y si no procederemos con el panel.
 
 Para este ataque de fuerza bruta vamos a usar la herramienta **john** y lo primero es guardar toda la contraseña en un archivo que lo llamaré `hash`:
 
-![img15](/images/Pasted%20image%2020260528085230.webp)
+![img15](/writeups/hackmyvm/airbind/media/15.webp)
 
 Listo ya tenemos nuestro archivo por lo que procedemos con **john** de la siguiente manera:
 
@@ -137,7 +137,7 @@ Listo ya tenemos nuestro archivo por lo que procedemos con **john** de la siguie
 john -w=/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt hash
 ```
 
-![img16](/images/Pasted%20image%2020260528111248.webp)
+![img16](/writeups/hackmyvm/airbind/media/16.webp)
 
 Como podemos observar es una contraseña por defecto y con poca seguridad.
 
@@ -145,11 +145,11 @@ Como podemos observar es una contraseña por defecto y con poca seguridad.
 
 Continuando con la explotación ya tenemos credenciales válidas y podemos pasar a intentar ingresar al panel:
 
-![img17](/images/Pasted%20image%2020260528111938.webp)
+![img17](/writeups/hackmyvm/airbind/media/17.webp)
 
 Listo ya dentro explorando un poco el panel algo que primero revisamos es ver las versiones del software para intentar buscar vulnerabilidades conocidas:
 
-![img18](/images/Pasted%20image%2020260528112044.webp)
+![img18](/writeups/hackmyvm/airbind/media/18.webp)
 
 # Explotación
 
@@ -159,7 +159,7 @@ Como podemos observar tenemos la versión de Wallos v1.11.0, vamos a hacer una b
 searchsploit wallos 1.11.0
 ```
 
-![img19](/images/Pasted%20image%2020260528112312.webp)
+![img19](/writeups/hackmyvm/airbind/media/19.webp)
 
 Lo que encontramos en realidad es una vulnerabilidad de subida de archivos y al ver RCE nos dice que mediante eso podríamos lograr una ejecución remota de comandos.
 
@@ -169,7 +169,7 @@ En este punto revisamos el archivo con la vulnerabilidad que sería de la siguie
 searchsploit -x php/webapps/51924.txt
 ```
 
-![img20](/images/Pasted%20image%2020260528112814.webp)
+![img20](/writeups/hackmyvm/airbind/media/20.webp)
 
 En este punto lo que más nos interesa son los pasos, al parecer para replicar esto y el cómo se da la vulnerabilidad es al momento de agregar una nueva suscripción. El punto es enviar un archivo `.php` que permita la ejecución de comandos pero para que se logre subir dicho archivo vamos a tener que cambiar el `Content-Type` a `image/jpeg` y luego agregar en la cabecera de la inyección `GIF89a;`, esto nos permite engañar al servidor primero diciéndole que el contenido es una imagen y luego modificando con la cabecera los magic numbers así evitando la detección de que es un archivo PHP.
 
@@ -181,55 +181,55 @@ Con esto claro, tenemos que comenzar con la modificación. Por lo tanto, vamos a
 ?>
 ```
 
-![img21](/images/Pasted%20image%2020260528113548.webp)
+![img21](/writeups/hackmyvm/airbind/media/21.webp)
 
 perfecto con nuestro archivo listo lo que vamos a hacer es capturar la petición exacta al agregar una suscripción para así poder cambiar el tipo de contenido y modificar los magic numbers, en este caso comenzamos capturando la petición original.
 
 Entonces el panel de agregar suscripción es:
 
-![img22](/images/Pasted%20image%2020260528114544.webp)
+![img22](/writeups/hackmyvm/airbind/media/22.webp)
 
 Como observamos, donde se puede subir un logo es donde se genera la vulnerabilidad, allí subimos nuestro archivo y luego damos a save para poder capturar con Burp Suite y la mandamos al repeater para comenzar a manipular:
 
-![img23](/images/Pasted%20image%2020260528114821.webp)
+![img23](/writeups/hackmyvm/airbind/media/23.webp)
 
 Lo que vamos a hacer es cambiar el tipo de contenido como se indicaba y vamos a cambiar el encabezado del archivo para que no se detecte como php.
 
 Bueno veamos cómo esto queda:
 
-![img24](/images/Pasted%20image%2020260528115200.webp)
+![img24](/writeups/hackmyvm/airbind/media/24.webp)
 
 Como podemos observar con los cambios, se envió correctamente por lo que posiblemente ya tengamos el archivo malicioso dentro.
 
 Ahora si recordamos nosotros tenemos `image/uploads` por lo que vamos a revisar si está allí:
 
-![img25](/images/Pasted%20image%2020260528115852.webp)
+![img25](/writeups/hackmyvm/airbind/media/25.webp)
 
 Como podemos observar sí tenemos en el directorio descrito un archivo PHP, intentamos cargarlo a ver si se interpreta y si nos permite la ejecución de comandos:
 
-![img26](/images/Pasted%20image%2020260528120028.webp)
+![img26](/writeups/hackmyvm/airbind/media/26.webp)
 
 Perfecto ya tenemos ejecución de comandos de forma remota, en este punto podemos realizar una reverse shell.
 
 Primero vamos a dejar el puerto 444 en escucha desde nuestra máquina atacante:
 
-![img27](/images/Pasted%20image%2020260528120735.webp)
+![img27](/writeups/hackmyvm/airbind/media/27.webp)
 
 En este punto ejecutamos la reverse shell en el navegador:
 
-![img28](/images/Pasted%20image%2020260528120936.webp)
+![img28](/writeups/hackmyvm/airbind/media/28.webp)
 
 Bueno si enviamos la petición y observamos, ya tenemos la reverse shell:
 
-![img29](/images/Pasted%20image%2020260528121029.webp)
+![img29](/writeups/hackmyvm/airbind/media/29.webp)
 
 En este punto se recomienda realizar un tratamiento a la shell para trabajar de mejor forma:
 
-![img30](/images/Pasted%20image%2020260528121441.webp)
+![img30](/writeups/hackmyvm/airbind/media/30.webp)
 
 Por último exportamos xterm:
 
-![img31](/images/Pasted%20image%2020260528121529.webp)
+![img31](/writeups/hackmyvm/airbind/media/31.webp)
 
 ya con esto podemos comenzar con el reconocimiento.
 
@@ -241,7 +241,7 @@ Comienzo identificando los usuarios del sistema operativo con ayuda del archivo 
 cat /etc/passwd | grep '.*sh'
 ```
 
-![img32](/images/Pasted%20image%2020260528122456.webp)
+![img32](/writeups/hackmyvm/airbind/media/32.webp)
 
 Podemos observar los usuarios `root` y `ubuntu`, tomando en cuenta que actualmente estamos como el usuario `www-data`, algo extra que siempre trato de hacer es verificar la IP para asegurar que estoy dentro de la máquina y no en un contenedor:
 
@@ -249,7 +249,7 @@ Podemos observar los usuarios `root` y `ubuntu`, tomando en cuenta que actualmen
 ip a
 ```
 
-![img33](/images/Pasted%20image%2020260528122816.webp)
+![img33](/writeups/hackmyvm/airbind/media/33.webp)
 
 Al parecer nos encontramos dentro de un contenedor ya que la IP a la que conectamos no es la misma IP que vemos actualmente.
 
@@ -259,15 +259,15 @@ En este punto vamos a escalar de privilegios por lo que podemos comenzar verific
 sudo -l
 ```
 
-![img34](/images/Pasted%20image%2020260528123135.webp)
+![img34](/writeups/hackmyvm/airbind/media/34.webp)
 
 En la respuesta se define que tenemos permitido la ejecución de comandos como el usuario `ubuntu` sin necesidad de ingresar contraseñas por lo tanto ejecutemos una bash:
 
-![img35](/images/Pasted%20image%2020260528123419.webp)
+![img35](/writeups/hackmyvm/airbind/media/35.webp)
 
 Perfecto, ya estamos como el usuario `ubuntu` así que vamos primero a investigar un poco dentro de su carpeta de usuario:
 
-![img36](/images/Pasted%20image%2020260528123617.webp)
+![img36](/writeups/hackmyvm/airbind/media/36.webp)
 
 No tenemos nada, así que vamos a realizar de igual forma los permisos de sudo a ver qué podemos ejecutar:
 
@@ -275,21 +275,21 @@ No tenemos nada, así que vamos a realizar de igual forma los permisos de sudo a
 sudo -l
 ```
 
-![img37](/images/Pasted%20image%2020260528123917.webp)
+![img37](/writeups/hackmyvm/airbind/media/37.webp)
 
 Lo que vemos es que podemos ejecutar sudo para cualquier cosa, vamos a realizar un sudo bash para que nos dé una bash como usuario `root` ahora:
 
-![img38](/images/Pasted%20image%2020260528124032.webp)
+![img38](/writeups/hackmyvm/airbind/media/38.webp)
 
 Ya estamos como `root` dentro del contenedor así que podemos intentar ver el contenido de su home:
 
-![img39](/images/Pasted%20image%2020260529081321.webp)
+![img39](/writeups/hackmyvm/airbind/media/39.webp)
 
 Como podemos observar ya tenemos la flag de usuario.
 
 Vemos algo más que llama la atención y es que al parecer tenemos el directorio de configuración de ssh, veamos posibles claves válidas:
 
-![img40](/images/Pasted%20image%2020260529081504.webp)
+![img40](/writeups/hackmyvm/airbind/media/40.webp)
 
 Esto es bueno ya tenemos una clave privada a usar y que podría ser válida.
 
@@ -299,7 +299,7 @@ Lo que voy a hacer en este caso primero es identificar el dispositivo principal 
 ping -c 1 10.0.3.1
 ```
 
-![img41](/images/Pasted%20image%2020260529083506.webp)
+![img41](/writeups/hackmyvm/airbind/media/41.webp)
 
 como logramos observar nos responde por lo tanto lo que quiero hacer es verificar de forma general si tengo puertos abiertos y cuáles son, esto recordando que en realidad el servicio de ssh por defecto corre en el puerto 22 pero los administradores por seguridad pueden haberlo cambiado, por lo tanto corremos un pequeño script de reconocimiento en una sola línea de la siguiente manera:
 
@@ -307,7 +307,7 @@ como logramos observar nos responde por lo tanto lo que quiero hacer es verifica
 seq 1 65535 | while read port; do timeout .2s bash -c "</dev/tcp/10.0.3.1/$port" 2>/dev/null && echo -e "Port:$port - Open"; done
 ```
 
-![img42](/images/Pasted%20image%2020260530182604.webp)
+![img42](/writeups/hackmyvm/airbind/media/42.webp)
 
 En este punto lo que podemos observar es el puerto `53` abierto lo que en realidad no me da indicios recordando que ese puerto por defecto está reservado para el DNS así que por ahora aquí no podemos hacer nada más.
 
@@ -317,11 +317,11 @@ Bueno posiblemente tengamos más dispositivos en la red, pero no mediante IPV4 s
 ping6 -I eth0 ff02::1
 ```
 
-![img43](/images/Pasted%20image%2020260530184640.webp)
+![img43](/writeups/hackmyvm/airbind/media/43.webp)
 
 Como podemos observar tenemos respuesta de varios dispositivos pero en realidad también tenemos repetidos en toda esa lista así que voy a copiar eso y a filtrar para identificar en realidad los dispositivos a los que tenemos que realizar un escaneo de puertos:
 
-![img44](/images/Pasted%20image%2020260530185103.webp)
+![img44](/writeups/hackmyvm/airbind/media/44.webp)
 
 como podemos observar nos quedamos con 3 dispositivos específicos que son:
 
@@ -335,13 +335,13 @@ En este punto vamos a realizar un escaneo a cada uno de los equipos que respondi
 nmap -p22 -6 fe80::a00:27ff:fe74:bbf3%eth0:
 ```
 
-![img45](/images/Pasted%20image%2020260530185622.webp)
+![img45](/writeups/hackmyvm/airbind/media/45.webp)
 
 perfecto ya con el dispositivo ubicado que es el `fe80::a00:27ff:fe74:bbf3%eth0:` vamos a intentar conectarnos utilizando la clave privada que encontramos en el contenedor y lo hacemos de la siguiente manera.
 
 Primero vamos a guardarla en un archivo en nuestra máquina:
 
-![img46](/images/Pasted%20image%2020260530190437.webp)
+![img46](/writeups/hackmyvm/airbind/media/46.webp)
 
 como observamos ya lo tenemos en un archivo y con los permisos correctos por lo que tratamos de generar la conexión de la siguiente manera:
 
@@ -349,15 +349,15 @@ como observamos ya lo tenemos en un archivo y con los permisos correctos por lo 
 ssh -i id_rsa root@fe80::a00:27ff:fe74:bbf3%eth0:
 ```
 
-![img47](/images/Pasted%20image%2020260530190723.webp)
+![img47](/writeups/hackmyvm/airbind/media/47.webp)
 
 perfecto ya estamos dentro y como root, veamos si encontramos la última flag:
 
-![img48](/images/Pasted%20image%2020260530190818.webp)
+![img48](/writeups/hackmyvm/airbind/media/48.webp)
 
 Listo máquina terminada.
 
-![img49](/images/Pasted%20image%2020260530190921.webp)
+![img49](/writeups/hackmyvm/airbind/media/49.webp)
 
 # Mitigaciónes
 

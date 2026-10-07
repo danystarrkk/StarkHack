@@ -30,5 +30,8 @@ Thumbs.db
 # Vitest
 .vitest/
 
+# Python
+__pycache__/
+
 # Images PNG
 temp/

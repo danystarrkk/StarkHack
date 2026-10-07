@@ -12,7 +12,7 @@ tags:
     "Privilege Escalation",
     "Remote Code Execution",
   ]
-image: "/images/Griffin.webp"
+image: "/writeups/hackmyvm/griffin/media/cover.webp"
 level: Medium
 ---
 
@@ -24,7 +24,7 @@ Vamos a comenzar con un escaneo en red con el objetivo de identificar la máquin
 arp-scan -I enss33 --localnet --ignoredups
 ```
 
-![img1](/images/Pasted%20image%2020251104163301.webp)
+![img1](/writeups/hackmyvm/griffin/media/01.webp)
 
 Como podemos observar ya tenemos la IP de la máquina víctima que es `192.168.1.67` por lo que intuiremos sistema operativo con ayuda del comando ping:
 
@@ -32,7 +32,7 @@ Como podemos observar ya tenemos la IP de la máquina víctima que es `192.168.1
 ping -c 1 192.168.1.67
 ```
 
-![img2](/images/Pasted%20image%2020251104184850.webp)
+![img2](/writeups/hackmyvm/griffin/media/02.webp)
 
 Como podemos observar tenemos un `ttl=64` por lo que podemos intuir el sistema operativo `Linux`.
 
@@ -42,7 +42,7 @@ Bueno, con esto podemos continuar realizando un pequeño escaneo con ayuda de **
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.67 -oG allPorts
 ```
 
-![img3](/images/Pasted%20image%2020251104185227.webp)
+![img3](/writeups/hackmyvm/griffin/media/03.webp)
 
 Como podemos observar tenemos los puertos `8080` y `22` abiertos. Vamos a realizar un segundo escaneo directamente a estos dos puertos para intentar obtener información sobre los mismos:
 
@@ -50,13 +50,13 @@ Como podemos observar tenemos los puertos `8080` y `22` abiertos. Vamos a realiz
 nmap -p22,8080 -sVC 192.168.1.67 -oN target
 ```
 
-![img4](/images/Pasted%20image%2020251104185603.webp)
+![img4](/writeups/hackmyvm/griffin/media/04.webp)
 
 Vemos que en la versión del puerto `22-SSH` nos habla de ser un Debian, por lo que podemos igualmente intuir un sistema operativo `Linux -> Debian`.
 
 La verdad en el escaneo no logramos observar nada más por lo que podemos directamente intentar ver la web que corre en el puerto `8080`:
 
-![img5](/images/Pasted%20image%2020251104185920.webp)
+![img5](/writeups/hackmyvm/griffin/media/05.webp)
 
 No encontramos nada absolutamente aquí y de igual forma wappalyzer no detecta nada, por lo que intentamos un escaneo con whatweb solo para ver que información extra podemos obtener:
 
@@ -64,7 +64,7 @@ No encontramos nada absolutamente aquí y de igual forma wappalyzer no detecta n
 whatweb http://192.168.1.67:8080
 ```
 
-![img6](/images/Pasted%20image%2020251104190202.webp)
+![img6](/writeups/hackmyvm/griffin/media/06.webp)
 
 Podemos observar como es que por detrás se puede estar implementando **Werkzeug** en su versión 3.1.3 y la versión de **Python** 3.9.2.
 
@@ -74,47 +74,47 @@ Bueno, como no podemos encontrar nada concreto por el momento lo que vamos a hac
 gobuster dir -u 'http://192.168.1.67:8080' -w <diccionario> -t20 -xl 164
 ```
 
-![img7](/images/Pasted%20image%2020251104193339.webp)
+![img7](/writeups/hackmyvm/griffin/media/07.webp)
 
 Como podemos observar tenemos dos rutas donde a la de `/info` si podemos acceder por lo que veamos su contenido:
 
-![img8](/images/Pasted%20image%2020251104193538.webp)
+![img8](/writeups/hackmyvm/griffin/media/08.webp)
 
 Nos indica que podemos usar `token=AlphaToken123`, podemos intentarlo en `/info` a ver si funciona:
 
-![img9](/images/Pasted%20image%2020251104193813.webp)
+![img9](/writeups/hackmyvm/griffin/media/09.webp)
 
 Vemos otro token vamos a intentar ahora con ese:
 
-![img10](/images/Pasted%20image%2020251104193840.webp)
+![img10](/writeups/hackmyvm/griffin/media/10.webp)
 
 Otro más veamos que sucede:
 
-![img11](/images/Pasted%20image%2020251104193915.webp)
+![img11](/writeups/hackmyvm/griffin/media/11.webp)
 
 Se repiten, en este punto podemos intentar lo mismo en `/debug` y veamos que obtenemos:
 
-![img12](/images/Pasted%20image%2020251104194025.webp)
+![img12](/writeups/hackmyvm/griffin/media/12.webp)
 
 # Explotación
 
 Los otros `tokens` no fueron validos, pero en este vemos que nos dice que usemos `run`, veamos que es lo que hace:
 
-![img13](/images/Pasted%20image%2020251104194501.webp)
+![img13](/writeups/hackmyvm/griffin/media/13.webp)
 
 Algo a tener en cuenta es que no funciona ninguno de los parámetros de primeras, vamos a tener que recargar la web varias veces y luego funciona.
 
 Entonces, lo que podemos hacer en este punto es generar una reverse shell de la siguiente manera:
 
-![img14](/images/Pasted%20image%2020251105133503.webp)
+![img14](/writeups/hackmyvm/griffin/media/14.webp)
 
 Ya con el puerto en escucha vamos a generar la reverse shell desde el navegador:
 
-![img15](/images/Pasted%20image%2020251105133656.webp)
+![img15](/writeups/hackmyvm/griffin/media/15.webp)
 
 Excelente ya deberíamos tener la reverse shell:
 
-![img16](/images/Pasted%20image%2020251105133735.webp)
+![img16](/writeups/hackmyvm/griffin/media/16.webp)
 
 Podemos ejecutar el tratamiento a la `TTY` para podernos mover con la mayor soltura posible:
 
@@ -125,13 +125,13 @@ stty raw -echo;fg
 reset xterm
 ```
 
-![img17](/images/Pasted%20image%2020251105133912.webp)
+![img17](/writeups/hackmyvm/griffin/media/17.webp)
 
 # Escalada de Privilegios
 
 Bueno ya como el usuario `lois` ya tenemos la flag de usuario que está en su home:
 
-![img18](/images/Pasted%20image%2020251105135228.webp)
+![img18](/writeups/hackmyvm/griffin/media/18.webp)
 
 En este punto podemos comenzar a buscar una forma de elevar privilegios.
 
@@ -141,7 +141,7 @@ Vamos a ver los puertos abiertos en el sistema:
 ss -ntlp
 ```
 
-![img19](/images/Pasted%20image%2020251105134306.webp)
+![img19](/writeups/hackmyvm/griffin/media/19.webp)
 
 Observamos que tenemos de forma interna el puerto 80 abierto.
 
@@ -149,7 +149,7 @@ Bueno, lo que vamos a hacer en este punto es jugar con la herramienta de chisel,
 
 Una vez descargado el binario vamos a tener que enviarlo a la máquina víctima, en este caso yo lo realize levantando un servidor con python3 y descargando con ayuda del comando `curl`, también podríamos usar el comando `wget`, pero la máquina no lo tiene:
 
-![img20](/images/Pasted%20image%2020251105135607.webp)
+![img20](/writeups/hackmyvm/griffin/media/20.webp)
 
 Ya con el archivo en las dos máquinas procederemos a ejecutar chisel primero en la máquina atacante de la siguiente manera:
 
@@ -157,7 +157,7 @@ Ya con el archivo en las dos máquinas procederemos a ejecutar chisel primero en
 ./chisel server --reverse -p 1234
 ```
 
-![img21](/images/Pasted%20image%2020251105135952.webp)
+![img21](/writeups/hackmyvm/griffin/media/21.webp)
 
 Ahora en la máquina víctima vamos a tener que ejecutar chisel como cliente de la siguiente manera:
 
@@ -165,34 +165,34 @@ Ahora en la máquina víctima vamos a tener que ejecutar chisel como cliente de 
 ./chisel client 192.168.1.130:1234 R:80:127.0.0.1:80
 ```
 
-![img22](/images/Pasted%20image%2020251105140048.webp)
+![img22](/writeups/hackmyvm/griffin/media/22.webp)
 
 Perfecto con esto ya nuestro puerto 80 es el puerto 80 de la máquina víctima por lo que vamos a ver que tenemos en el puerto 80:
 
-![img23](/images/Pasted%20image%2020251105140251.webp)
+![img23](/writeups/hackmyvm/griffin/media/23.webp)
 
 Vemos que tenemos otra web, pero si investigamos no vamos a obtener nada más, así que con ayuda de **Gobuster** vamos a volver a buscar otras rutas dentro de la web:
 
-![img24](/images/Pasted%20image%2020251105140528.webp)
+![img24](/writeups/hackmyvm/griffin/media/24.webp)
 
 Podemos observar una ruta `/family` vemos cual es su contenido:
 
-![img25](/images/Pasted%20image%2020251105140608.webp)
+![img25](/writeups/hackmyvm/griffin/media/25.webp)
 
 Vemos este panel para iniciar sección. Si regresamos a la web anterior nos lista algunos nombres como `peter, lois, brian` donde a diferencia de cuando usamos `lois` y nos sale:
 
-![img26](/images/Pasted%20image%2020251105140850.webp)
+![img26](/writeups/hackmyvm/griffin/media/26.webp)
 
 Con el usuario `brian` esto cambia y nos dice:
 
-![img27](/images/Pasted%20image%2020251105140928.webp)
+![img27](/writeups/hackmyvm/griffin/media/27.webp)
 
 Esto ya nos indica que el usuario es válido, pero su contraseña NO.
 
 Lo que vamos a hacer es realizar un ataque de fuerza bruta a la contraseña y para esto usare la herramienta que diseñe con python3 para este apartado y la pueden encontrar en el siguiente repo de [**GitHub**](<https://github.com/danystarrkk/Hacking-Tools/tree/main/Tools/Web%20Brute%20Force%20(Griffin)>).
 Algo que tenemos que hacer de forma extra es extraer la cookie que tenemos asignada en ese momento y lo podemos hacer con `ctrl + shift + c` y se desplegara:
 
-![img28](/images/Pasted%20image%2020251105180223.webp)
+![img28](/writeups/hackmyvm/griffin/media/28.webp)
 
 Como vemos en la parte de Storage encontraremos el `PHPSESSID` del cual necesitamos su valor, ya con esto continuemos.
 
@@ -202,25 +202,25 @@ El uso de la herramienta ya está descrito en el repositorio por lo que directam
 python3 Bruteforce.py -u http://192.168.1.130 -w /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt -U brian -c gnrou14ivh0tqme7il8h7aqihk
 ```
 
-![img29](/images/Pasted%20image%2020251105180420.webp)
+![img29](/writeups/hackmyvm/griffin/media/29.webp)
 
 Una vez que la herramienta entre en ejecución será cuestión de esperar para poder ver la contraseña correcta, recomiendo usar el diccionario de `rockyou.txt` debido a que este cuenta con la contraseña:
 
-![img30](/images/Pasted%20image%2020251105142055.webp)
+![img30](/writeups/hackmyvm/griffin/media/30.webp)
 
 Si este script te ha gustado y a sido de utilidad podrías dejar una estrellita en el repositorio.
 
 Perfecto ya tenemos la contraseña de `brian` que es `savannah`. Vamos a iniciar sesión y esto lo vamos a capturar también con BurpSuite para ver que se tramita por detrás:
 
-![img31](/images/Pasted%20image%2020251105142420.webp)
+![img31](/writeups/hackmyvm/griffin/media/31.webp)
 
 Vemos que se nos asigna un Token, este tiene una forma algo extraña por lo que vamos a pasarle a un decode a ver que nos dice:
 
-![img32](/images/Pasted%20image%2020251105142605.webp)
+![img32](/writeups/hackmyvm/griffin/media/32.webp)
 
 Vemos que nos da algunas opciones pero la válida es la que tiene `Base 58` por lo que vamos a intentar ver que es lo que contiene:
 
-![img33](/images/Pasted%20image%2020251105142716.webp)
+![img33](/writeups/hackmyvm/griffin/media/33.webp)
 
 Esto es excelente, lo que estoy viendo es una cadena en `Base64` el cómo lo identifico es sencillo y es que casi siempre si no es siempre vamos a encontrar que las cadenas en `Base64` llevan ese `==` por lo que vamos a ver que contiene esa cadena:
 
@@ -228,7 +228,7 @@ Esto es excelente, lo que estoy viendo es una cadena en `Base64` el cómo lo ide
 echo 'bWVnOmxvdmVseWZhbWlseQ==' | base64 -d ;echo
 ```
 
-![img34](/images/{DDF02666-EE84-4C6C-9D6D-7D2AF6E5C9C1}.webp)
+![img34](/writeups/hackmyvm/griffin/media/34.webp)
 
 ! Perfecto ya tenemos la contraseña del usuario `meg` por lo que en este punto podemos intentar conectarnos a la máquina como este usuario mediante `SSH` recordemos que tenemos el servicio activo:
 
@@ -236,19 +236,19 @@ echo 'bWVnOmxvdmVseWZhbWlseQ==' | base64 -d ;echo
 ssh meg@192.168.1.67
 ```
 
-![img35](/images/Pasted%20image%2020251105143101.webp)
+![img35](/writeups/hackmyvm/griffin/media/35.webp)
 
 Ya estamos como el usuario `meg` podemos comenzar a analizar con el comando `sudo -l` si tenemos algún comando que podamos ejecutar como sudo:
 
-![img36](/images/Pasted%20image%2020251105143229.webp)
+![img36](/writeups/hackmyvm/griffin/media/36.webp)
 
 vemos que el usuario `meg` puede ejecutar el comando `/usr/bin/python3 /root/game.py`, vemos que es lo que hace:
 
-![img37](/images/Pasted%20image%2020251105143318.webp)
+![img37](/writeups/hackmyvm/griffin/media/37.webp)
 
 Se queda un puerto en escucha podemos intentar conectarnos a ver que es:
 
-![img38](/images/Pasted%20image%2020251105143354.webp)
+![img38](/writeups/hackmyvm/griffin/media/38.webp)
 
 En este caso es una especie de juego, pero vamos a tener que automatizar la resolución de los mismos porque tiene que hacerse de forma rápida y en mi caso el código es el siguiente:
 
@@ -330,32 +330,32 @@ Como podemos observar asignamos un valor a cada dígito siguiente la key y este 
 
 Si lo ejecutamos vamos a ver lo siguiente:
 
-![img39](/images/Pasted%20image%2020251105143621.webp)
+![img39](/writeups/hackmyvm/griffin/media/39.webp)
 
 en este caso vemos una flag que en realidad es la contraseña del usuario peter solo lo que se encuentra dentro de los `{}`:
 
-![img40](/images/Pasted%20image%2020251105143743.webp)
+![img40](/writeups/hackmyvm/griffin/media/40.webp)
 
 Ya estamos cerca, podemos ver de igual forma si tenemos algún comando con `sudo -l` :
 
-![img41](/images/Pasted%20image%2020251105143829.webp)
+![img41](/writeups/hackmyvm/griffin/media/41.webp)
 
 Al parecer podemos ejecutar un editor llamado `meg` como usuario administrador por lo que vamos a editar el archivo de `/etc/sudoers` el objetivo es que nos permite la ejecución de sudo sin contraseña y lo vamos a editar de la siguiente manera:
 
-![img42](/images/Pasted%20image%2020251105144158.webp)
+![img42](/writeups/hackmyvm/griffin/media/42.webp)
 
 Agregamos la línea que vemos en la imagen, guardamos y salimos.
 Para que funcione vamos a salir del usuario peter y luego volvemos a ingresar y ya con eso podemos hacer un `sudo su`:
 
-![img43](/images/Pasted%20image%2020251105144629.webp)
+![img43](/writeups/hackmyvm/griffin/media/43.webp)
 
 Listo ya estamos como root y en su ruta encontraremos la flag:
 
-![img44](/images/Pasted%20image%2020251105144707.webp)
+![img44](/writeups/hackmyvm/griffin/media/44.webp)
 
 Ya con esto terminamos la Máquina:
 
-![img45](/images/{1CA373A4-ECAB-4BBE-A247-41B9B188B21B}.webp)
+![img45](/writeups/hackmyvm/griffin/media/45.webp)
 
 # Recomendaciones y Mitigaciones
 

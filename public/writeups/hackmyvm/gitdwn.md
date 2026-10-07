@@ -12,7 +12,7 @@ tags:
     "Privilege Escalation",
     "XML External Entity",
   ]
-image: "/images/gitdwn.webp"
+image: "/writeups/hackmyvm/gitdwn/media/cover.webp"
 level: Medium
 ---
 
@@ -24,7 +24,7 @@ Comenzamos con un reconocimiento para identificar la máquina víctima con ayuda
 arp-scan -I ens33 --localnet --ignoredups
 ```
 
-![img1](/images/Pasted%20image%2020260325164654.webp)
+![img1](/writeups/hackmyvm/gitdwn/media/01.webp)
 
 Se observa que la máquina cuenta con la IP `192.168.1.128`.
 
@@ -34,7 +34,7 @@ Mediante el comando `ping` y su valor de `ttl` siempre y cuando este no se haya 
 ping -c 1 192.168.1.128
 ```
 
-![img2](/images/Pasted%20image%2020260325164851.webp)
+![img2](/writeups/hackmyvm/gitdwn/media/02.webp)
 
 Como podemos observar un `ttl=64` nos habla de un posible sistema Unix o basado en él.
 
@@ -44,7 +44,7 @@ Ya podemos comenzar con un escaneo de puertos mediante `nmap` primero para ident
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.128 -oG allPorts
 ```
 
-![img3](/images/Pasted%20image%2020260325165055.webp)
+![img3](/writeups/hackmyvm/gitdwn/media/03.webp)
 
 Tenemos el puerto `22` y `80` abiertos así que con ayuda de `nmap` vamos a intentar obtener más información sobre ellos:
 
@@ -52,7 +52,7 @@ Tenemos el puerto `22` y `80` abiertos así que con ayuda de `nmap` vamos a inte
 nmap -p22,80 -sVC 192.168.1.128 -oN target
 ```
 
-![img4](/images/Pasted%20image%2020260325165331.webp)
+![img4](/writeups/hackmyvm/gitdwn/media/04.webp)
 
 Obtenemos nuevamente los servicios y su versión que son `ssh` y `http` corriendo.
 
@@ -62,11 +62,11 @@ Lo primero será identificar un poco más el puerto `80` con ayuda de `whatweb`:
 whatweb http://192.168.1.128
 ```
 
-![img5](/images/Pasted%20image%2020260325165541.webp)
+![img5](/writeups/hackmyvm/gitdwn/media/05.webp)
 
 Como observamos tenemos `apache v2.4.62` al parecer corre en un Debian pero es algo que no podemos asegurar y por el título al parecer es un login. Veámoslo en el navegador para tener algo mucho más visual:
 
-![img6](/images/Pasted%20image%2020260325165729.webp)
+![img6](/writeups/hackmyvm/gitdwn/media/06.webp)
 
 Como observamos es un login y pues podemos intentar diferentes métodos de bypass pero de primeras no se logra nada desde la web.
 
@@ -74,17 +74,17 @@ Veamos cómo es que la petición se está tramitando con ayuda de Burp Suite.
 
 La petición se tramitó con las credenciales `test` y `test`:
 
-![img7](/images/Pasted%20image%2020260325170140.webp)
+![img7](/writeups/hackmyvm/gitdwn/media/07.webp)
 
 Pero si revisamos en el Burp Suite:
 
-![img8](/images/Pasted%20image%2020260325170220.webp)
+![img8](/writeups/hackmyvm/gitdwn/media/08.webp)
 
 Es una estructura muy extraña la cual debe tener algún proceso de encriptación que lo deja de esa forma.
 
 Si analizamos un poco el código fuente de la web vamos a encontrarnos con lo siguiente:
 
-![img9](/images/Pasted%20image%2020260325170509.webp)
+![img9](/writeups/hackmyvm/gitdwn/media/09.webp)
 
 Como observamos tenemos un script de `login.js` el cual vamos a traernos a local para analizar su código:
 
@@ -92,15 +92,15 @@ Como observamos tenemos un script de `login.js` el cual vamos a traernos a local
 curl http://192.168.1.128/login.js -o login.js
 ```
 
-![img10](/images/Pasted%20image%2020260325170736.webp)
+![img10](/writeups/hackmyvm/gitdwn/media/10.webp)
 
 Con el archivo en local vamos a tratar de entender qué hace, se va a registrar lo más relevante del script.
 
-![img11](/images/Pasted%20image%2020260325171014.webp)
+![img11](/writeups/hackmyvm/gitdwn/media/11.webp)
 
 Lo primero es la clave pública, esta puede estar siendo utilizada para algún tipo de autenticación o encriptación, luego observamos que dentro de la función se recuperan los valores de `username` y `password`.
 d
-![img12](/images/Pasted%20image%2020260325171303.webp)
+![img12](/writeups/hackmyvm/gitdwn/media/12.webp)
 
 Aquí tenemos lo más importante de manera general lo que vemos es un cifrado híbrido donde:
 
@@ -108,27 +108,27 @@ Aquí tenemos lo más importante de manera general lo que vemos es un cifrado h�
 - Lo siguiente es el cifrado simétrico utilizando las credenciales, el `aeskey` y también el `iv` para por último dejarlo en base64.
 - Ya lo último es el cifrado asimétrico donde tomamos tanto la `aeskey` ya en base64 y el `iv` también en base64 y los ciframos de forma asimétrica con el objetivo de tramitarlo de forma segura.
 
-![img13](/images/Pasted%20image%2020260325200724.webp)
+![img13](/writeups/hackmyvm/gitdwn/media/13.webp)
 
 También tenemos el cómo se tramitan las peticiones y es la estructura con la que nos encontramos en Burp Suite.
 
-![img14](/images/Pasted%20image%2020260325200911.webp)
+![img14](/writeups/hackmyvm/gitdwn/media/14.webp)
 
 Por último vemos una ruta `/dashboard.html` y pues parece ser que necesita un `token` de sesión para entrar en la misma.
 
 Con esto claro no veo forma de romper el cifrado pero y si intentamos ver si este login cuenta con algún límite de intentos:
 
-![img15](/images/Pasted%20image%2020260325201225.webp)
+![img15](/writeups/hackmyvm/gitdwn/media/15.webp)
 
 Lo he intentado múltiples veces y pues no parece bloquearse.
 
 Podríamos directamente intentar un ataque de fuerza bruta pero antes miremos la ruta de `dashboard.html`:
 
-![img16](/images/Pasted%20image%2020260325201448.webp)
+![img16](/writeups/hackmyvm/gitdwn/media/16.webp)
 
 Por un momento algo diferente carga y luego nos envía de nuevo al login, vamos a intentarlo desde el Burp Suite para poder pausar esa carga:
 
-![img17](/images/Pasted%20image%2020260325201630.webp)
+![img17](/writeups/hackmyvm/gitdwn/media/17.webp)
 
 Como observamos sí, al ingresar al `dashboard.html` parece ser que no verifica primero si el acceso es válido sino que devuelve primero el HTML y al terminar de cargarlo verifica el `token` que no existe y genera la redirección esto lo conocemos como un Broken Access Control.
 
@@ -260,35 +260,35 @@ python3 bruteForce.py <dictionary>
 
 Si el diccionario contiene la contraseña veremos lo siguiente:
 
-![img18](/images/Pasted%20image%2020260326222106.webp)
+![img18](/writeups/hackmyvm/gitdwn/media/18.webp)
 
 La contraseña es `hotdog` para el usuario `admin`, con esto vamos a intentar ingresar:
 
-![img19](/images/Pasted%20image%2020260326222252.webp)
+![img19](/writeups/hackmyvm/gitdwn/media/19.webp)
 
 Tenemos un panel donde al parecer el objetivo es subir archivos de tipo XML, en este caso vamos a subir uno de prueba solo para poder capturar la petición con ayuda de Burp Suite y analizarlo:
 
-![img20](/images/Pasted%20image%2020260326223115.webp)
+![img20](/writeups/hackmyvm/gitdwn/media/20.webp)
 
 Se envía el contenido del archivo `test.xml` para posteriormente representarse en en la respuesta.
 
 En este punto al ver que es un archivo `xml` y el cómo se tramita se intenta **XML External Entity Injection**:
 
-![img21](/images/Pasted%20image%2020260326225352.webp)
+![img21](/writeups/hackmyvm/gitdwn/media/21.webp)
 
 Vemos que no es autorizado y muchas de las formas usuales no funcionarán.
 
 Algo que puede estar pasando en realidad es que el filtro que impide el uso de entidades está aplicado solo a `utf-8`, por lo tanto podemos intentar cambiarlo a `utf-16` para ver si es válido, para esto lo vamos a realizar desde python:
 
-![img22](/images/Pasted%20image%2020260326231711.webp)
+![img22](/writeups/hackmyvm/gitdwn/media/22.webp)
 
 Comenzamos construyendo la petición de forma normal y valido que funciona.
 
-![img23](/images/Pasted%20image%2020260326231844.webp)
+![img23](/writeups/hackmyvm/gitdwn/media/23.webp)
 
 Como observamos pasamos el formato a `utf-16` donde se tiene una respuesta normal así que intentamos el XML External Entity Injection:
 
-![img24](/images/Pasted%20image%2020260326232205.webp)
+![img24](/writeups/hackmyvm/gitdwn/media/24.webp)
 
 La inyección fue exitosa, a partir de allí se mejoró un poco el código quedando en su versión final para su uso:
 
@@ -344,7 +344,7 @@ Bueno el script es sencillo de usar y sería de la siguiente forma:
 python3 xxeInjection.py /etc/passwd
 ```
 
-![img25](/images/Pasted%20image%2020260327164935.webp)
+![img25](/writeups/hackmyvm/gitdwn/media/25.webp)
 
 Podemos ver archivos de la máquina, en este caso voy a intentar ver el contenido del archivo `/etc/passwd` para luego filtrar el output por líneas donde terminen en `sh`, el objetivo es identificar potenciales usuarios:
 
@@ -352,7 +352,7 @@ Podemos ver archivos de la máquina, en este caso voy a intentar ver el contenid
 python3 xxeInjection.py /etc/passwd | grep ".*sh$"
 ```
 
-![img26](/images/Pasted%20image%2020260327165135.webp)
+![img26](/writeups/hackmyvm/gitdwn/media/26.webp)
 
 Podemos observar que son tres `root, git y bilir`, como tenemos el puerto 22 abierto lo siguiente que se me ocurre es buscar por posibles claves para intentar una conexión por ssh en los directorios de cada usuario, al no conocer el nombre de dicha llave se usarán los más comunes y los probaremos de la siguiente manera:
 
@@ -360,11 +360,11 @@ Podemos observar que son tres `root, git y bilir`, como tenemos el puerto 22 abi
 cat ssh-priv-key-loot-common.txt| while read line; do echo "name: ${line}"; python3 xxeInjection.py /home/bilir/.ssh/${line} | grep -v "not recovered"; done
 ```
 
-![img27](/images/Pasted%20image%2020260327171608.webp)
+![img27](/writeups/hackmyvm/gitdwn/media/27.webp)
 
 Observamos como se prueba uno por uno varios nombres usuales al crear claves, en caso no logramos encontrar nada para el usuario `bilir` así que lo ejecutamos ahora para el usuario `git`:
 
-![img28](/images/Pasted%20image%2020260327172008.webp)
+![img28](/writeups/hackmyvm/gitdwn/media/28.webp)
 
 Logramos obtener la clave privada del usuario `git`, podemos intentar almacenarla en un archivo y usarla para intentar una conexión:
 
@@ -372,7 +372,7 @@ Logramos obtener la clave privada del usuario `git`, podemos intentar almacenarl
 ssh -i idrsa git@192.168.1.128
 ```
 
-![img29](/images/Pasted%20image%2020260327172553.webp)
+![img29](/writeups/hackmyvm/gitdwn/media/29.webp)
 
 Algo extra es no olvidar la asignación del permiso `600` al archivo donde almacenamos la clave privada para que sea válido.
 
@@ -382,7 +382,7 @@ En este punto algo que podemos intentar es un ataque de fuerza bruta a la clave 
 ssh2john idrsa > hash
 ```
 
-![img30](/images/Pasted%20image%2020260327173634.webp)
+![img30](/writeups/hackmyvm/gitdwn/media/30.webp)
 
 Ya con esto creamos el archivo mediante el cual realizaremos el ataque de fuerza bruta, por lo tanto usando el diccionario de preferencia el comando sería el siguiente:
 
@@ -390,7 +390,7 @@ Ya con esto creamos el archivo mediante el cual realizaremos el ataque de fuerza
 john --wordlist=/usr/share/seclists/Passwords/Common-Credentials/xato-net-10-million-passwords-1000000.txt hash
 ```
 
-![img31](/images/Pasted%20image%2020260327173912.webp)
+![img31](/writeups/hackmyvm/gitdwn/media/31.webp)
 
 Como observamos obtuvimos la contraseña la cual es `logitech` con esto podemos intentar un inicio de sesión nuevamente:
 
@@ -398,13 +398,13 @@ Como observamos obtuvimos la contraseña la cual es `logitech` con esto podemos 
 ssh -i idrsa git@192.168.1.128
 ```
 
-![img32](/images/Pasted%20image%2020260327174044.webp)
+![img32](/writeups/hackmyvm/gitdwn/media/32.webp)
 
 # Escalada de privilegios
 
 Ya estamos dentro.
 
-![img33](/images/Pasted%20image%2020260329210332.webp)
+![img33](/writeups/hackmyvm/gitdwn/media/33.webp)
 
 Podemos ver que tenemos ya la flag de usuario.
 
@@ -414,7 +414,7 @@ Comenzamos con un reconocimiento en este caso de puertos internos abiertos:
 ss -nltp
 ```
 
-![img34](/images/Pasted%20image%2020260329210515.webp)
+![img34](/writeups/hackmyvm/gitdwn/media/34.webp)
 
 Como observamos tenemos el puerto `3000` abierto, lo que podemos hacer es exponerlo mediante la conexión `ssh` de la siguiente manera:
 
@@ -422,11 +422,11 @@ Como observamos tenemos el puerto `3000` abierto, lo que podemos hacer es expone
 ssh -i idrsa git@192.168.1.128 -L 3000:127.0.0.1:3000
 ```
 
-![img35](/images/Pasted%20image%2020260329211015.webp)
+![img35](/writeups/hackmyvm/gitdwn/media/35.webp)
 
 Si revisamos nuestros puertos abiertos vamos a ver que ya tenemos el puerto `3000` abierto:
 
-![img36](/images/Pasted%20image%2020260329211127.webp)
+![img36](/writeups/hackmyvm/gitdwn/media/36.webp)
 
 Perfecto podemos realizar un pequeño escaneo con `nmap` sobre el puerto:
 
@@ -434,21 +434,21 @@ Perfecto podemos realizar un pequeño escaneo con `nmap` sobre el puerto:
 nmap -p3000 -sVC 127.0.0.1
 ```
 
-![img37](/images/Pasted%20image%2020260329211357.webp)
+![img37](/writeups/hackmyvm/gitdwn/media/37.webp)
 
 Como observamos es un servicio `http` y por el título y la versión nos enteramos que es `gitea`.
 
 Revisamos la web de forma manual con el objetivo de encontrar algo de información:
 
-![img38](/images/Pasted%20image%2020260329211754.webp)
+![img38](/writeups/hackmyvm/gitdwn/media/38.webp)
 
 Podemos registrarnos en la web, así que vamos a hacerlo:
 
-![img39](/images/Pasted%20image%2020260329212510.webp)
+![img39](/writeups/hackmyvm/gitdwn/media/39.webp)
 
 Ya estamos dentro así que seguiremos investigando.
 
-![img40](/images/Pasted%20image%2020260329212835.webp)
+![img40](/writeups/hackmyvm/gitdwn/media/40.webp)
 
 Encontramos que root tiene una publicación pero de igual forma no logramos encontrar nada.
 
@@ -460,15 +460,15 @@ Comenzamos identificando el directorio donde se almacena la configuración de la
 ps -aux | grep gitea
 ```
 
-![img41](/images/Pasted%20image%2020260329213207.webp)
+![img41](/writeups/hackmyvm/gitdwn/media/41.webp)
 
 Como observamos ya tenemos identificado el archivo de configuración que se usó para levantar la web, por lo tanto podemos ver su contenido:
 
-![img42](/images/Pasted%20image%2020260329214021.webp)
+![img42](/writeups/hackmyvm/gitdwn/media/42.webp)
 
 Podemos observar lo que parece ser la ruta principal del proyecto por lo que vamos a acceder a la misma y veamos que es lo que tenemos:
 
-![img43](/images/Pasted%20image%2020260329214208.webp)
+![img43](/writeups/hackmyvm/gitdwn/media/43.webp)
 
 Bueno encontramos algo que puede servir mucho y es lo que parece ser la base de datos de la web.
 
@@ -478,7 +478,7 @@ Revisando un poco logro observar cómo `sqlite3` está instalado por lo que vamo
 sqlite3 gitea.db
 ```
 
-![img44](/images/Pasted%20image%2020260330203938.webp)
+![img44](/writeups/hackmyvm/gitdwn/media/44.webp)
 
 Bueno listemos las tablas:
 
@@ -486,7 +486,7 @@ Bueno listemos las tablas:
 .tables
 ```
 
-![img45](/images/Pasted%20image%2020260330204224.webp)
+![img45](/writeups/hackmyvm/gitdwn/media/45.webp)
 
 Nos centraremos en la tabla `user`, primero activaremos los headers para saber qué pertenece a qué y luego listemos su información:
 
@@ -495,7 +495,7 @@ Nos centraremos en la tabla `user`, primero activaremos los headers para saber q
 select * from user;
 ```
 
-![img46](/images/Pasted%20image%2020260330204838.webp)
+![img46](/writeups/hackmyvm/gitdwn/media/46.webp)
 
 Tenemos 3 items y esto lo digo centrándome en el `id` además limitaremos la información solo a `id,name,is_admin`:
 
@@ -503,7 +503,7 @@ Tenemos 3 items y esto lo digo centrándome en el `id` además limitaremos la in
 select id, name, is_admin from user;
 ```
 
-![img47](/images/Pasted%20image%2020260330205130.webp)
+![img47](/writeups/hackmyvm/gitdwn/media/47.webp)
 
 Tenemos valores de 1 y 0 para definir si un usuario es administrador o no por lo tanto qué tal si cambiamos a mi usuario `stark` como administrador para tener mayores permisos en la web:
 
@@ -511,15 +511,15 @@ Tenemos valores de 1 y 0 para definir si un usuario es administrador o no por lo
 update user set is_admin=1 where id=3;
 ```
 
-![img48](/images/Pasted%20image%2020260330205532.webp)
+![img48](/writeups/hackmyvm/gitdwn/media/48.webp)
 
 Con esto procedamos a ver si en la web cambió algo:
 
-![img49](/images/Pasted%20image%2020260330205650.webp)
+![img49](/writeups/hackmyvm/gitdwn/media/49.webp)
 
 Algo interesante es que en el repositorio de `root` podemos ver su configuración, veamos si encontramos algo de utilidad:
 
-![img50](/images/Pasted%20image%2020260330210021.webp)
+![img50](/writeups/hackmyvm/gitdwn/media/50.webp)
 
 Como observamos tenemos una cabecera de autorización `bearer` y el valor que parece estar en base64, vamos a intentar ver su contenido decodificado:
 
@@ -527,37 +527,37 @@ Como observamos tenemos una cabecera de autorización `bearer` y el valor que pa
 echo "YmlsaXIhQCM=" | base64 -d; echo
 ```
 
-![img51](/images/Pasted%20image%2020260330210145.webp)
+![img51](/writeups/hackmyvm/gitdwn/media/51.webp)
 
 Bueno una posible contraseña, vamos a intentar usarla:
 
-![img52](/images/Pasted%20image%2020260330210309.webp)
+![img52](/writeups/hackmyvm/gitdwn/media/52.webp)
 
 Con esto actualmente estamos como el usuario `bilir`, por lo tanto vamos a realizar reconocimiento nuevamente:
 
-![img53](/images/Pasted%20image%2020260330210454.webp)
+![img53](/writeups/hackmyvm/gitdwn/media/53.webp)
 
 En su directorio home encontramos una carpeta code, vemos su interior:
 
-![img54](/images/Pasted%20image%2020260330210552.webp)
+![img54](/writeups/hackmyvm/gitdwn/media/54.webp)
 
 Como observamos tenemos algunos archivos pero el directorio tiene un registro con git por lo tanto vamos a hacer algo de reconocimiento para intentar identificar u obtener algo más de información:
 
-![img55](/images/Pasted%20image%2020260330210749.webp)
+![img55](/writeups/hackmyvm/gitdwn/media/55.webp)
 
 Como observamos tenemos un registro temporal de `stash` recordemos que es un espacio que almacena cambios sin necesidad de un commit, vemos cuáles son estos cambios:
 
-![img56](/images/Pasted%20image%2020260330211038.webp)
+![img56](/writeups/hackmyvm/gitdwn/media/56.webp)
 
 En este caso contenía una contraseña la cual podemos intentar usar para root a ver si es válida:
 
-![img57](/images/Pasted%20image%2020260330211140.webp)
+![img57](/writeups/hackmyvm/gitdwn/media/57.webp)
 
 Ya nos encontramos como root y tenemos la última flag:
 
-![img58](/images/Pasted%20image%2020260330211214.webp)
+![img58](/writeups/hackmyvm/gitdwn/media/58.webp)
 
-![img59](/images/Pasted%20image%2020260330211635.webp)
+![img59](/writeups/hackmyvm/gitdwn/media/59.webp)
 
 Laboratorio Terminado.
 

@@ -15,8 +15,19 @@ mezclados como tag.
 
 **Imágenes**: `public/images/` con 788 archivos en una boveda plana.
 713 referencias distintas (697 en cuerpos + 16 portadas), **0 rotas**,
-**75 huérfanas**, **0 compartidas entre writeups**, todas absolutas
-(`/images/…`). `stark.webp` es de UI (avatar del Layout), no de un writeup.
+**73 huérfanas reales**, **2 assets de UI** (`stark.webp` avatar y
+`logo.webp` favicon), **0 compartidas entre writeups**, todas absolutas
+(`/images/…`).
+
+Cuatro sitios de código dependían del prefijo `/images/` y entraron en el
+alcance (detectados al planificar, no en la primera medición):
+
+| Sitio | Dependencia |
+|---|---|
+| `index.html:8` | favicon `/images/logo.webp` |
+| `pages/Writeup.tsx:44` | `handleError` solo reintenta si `src` empieza con `/images/` |
+| `components/Layout.tsx:62` y `pages/About.tsx:11` | avatar `stark.webp` |
+| `scripts/markdown.py:69` | genera refs `/images/…` → reintroduciría la boveda |
 
 ## Diseño aprobado
 
@@ -53,16 +64,17 @@ test de deriva, y chips del Directory derivados del índice ya validado.
 ### 2. Imágenes: carpeta `media/` propia de cada writeup
 
 ```
-public/writeups/hackmyvm/wave/
+public/writeups/hackmyvm/
 ├── wave.md
-└── media/
-    ├── cover.webp        ← portada (frontmatter image:)
-    ├── 01.webp … 59.webp ← capturas en orden de aparición en el .md
+└── wave/
+    └── media/
+        ├── cover.webp        ← portada (frontmatter image:)
+        └── 01.webp … NN.webp ← capturas en orden de aparición en el .md
 ```
 
 - `public/images/` **desaparece**.
-- `stark.webp` → `public/ui/` (es UI, no contenido).
-- Las 75 huérfanas → `public/_archive/unreferenced/` (recuperables).
+- `stark.webp` y `logo.webp` → `public/ui/` (son UI: avatar y favicon).
+- Las 73 huérfanas → `public/_archive/unreferenced/` (recuperables).
 - Renombrado normalizado `01…NN` (aprobado por el humano).
 - Migración por script idempotente con `--dry-run`: mueve y reescribe el
   prefijo de las 713 referencias respetando `%20` codificado, luego
@@ -75,7 +87,8 @@ public/writeups/hackmyvm/wave/
 3. Tests de deriva: todo tag ∈ `TAGS` · toda referencia de imagen existe ·
    0 huérfanas · toda portada declarada existe.
 4. Verificación final: `npm test` + `tsc` + `build` + grep de que no queda
-   ni un `/images/` + preview manual de 3 writeups.
+   ni un `/images/` **en código y contenido** (el presente documento cita la
+   convención vieja por ser histórico) + preview manual de 3 writeups.
 5. Nada se borra: las huérfanas se archivan, no se eliminan.
 
 ## Tareas
@@ -85,11 +98,14 @@ public/writeups/hackmyvm/wave/
 - [ ] T3. Remapear los 70 tags → 20 en los 16 `.md`; mover los 3 CVE a
       `cve:`; regenerar `index.json`; test de deriva de tags en verde.
 - [ ] T4. `pages/Directory.tsx`: chips de filtro desde los tags del índice.
-- [ ] T5. Script de migración de imágenes con `--dry-run` + reporte.
-- [ ] T6. Ejecutar la migración: mover a `media/`, reescribir 713
-      referencias, `stark.webp` → `public/ui/`, huérfanas → `_archive/`.
-- [ ] T7. Tests de deriva de imágenes (referencias existentes, 0 huérfanas,
-      portadas declaradas) + regenerar `index.json`.
+- [x] T5. Script de migración de imágenes con `--dry-run` + puerta de 5
+      invariantes (`scripts/migrate-images.js`, queda commiteado).
+- [x] T6. Migración ejecutada: 713 movidas a `media/`, 731 referencias
+      reescritas (697 cuerpo + 16 portada), 2 UI a `public/ui/`, 73 huérfanas
+      a `_archive/`, `public/images/` eliminado. Idempotente (2da y 3er run
+      = "nothing to migrate"). Los 4 sitios de código actualizados.
+- [x] T7. Tests de deriva de imágenes (`tests/media.test.ts`, 6 casos, RED
+      previo) + `index.json` regenerado con las portadas nuevas.
 - [ ] T8. Verificación final completa.
 - [ ] T9. Cierre: commits por unidad de trabajo y evidencia.
 

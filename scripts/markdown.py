@@ -3,23 +3,38 @@ import os
 import re
 import shutil
 import sys
-import urllib.parse
 
 
-def procesar_markdown(archivo_md, dir_origen, dir_destino):
+def procesar_markdown(archivo_md, dir_origen):
     # 1. Validar que el archivo Markdown existe
     if not os.path.exists(archivo_md):
         print(f"[!] Error: El archivo '{archivo_md}' no existe.")
         return
 
-    # 2. Asegurar que el directorio de destino existe
-    os.makedirs(dir_destino, exist_ok=True)
+    # 2. Derivar <platform>/<slug> de la ubicación del archivo
+    #    (public/writeups/<platform>/<slug>.md) para usar la convención del sitio.
+    #    Si no está bajo public/writeups/ fallamos claro: jamás volvemos a
+    #    escribir la bóveda plana antigua de imágenes.
+    ruta_norm = os.path.normpath(archivo_md).replace("\\", "/")
+    m = re.search(r"(?:^|/)public/writeups/([^/]+)/([^/]+)(?:/[^/]+)?\.md$", ruta_norm)
+    if not m:
+        print(
+            f"[!] Error: '{archivo_md}' no está bajo public/writeups/<platform>/<slug>/; "
+            "no se puede derivar la carpeta media/ del writeup."
+        )
+        sys.exit(1)
+    plataforma, slug = m.group(1), m.group(2)
 
-    # 3. Leer el contenido del Markdown
+    # 3. Carpeta de medios del writeup: public/writeups/<platform>/<slug>/media/
+    raiz_writeups = ruta_norm[: m.start(1)]  # termina en 'public/writeups/'
+    dir_destino = f"{raiz_writeups}{plataforma}/{slug}/media"
+    prefijo_url = f"/writeups/{plataforma}/{slug}/media"
+
+    # 4. Leer el contenido del Markdown
     with open(archivo_md, "r", encoding="utf-8") as f:
         contenido = f.read()
 
-    # 4. Regex para cazar las imágenes tipo Obsidian: [[nombre.png/jpg]]
+    # 5. Regex para cazar las imágenes tipo Obsidian: [[nombre.png/jpg]]
     # Captura todo lo que esté dentro de los corchetes y termine en una extensión gráfica
     patron = r"\[\[(.*?\.(?:png|jpg|jpeg))\]\]"
 
@@ -33,22 +48,29 @@ def procesar_markdown(archivo_md, dir_origen, dir_destino):
         f"[*] Se detectaron {len(imagenes_encontradas)} etiquetas de imagen en el archivo."
     )
 
+    # La carpeta media/ solo se crea cuando hay imágenes que mover
+    os.makedirs(dir_destino, exist_ok=True)
+
+    # 6. Numeración secuencial con padding al ancho del mayor índice (01, 02, ...)
+    ancho = len(str(len(imagenes_encontradas)))
+
     contador = 1
 
-    # 5. Función de reemplazo dinámico
+    # 7. Función de reemplazo dinámico
     def reemplazar_y_mover(match):
         nonlocal contador
         nombre_original = match.group(1)
+        numero = f"{contador:0{ancho}d}"
 
-        # Rutas para mover el archivo físico
+        # Rutas para mover el archivo físico con nombre secuencial (01, 02, ...)
         ruta_src = os.path.join(dir_origen, nombre_original)
-        ruta_dst = os.path.join(dir_destino, nombre_original)
+        ruta_dst = os.path.join(dir_destino, f"{numero}{os.path.splitext(nombre_original)[1]}")
 
         # Mover la imagen si existe en el origen
         if os.path.exists(ruta_src):
             try:
                 shutil.move(ruta_src, ruta_dst)
-                print(f"[+] Movida: {nombre_original} -> {dir_destino}")
+                print(f"[+] Movida: {nombre_original} -> {ruta_dst}")
             except Exception as e:
                 print(f"[!] Error al mover '{nombre_original}': {e}")
         else:
@@ -57,24 +79,18 @@ def procesar_markdown(archivo_md, dir_origen, dir_destino):
                 f"[-] Aviso: La imagen '{nombre_original}' no se encontró en la carpeta origen (¿ya fue movida?)."
             )
 
-        # 6. Preparar el nuevo formato de texto
-        # Le quitamos la extensión original y le ponemos .webp
-        nombre_sin_ext = os.path.splitext(nombre_original)[0]
-        nuevo_nombre = f"{nombre_sin_ext}.webp"
-
-        # Codificar espacios a %20 para la URL (ej. "Pasted image 1.webp" -> "Pasted%20image%201.webp")
-        nombre_url = urllib.parse.quote(nuevo_nombre)
-
-        # Formato final: ![img1](/images/Pasted%20image....webp)
-        nuevo_texto = f"![img{contador}](/images/{nombre_url})"
+        # 8. Preparar el nuevo formato de texto
+        # La URL sigue la convención del sitio: <NN>.webp dentro de media/
+        # (la conversión física a .webp conserva el nombre base numerado)
+        nuevo_texto = f"![img{contador}]({prefijo_url}/{numero}.webp)"
 
         contador += 1
         return nuevo_texto
 
-    # 7. Ejecutar el reemplazo en todo el texto
+    # 9. Ejecutar el reemplazo en todo el texto
     nuevo_contenido = re.sub(patron, reemplazar_y_mover, contenido, flags=re.IGNORECASE)
 
-    # 8. Sobrescribir el archivo .md con los cambios
+    # 10. Sobrescribir el archivo .md con los cambios
     with open(archivo_md, "w", encoding="utf-8") as f:
         f.write(nuevo_contenido)
 
@@ -90,9 +106,10 @@ if __name__ == "__main__":
     archivo_entrada = sys.argv[1]
 
     # ====== CONFIGURACIÓN DE RUTAS ======
-    # Modifica estas rutas según cómo tengas organizada tu carpeta
+    # Modifica esta ruta según cómo tengas organizada tu carpeta.
+    # El destino ya no se configura: sale de la ubicación del .md en
+    # public/writeups/<platform>/<slug>/ y sus imágenes van a su carpeta media/.
     DIR_ORIGEN = "/home/stark/Documents/Brain/99 - Plantillas y Recursos/Capturas"  # Donde Obsidian/tu editor guarda las imágenes por defecto
-    DIR_DESTINO = "/home/stark/Projects/StarkHack/temp/"  # La carpeta de donde el Script 1 (conversor) tomará las imágenes
 
     print("\n\t Procesador de Markdown a formato Web \n")
-    procesar_markdown(archivo_entrada, DIR_ORIGEN, DIR_DESTINO)
+    procesar_markdown(archivo_entrada, DIR_ORIGEN)

@@ -13,7 +13,7 @@ tags:
     "Misconfiguration",
     "Privilege Escalation",
   ]
-image: "/images/tryharder.webp"
+image: "/writeups/hackmyvm/tryharder/media/cover.webp"
 level: Medium
 ---
 
@@ -25,7 +25,7 @@ Comenzamos con un escaneo en red para identificar la máquina víctima, eso medi
 arp-scan -I ens33 --localnet --ignoredups
 ```
 
-![img1](/images/Pasted%20image%2020260131215626.webp)
+![img1](/writeups/hackmyvm/tryharder/media/01.webp)
 
 Observamos como la IP de la máquina víctima es `192.168.1.72`.
 Procedemos tratar de intuir el sistema, esto con ayuda del comando `ping`:
@@ -34,7 +34,7 @@ Procedemos tratar de intuir el sistema, esto con ayuda del comando `ping`:
 ping -c 1 192.168.1.72
 ```
 
-![img2](/images/Pasted%20image%2020260131215828.webp)
+![img2](/writeups/hackmyvm/tryharder/media/02.webp)
 
 Podemos ver que `ttl=64`, por lo tanto intuimos una posible máquina Linux.
 
@@ -44,7 +44,7 @@ Comenzamos a realizar un escaneo con ayuda de **Nmap**, esto con el primer objet
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.72 -oG allPorts
 ```
 
-![img3](/images/Pasted%20image%2020260131220144.webp)
+![img3](/writeups/hackmyvm/tryharder/media/03.webp)
 
 Se detectan los puertos `22` y `80` abiertos. Ahora vamos a realizar un segundo escaneo más centrado en obtener información de ambos puertos:
 
@@ -52,24 +52,24 @@ Se detectan los puertos `22` y `80` abiertos. Ahora vamos a realizar un segundo 
 nmap -p22,80 -sVC 192.168.1.72 -oN target
 ```
 
-![img4](/images/Pasted%20image%2020260131220411.webp)
+![img4](/writeups/hackmyvm/tryharder/media/04.webp)
 
 Vemos que el puerto `22` corre el servicio de SSH y el puerto `80` corre HTTPD (Apache). También observamos cómo la probabilidad de ser Linux aumenta y aunque no se seguro nos sugiere un Debian, esto debido a lo que nos logra reportar **Nmap**.
 
 Lo primero será observar el contenido de la web:
 
-![img5](/images/Pasted%20image%2020260131221002.webp)
+![img5](/writeups/hackmyvm/tryharder/media/05.webp)
 
 Observamos una web en chino pero ninguno de los botones o enlaces llevan a ningún lado. Algo que podemos hacer es identificar qué nos reportan como tecnologías implementadas en la web algunas herramientas que, en mi caso, son Wappalyzer y Whatweb.
 
-![img6](/images/Pasted%20image%2020260131221235.webp)
-![img7](/images/Pasted%20image%2020260131221305.webp)
+![img6](/writeups/hackmyvm/tryharder/media/06.webp)
+![img7](/writeups/hackmyvm/tryharder/media/07.webp)
 
 Los resultados nos confirman cada vez más de que se trata de un sistema Linux, en especifico, Debian.
 
 Continuando con la web, vamos a revisar, antes de realizar un escaneo de directorios con **Gobuster**, el código fuente para ver si logramos obtener información:
 
-![img8](/images/Pasted%20image%2020260131221629.webp)
+![img8](/writeups/hackmyvm/tryharder/media/08.webp)
 
 Al parecer tenemos una ruta. Tal cual no es valida, pero la estructura de la misma, en especial por el `=` al final, puede significar que se encuentra en Base64. Veamos qué pasa si intentamos pasarlo a texto claro:
 
@@ -77,17 +77,17 @@ Al parecer tenemos una ruta. Tal cual no es valida, pero la estructura de la mis
 echo 'NzQyMjE=' | base64 -d;echo
 ```
 
-![img9](/images/Pasted%20image%2020260131221924.webp)
+![img9](/writeups/hackmyvm/tryharder/media/09.webp)
 
 Tenemos algunos números que pueden ser la verdadera ruta. Veamos qué es lo que obtenemos:
 
-![img10](/images/Pasted%20image%2020260131222135.webp)
+![img10](/writeups/hackmyvm/tryharder/media/10.webp)
 
 Encontramos un login. Ahora podemos intentar identificar nuevamente las tecnologías de la web con ayuda de Wappalyzer y Whatweb:
 
-![img11](/images/Pasted%20image%2020260131222244.webp)
+![img11](/writeups/hackmyvm/tryharder/media/11.webp)
 
-![img12](/images/Pasted%20image%2020260131222315.webp)
+![img12](/writeups/hackmyvm/tryharder/media/12.webp)
 
 Por el momento no vemos nada nuevo, pero podría estar en uso de igual forma php, cuestión que seria de comprobar mediante extensiones como `index.php`.
 
@@ -97,15 +97,15 @@ Comencemos a realizar un poco de reconocimiento de la web. Veamos que directorio
 gobuster dir -u http://192.168.1.72/74221/ -w /usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt
 ```
 
-![img13](/images/Pasted%20image%2020260201162914.webp)
+![img13](/writeups/hackmyvm/tryharder/media/13.webp)
 
 Se encontró el directorio `uploads/`. Veamos que es lo que este contiene:
 
-![img14](/images/Pasted%20image%2020260201163143.webp)
+![img14](/writeups/hackmyvm/tryharder/media/14.webp)
 
 Observamos un directorio con el nombre `999`. Vemos lo que contiene dentro:
 
-![img15](/images/Pasted%20image%2020260201163410.webp)
+![img15](/writeups/hackmyvm/tryharder/media/15.webp)
 
 No contiene nada. Esto puede que no se vea como algo útil, pero si lo pensamos de manera más detenida, este directorio puede estar almacenando archivos subidos por algún usuario.
 
@@ -115,7 +115,7 @@ Ya no tenemos nada más por lo que podemos intentar un pequeño ataque de fuerza
 
 Me gusta mucho automatizar este tipo de ataques, así que primero con ayuda de Burp Suite, vamos a capturar la petición:
 
-![img16](/images/Pasted%20image%2020260201165629.webp)
+![img16](/writeups/hackmyvm/tryharder/media/16.webp)
 
 Lo que necesitamos es todo lo seleccionado en la máquina que son: método (Post), cabeceras (Headers, User-Agent, Content-Type), data y, en este caso, como la respuesta, aun siendo incorrecta, nos responde con un código de estado `200`, vamos a fijarnos cuando la longitud del contenido cambie.
 
@@ -182,13 +182,13 @@ Su ejecución es bastante sencilla y en mi caso será:
 python3 bruteForce.py /usr/share/seclists/Usernames/top-usernames-shortlist.txt /usr/share/seclists/Passwords/Common-Credentials/top-passwords-shortlist.txt
 ```
 
-![img17](/images/Pasted%20image%2020260201173239.webp)
+![img17](/writeups/hackmyvm/tryharder/media/17.webp)
 
 Observamos de forma correcta las credenciales válidas.
 
 Una vez que ingresamos, nos encontramos con la siguiente interfaz:
 
-![img18](/images/Pasted%20image%2020260201173720.webp)
+![img18](/writeups/hackmyvm/tryharder/media/18.webp)
 
 Se nos indica algunas cosas importantes, como: usuario 123, rol `usuario` y que no tenemos permisos para subir archivos. Esto de subir archivos, de cierta forma, confirma que en la ruta `uploads/999` se almacene archivos.
 
@@ -196,11 +196,11 @@ Se nos indica algunas cosas importantes, como: usuario 123, rol `usuario` y que 
 
 En este caso inspeccionando la web encontramos algo en las cookies:
 
-![img19](/images/Pasted%20image%2020260201185715.webp)
+![img19](/writeups/hackmyvm/tryharder/media/19.webp)
 
 Observamos que tenemos un JSON Web Token. Intentemos ver el contenido del mismo primero:
 
-![img20](/images/Pasted%20image%2020260201185846.webp)
+![img20](/writeups/hackmyvm/tryharder/media/20.webp)
 
 Al parecer, el JSON Web Token es el encargado de mantener o definir el rol asociado a la cuenta. Se intentó modificar el tipo de algoritmo que usa el JWT para que sea nulo y no funcionó, esto tomando en cuenta que al pasar el algoritmo a `none` y eliminar la firma se vuelve un token invalido. Tomando en cuenta esto, vamos a intentar, mediante fuerza bruta, obtener el secreto que nos permita modificar el JWT de forma valida.
 
@@ -210,37 +210,37 @@ Para el ataque de fuerza bruta, primero vamos a almacenar este JWT dentro de un 
 john --wordlist=/usr/share/seclists/Passwords/scraped-JWT-secrets.txt jwt.txt
 ```
 
-![img21](/images/Pasted%20image%2020260201190621.webp)
+![img21](/writeups/hackmyvm/tryharder/media/21.webp)
 
 Listo, con esto tenemos que el secreto del JWT es `jwtsecret123`. Vamos a modificarlo para que el rol sea `admin`:
 
-![img22](/images/Pasted%20image%2020260201190928.webp)
+![img22](/writeups/hackmyvm/tryharder/media/22.webp)
 
 Se insertó el secreto y luego se modifico de `user` a `admin` el rol. Vamos a copiar nuevamente el JWT que vemos dando clic en `Copy JWT` y lo vamos a modificar en la web. Yo tengo una extensión que lo facilita por lo tanto queda de la siguiente forma:
 
-![img23](/images/Pasted%20image%2020260201191147.webp)
+![img23](/writeups/hackmyvm/tryharder/media/23.webp)
 
 Luego de guardar, es cuestión de recargar la web y ver qué sucede:
 
-![img24](/images/Pasted%20image%2020260201191224.webp)
+![img24](/writeups/hackmyvm/tryharder/media/24.webp)
 
 Se ha activado una opción para la subida de archivos. Veamos cómo es:
 
-![img25](/images/Pasted%20image%2020260201191312.webp)
+![img25](/writeups/hackmyvm/tryharder/media/25.webp)
 
 Excelente, tenemos para subir un archivo. En este caso voy a subir un archivo `.jpg` con el objetivo de ver si nos lo permite:
 
-![img26](/images/Pasted%20image%2020260201191418.webp)
+![img26](/writeups/hackmyvm/tryharder/media/26.webp)
 
 Observamos una ruta, vamos a intentar ver si allí nos carga el archivo:
 
-![img27](/images/Pasted%20image%2020260201191555.webp)
+![img27](/writeups/hackmyvm/tryharder/media/27.webp)
 
 Vemos que sí se abre el archivo y que efectivamente es lo que subimos, pero ahora si nos fijamos en nuestra `url`, es la misma de la que ya teníamos conocimiento. Por lo tanto, vamos a inspeccionar:
 
-![img28](/images/Pasted%20image%2020260201191746.webp)
+![img28](/writeups/hackmyvm/tryharder/media/28.webp)
 
-![img29](/images/Pasted%20image%2020260201191807.webp)
+![img29](/writeups/hackmyvm/tryharder/media/29.webp)
 
 ## File Upload
 
@@ -259,7 +259,7 @@ Comenzamos creando el archivo `.htaccess` y luego implementamos el siguiente con
 
 Listo, subimos el archivo:
 
-![img30](/images/Pasted%20image%2020260201192822.webp)
+![img30](/writeups/hackmyvm/tryharder/media/30.webp)
 
 Ya con esto listo, lo que se va a hacer es subir un archivo con extensión `.png` pero su contenido será `php`, con el cual vamos a ejecutar comandos de la siguiente manera:
 
@@ -269,30 +269,30 @@ Ya con esto listo, lo que se va a hacer es subir un archivo con extensión `.png
 ?>
 ```
 
-![img31](/images/Pasted%20image%2020260201193218.webp)
+![img31](/writeups/hackmyvm/tryharder/media/31.webp)
 
 Procedemos a subir el archivo:
 
-![img32](/images/Pasted%20image%2020260201193234.webp)
+![img32](/writeups/hackmyvm/tryharder/media/32.webp)
 
 Nos dirigimos a la ruta donde se almacenó y veremos nada por el momento:
 
-![img33](/images/Pasted%20image%2020260201193328.webp)
+![img33](/writeups/hackmyvm/tryharder/media/33.webp)
 
 Esto es debido a que se le tiene que proporcionar el comando mediante el parámetro `cmd`, como veremos en la imagen:
 
-![img34](/images/Pasted%20image%2020260201193424.webp)
+![img34](/writeups/hackmyvm/tryharder/media/34.webp)
 
 Listo, ya tenemos un RCE. Ahora vamos a realizar una Reverse Shell:
 
 Netcat en espera:
-![img35](/images/Pasted%20image%2020260201193626.webp)
+![img35](/writeups/hackmyvm/tryharder/media/35.webp)
 
 Ejecutando la reverse Shell:
-![img36](/images/Pasted%20image%2020260201193634.webp)
+![img36](/writeups/hackmyvm/tryharder/media/36.webp)
 
 Conexión establecida:
-![img37](/images/Pasted%20image%2020260201193705.webp)
+![img37](/writeups/hackmyvm/tryharder/media/37.webp)
 
 # Escalada de Privilegios
 
@@ -304,7 +304,7 @@ Se han realizado diferentes métodos de enumeración pero no se encontró algo u
 find / -name .\* 2>/dev/null
 ```
 
-![img38](/images/Pasted%20image%2020260202160924.webp)
+![img38](/writeups/hackmyvm/tryharder/media/38.webp)
 
 Vemos una gran cantidad de archivos dentro de `sys`, pero en realidad no encontramos nada muy relevante. Vamos a eliminar de las respuestas el resultado de `sys`, esto para evitar ver muchos archivos de una carpeta que ya se revisó:
 
@@ -312,15 +312,15 @@ Vemos una gran cantidad de archivos dentro de `sys`, pero en realidad no encontr
 find / -name .\* 2>/dev/null | grep -v sys
 ```
 
-![img39](/images/Pasted%20image%2020260202161227.webp)
+![img39](/writeups/hackmyvm/tryharder/media/39.webp)
 
 Como se observa en la imagen, se tiene dos archivos en espacial, los cuales veremos su contenido:
 
-![img40](/images/Pasted%20image%2020260202161716.webp)
+![img40](/writeups/hackmyvm/tryharder/media/40.webp)
 
 Tenemos una nota que nos relata una historia, pero encontramos un archivo `...` una cadena de texto muy similar a la que encontramos para el usuario `pentester` en el `/etc/passwd`:
 
-![img41](/images/Pasted%20image%2020260202161938.webp)
+![img41](/writeups/hackmyvm/tryharder/media/41.webp)
 
 Esto está más relacionado con el encoding. Lo que vamos a hacer es compara cada una de las letras y, donde coincidan, lo marcamos con un 0 y donde no, lo marcaremos con un 1. Esto es un proceso largo, el cual es mucho más sencillo automatizarlo con ayuda de Python:
 
@@ -348,15 +348,15 @@ if __name__ == '__main__':
 
 Al ejecutarlo vemos lo siguiente:
 
-![img42](/images/Pasted%20image%2020260202162806.webp)
+![img42](/writeups/hackmyvm/tryharder/media/42.webp)
 
 Ahora esto lo llevamos a algún convertidor de binario a string y obtenemos lo siguiente:
 
-![img43](/images/Pasted%20image%2020260202162916.webp)
+![img43](/writeups/hackmyvm/tryharder/media/43.webp)
 
 Esto puede ser una contraseña, y específicamente del usuario `pentester`, ya que la segunda cadena está relacionada al mismo. Por lo tanto intentémoslo:
 
-![img44](/images/Pasted%20image%2020260202163149.webp)
+![img44](/writeups/hackmyvm/tryharder/media/44.webp)
 
 Ya nos encontramos como el usuario `pentester`.
 
@@ -364,7 +364,7 @@ Nuevamente se realizo una enumeración para identificar alguna forma de escalar 
 
 Listando los puerto de la máquina víctima, logramos ver un puerto interno abierto, en especifico el puerto `8989`:
 
-![img45](/images/Pasted%20image%2020260202165500.webp)
+![img45](/writeups/hackmyvm/tryharder/media/45.webp)
 
 Mediante `nc`, desde la misma máquina víctima, vamos a conectarnos para ver cómo responde:
 
@@ -372,25 +372,25 @@ Mediante `nc`, desde la misma máquina víctima, vamos a conectarnos para ver c�
 nc 127.0.0.1 8989
 ```
 
-![img46](/images/Pasted%20image%2020260202171244.webp)
+![img46](/writeups/hackmyvm/tryharder/media/46.webp)
 
 Nos pide una contraseña y, si no es correcta no nos deja pasar. Vamos a intentar reutilizar contraseñas como la que ya obtuvimos para el usuario `pentester` y veamos que sucede:
 
-![img47](/images/Pasted%20image%2020260202171355.webp)
+![img47](/writeups/hackmyvm/tryharder/media/47.webp)
 
 Listo, logramos obtener acceso a una shell, que al parecer es del usuario `xiix`. Por lo que en este caso voy a generar una nueva reverse shell para trabajar con una bash de mejor manera:
 
-![img48](/images/Pasted%20image%2020260202171551.webp)
+![img48](/writeups/hackmyvm/tryharder/media/48.webp)
 
 Se le dará un tratamiento a la bash, para que esto sea mucho más manejable y comenzaremos nuevamente enumerando para ver si logramos obtener algo nuevo.
 
 Se intentó el comando `sudo -l`, pero se necesita contraseña, además de que no encontramos permisos extraños, pero sí un archivo llamado `guess_game`:
 
-![img49](/images/Pasted%20image%2020260202171936.webp)
+![img49](/writeups/hackmyvm/tryharder/media/49.webp)
 
 Si ejecutamos el archivo observamos lo siguiente:
 
-![img50](/images/Pasted%20image%2020260202172017.webp)
+![img50](/writeups/hackmyvm/tryharder/media/50.webp)
 
 Por lo poco que entiendo, es un juego en el cual se requiere adivinar el número generado entre el 0 y el 99.
 
@@ -400,13 +400,13 @@ Algo que se puede hacer, viendo que en general se lo ejecuta de forma múltiple 
 while true;do echo '90' | ./guess_game ;done
 ```
 
-![img51](/images/Pasted%20image%2020260202172707.webp)
+![img51](/writeups/hackmyvm/tryharder/media/51.webp)
 
 Luego de algún tiempo, logramos obtener un resultado correcto, donde vemos `Pass: superxiix`.
 
 Algo que quedó pendiente es el comando `sudo -l`, que pedía de una contraseña. Vemos que obtenemos ahora:
 
-![img52](/images/Pasted%20image%2020260202173612.webp)
+![img52](/writeups/hackmyvm/tryharder/media/52.webp)
 
 ## Escalada vía LD_PRELOAD
 
@@ -418,7 +418,7 @@ Uno de los requisitos se cumple. Verifiquemos si `whoami` es dinámico de la sig
 ldd /bin/whoami
 ```
 
-![img53](/images/Pasted%20image%2020260202174304.webp)
+![img53](/writeups/hackmyvm/tryharder/media/53.webp)
 
 Vemos que lista algunas librerías por lo tanto es dinámico.
 
@@ -444,7 +444,7 @@ El nombre puede ser el que queramos. Ya tenemos listo nuestro archivo `hack.c` y
 gcc -fPIC -shared -nostartfiles -o hack.so hack.c
 ```
 
-![img54](/images/Pasted%20image%2020260202175611.webp)
+![img54](/writeups/hackmyvm/tryharder/media/54.webp)
 
 Donde:
 
@@ -458,10 +458,10 @@ Ya con esto solo queda ejecutar `/bin/whoami` llamando a esta librería de la si
 sudo LD_PRELOAD=./hack.so /bin/whoami
 ```
 
-![img55](/images/Pasted%20image%2020260202182231.webp)
+![img55](/writeups/hackmyvm/tryharder/media/55.webp)
 
 Ya nos encontramos como usuario `root` y es cuestión de enviar la flag.
 
-![img56](/images/Pasted%20image%2020260202182449.webp)
+![img56](/writeups/hackmyvm/tryharder/media/56.webp)
 
 Máquina Terminada.

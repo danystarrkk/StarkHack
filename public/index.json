@@ -14,7 +14,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/wave.webp",
+    "image": "/writeups/hackmyvm/wave/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "wave",
@@ -34,7 +34,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/krustykrab.webp",
+    "image": "/writeups/hackmyvm/krustykrab/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "krustykrab",
@@ -55,7 +55,7 @@
       "Server-Side Request Forgery"
     ],
     "cve": "CVE-2021-4034",
-    "image": "/images/flossy.webp",
+    "image": "/writeups/hackmyvm/flossy/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "flossy",
@@ -76,7 +76,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/Airbind.webp",
+    "image": "/writeups/hackmyvm/airbind/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "airbind",
@@ -97,7 +97,7 @@
       "Privilege Escalation",
       "XML External Entity"
     ],
-    "image": "/images/gitdwn.webp",
+    "image": "/writeups/hackmyvm/gitdwn/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "gitdwn",
@@ -118,7 +118,7 @@
       "Path Traversal",
       "Privilege Escalation"
     ],
-    "image": "/images/sabulaji.webp",
+    "image": "/writeups/hackmyvm/sabulaji/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "sabulaji",
@@ -140,7 +140,7 @@
       "Misconfiguration",
       "Privilege Escalation"
     ],
-    "image": "/images/tryharder.webp",
+    "image": "/writeups/hackmyvm/tryharder/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "tryharder",
@@ -162,7 +162,7 @@
       "Remote Code Execution"
     ],
     "cve": "CVE-2020-35234",
-    "image": "/images/realsaga.webp",
+    "image": "/writeups/hackmyvm/realsaga/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "realsaga",
@@ -183,7 +183,7 @@
       "Remote Code Execution"
     ],
     "cve": "CVE-2023-5965",
-    "image": "/images/espo.webp",
+    "image": "/writeups/hackmyvm/espo/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "espo",
@@ -205,7 +205,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/pycrt.webp",
+    "image": "/writeups/hackmyvm/pycrt/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "pycrt",
@@ -227,7 +227,7 @@
       "Misconfiguration",
       "Privilege Escalation"
     ],
-    "image": "/images/homelab.webp",
+    "image": "/writeups/hackmyvm/homelab/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "homelab",
@@ -248,7 +248,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/console.webp",
+    "image": "/writeups/hackmyvm/console/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "console",
@@ -269,7 +269,7 @@
       "SQL Injection",
       "Vulnerable Component"
     ],
-    "image": "/images/ximai.webp",
+    "image": "/writeups/hackmyvm/ximai/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "ximai",
@@ -290,7 +290,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/Griffin.webp",
+    "image": "/writeups/hackmyvm/griffin/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "griffin",
@@ -310,7 +310,7 @@
       "Remote Code Execution",
       "Server-Side Request Forgery"
     ],
-    "image": "/images/Birdeye.webp",
+    "image": "/writeups/hackmyvm/birdeye/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "birdeye",
@@ -330,7 +330,7 @@
       "Privilege Escalation",
       "Remote Code Execution"
     ],
-    "image": "/images/silentdev.webp",
+    "image": "/writeups/hackmyvm/silentdev/media/cover.webp",
     "level": "Medium",
     "platform": "hackmyvm",
     "slug": "silentdev",

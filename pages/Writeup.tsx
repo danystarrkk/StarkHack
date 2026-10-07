@@ -41,7 +41,9 @@ const MarkdownImage = ({ src, alt, ...props }: any) => {
   }, [src]);
 
   const handleError = () => {
-    if (!retry && src && src.startsWith("/images/")) {
+    // Rutas absolutas del sitio (/ui/, /writeups/<platform>/<slug>/media/...):
+    // reintento único con el prefijo /public antes de marcar la imagen como rota
+    if (!retry && src && src.startsWith("/")) {
       setImgSrc(`/public${src}`);
       setRetry(true);
     } else {

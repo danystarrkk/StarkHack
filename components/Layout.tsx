@@ -59,7 +59,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="size-10 rounded bg-nord1 border border-nord3/30 overflow-hidden flex items-center justify-center">
               <span className="material-symbols-outlined text-nord9">
                 {" "}
-                <img src="/images/stark.webp" alt="Avatar"></img>{" "}
+                <img src="/ui/stark.webp" alt="Avatar"></img>{" "}
               </span>
             </div>
           </div>

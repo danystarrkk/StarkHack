@@ -12,7 +12,7 @@ tags:
     "Path Traversal",
     "Privilege Escalation",
   ]
-image: "/images/sabulaji.webp"
+image: "/writeups/hackmyvm/sabulaji/media/cover.webp"
 level: Medium
 ---
 
@@ -24,7 +24,7 @@ Iniciamos con un escaneo en red, esto con ayuda de **Arp-Scan**:
 arp-scan -I ens33 --localnet --ignoredups
 ```
 
-![img1](/images/Pasted%20image%2020260216212321.webp)
+![img1](/writeups/hackmyvm/sabulaji/media/01.webp)
 
 Observamos la IP de la máquina víctima, la cual es `192.168.1.71`.
 
@@ -34,7 +34,7 @@ Intentemos mediante el comando `ping` intuir de cierta forma el sistema operativ
 ping -c 1 192.168.1.71
 ```
 
-![img2](/images/Pasted%20image%2020260216212555.webp)
+![img2](/writeups/hackmyvm/sabulaji/media/02.webp)
 
 Identificamos que tenemos un `ttl=64`, por defecto suele pertenecer al sistema Unix-like, donde entran sistemas como (Linux, BSD, etc.).
 
@@ -44,7 +44,7 @@ Ya podemos comenzar con un escaneo de puertos general, para observar primero pue
 nmap -p- --open -sS --min-rate 5000 -n -v -Pn 192.168.1.71 -oG allPorts
 ```
 
-![img3](/images/Pasted%20image%2020260217215031.webp)
+![img3](/writeups/hackmyvm/sabulaji/media/03.webp)
 
 Observamos los puertos `22,80,873` abiertos. Intentemos obtener mas información sobre los puertos abiertos, esto, nuevamente con **Nmap**:
 
@@ -52,13 +52,13 @@ Observamos los puertos `22,80,873` abiertos. Intentemos obtener mas información
 nmap -p22,80,873 -sVC 192.168.1.71 -oN target
 ```
 
-![img4](/images/Pasted%20image%2020260217215400.webp)
+![img4](/writeups/hackmyvm/sabulaji/media/04.webp)
 
 Tenemos los servicios: SSH puerto `22`, http puerto `80` y rsync puerto `873` corriendo en la máquina víctima.
 
 Comencemos revisando la web alojada en el puerto `80`
 
-![img5](/images/Pasted%20image%2020260217215903.webp)
+![img5](/writeups/hackmyvm/sabulaji/media/05.webp)
 
 Tenemos un texto, el cual nos explica el origen de la palabra `sabulaji` y cómo esta es usada, a parte de eso, no vamos a ver nada mas.
 
@@ -70,7 +70,7 @@ Al no encontrar nada, comenzamos a enumerar el servicio de `rsync`, recalcando q
 rsync --list-only 192.168.1.71::
 ```
 
-![img6](/images/Pasted%20image%2020260217221059.webp)
+![img6](/writeups/hackmyvm/sabulaji/media/06.webp)
 
 Observamos lo que, al parecer, son dos directorios. Veamos primero el contenido de `public`:
 
@@ -78,7 +78,7 @@ Observamos lo que, al parecer, son dos directorios. Veamos primero el contenido 
 rsync -av rsync://192.168.1.71/public
 ```
 
-![img7](/images/Pasted%20image%2020260217221409.webp)
+![img7](/writeups/hackmyvm/sabulaji/media/07.webp)
 
 Bajemos el archivo a local para observar su contenido:
 
@@ -86,11 +86,11 @@ Bajemos el archivo a local para observar su contenido:
 rsync -avz rsync://192.168.1.71/public/todo.list .
 ```
 
-![img8](/images/Pasted%20image%2020260217222130.webp)
+![img8](/writeups/hackmyvm/sabulaji/media/08.webp)
 
 El contenido de `todo.list` es:
 
-![img9](/images/Pasted%20image%2020260217222159.webp)
+![img9](/writeups/hackmyvm/sabulaji/media/09.webp)
 
 Tenemos una lista de tareas, exclusivamente tenemos tareas pertenecientes a `sabulaji`. Tomando en cuenta que la lista de Tareas especifican a `sabulaji` podemos pensar en este como usuario.
 
@@ -102,7 +102,7 @@ rsync --list-only rsync://192.168.1.71/epages
 
 # Explotación
 
-![img10](/images/Pasted%20image%2020260217222411.webp)
+![img10](/writeups/hackmyvm/sabulaji/media/10.webp)
 
 El modulo `epages` requiere autenticación. Dado que anteriormente en las notas encontradas en el modulo `public` se asignan a `sabulaji` las tareas, este podría tratarse de un usuario asociado a rsync. Mediante ese usuario y utilizando contraseñas por defecto se intenta la autenticación.
 
@@ -110,7 +110,7 @@ El modulo `epages` requiere autenticación. Dado que anteriormente en las notas 
 rsync --list-only rsync://sabulaji@192.168.1.71/epages
 ```
 
-![img11](/images/Pasted%20image%2020260217222540.webp)
+![img11](/writeups/hackmyvm/sabulaji/media/11.webp)
 
 No se logró con contraseñas por defecto, por lo que el siguiente paso será automatizar un script que nos permita realizar fuerza bruta, y el script me quedó de la siguiente manera:
 
@@ -153,7 +153,7 @@ echo -e "\n================================\n"
 
 ```
 
-![img12](/images/Pasted%20image%2020260219213826.webp)
+![img12](/writeups/hackmyvm/sabulaji/media/12.webp)
 
 Observamos que la contraseña es `admin123`. Con esto vamos a intentar ver el contenido de `epages`:
 
@@ -161,7 +161,7 @@ Observamos que la contraseña es `admin123`. Con esto vamos a intentar ver el co
 rsync -av rsync://sabulaji@192.168.1.71:873/epages
 ```
 
-![img13](/images/Pasted%20image%2020260219214241.webp)
+![img13](/writeups/hackmyvm/sabulaji/media/13.webp)
 
 Como logramos observar, tenemos el archivo `secrets.doc`, un documento el cual vamos a traerlo a local para ver su contenido:
 
@@ -169,11 +169,11 @@ Como logramos observar, tenemos el archivo `secrets.doc`, un documento el cual v
 rsync -avz rsync://sabulaji@192.168.1.71:873/epages/secrets.doc .
 ```
 
-![img14](/images/Pasted%20image%2020260219215954.webp)
+![img14](/writeups/hackmyvm/sabulaji/media/14.webp)
 
 Ya con el archivo en local, procedemos a verlo en cualquier lector de documentos, en mi caso con OnlyOffice:
 
-![img15](/images/Pasted%20image%2020260219220346.webp)
+![img15](/writeups/hackmyvm/sabulaji/media/15.webp)
 
 Tenemos un texto algo extenso, pero en este se describe una cuenta por defecto, `welcome`, donde se usa una contraseña que es `P@ssw0rd123!`. Con estas credenciales vamos directamente a intentar conectarnos mediante `ssh`:
 
@@ -181,9 +181,9 @@ Tenemos un texto algo extenso, pero en este se describe una cuenta por defecto, 
 ssh welcome@192.168.1.71
 ```
 
-![img16](/images/Pasted%20image%2020260219221330.webp)
+![img16](/writeups/hackmyvm/sabulaji/media/16.webp)
 
-![img17](/images/Pasted%20image%2020260219221600.webp)
+![img17](/writeups/hackmyvm/sabulaji/media/17.webp)
 
 Como observamos, dentro del directorio personal de `welcome` vamos a lograr encontrar la flag de usuario.
 
@@ -191,11 +191,11 @@ Como observamos, dentro del directorio personal de `welcome` vamos a lograr enco
 
 Comenzamos el reconocimiento ejecutando `sudo -l` para ver si nos permite ejecutar binarios como otro usuario o directamente como `root`:
 
-![img18](/images/Pasted%20image%2020260221222445.webp)
+![img18](/writeups/hackmyvm/sabulaji/media/18.webp)
 
 El código del script es el siguiente:
 
-![img19](/images/Pasted%20image%2020260222095315.webp)
+![img19](/writeups/hackmyvm/sabulaji/media/19.webp)
 
 En lo que nos fijamos del script son 3 puntos fundamentales:
 
@@ -207,12 +207,12 @@ Comprendiendo eso, y debajo de lo mismo, vemos que las diferencias se imprimen p
 
 Veamos un poco dentro del directorio personal de `sabulaji` :
 
-![img20](/images/Pasted%20image%2020260222102806.webp)
+![img20](/writeups/hackmyvm/sabulaji/media/20.webp)
 
 Observamos como dentro de la carpeta `/home/sabulaji` tenemos una carpeta `personal`, la cual, gracias al código del script sabemos que tiene `notes.txt`, pero no logramos entrar ni listar dentro de la misma por sus permisos.
 
 Si verificamos nuestro usuario actual mediante `id` y `groups` para obtener más información veremos lo siguiente:
-![img21](/images/Pasted%20image%2020260222103010.webp)
+![img21](/writeups/hackmyvm/sabulaji/media/21.webp)
 
 Pertenecemos al grupo `mlocate`. Al pertenecer a este grupo se nos permite acceder a la base de datos que el comando `locate` consulta y que contiene indexadas todas las rutas del sistema, siempre y cuando `root` lo haya actualizado. De este concepto es del cual vamos a intentar aprovecharnos para encontrar cualquier cosa en el sistema.
 
@@ -222,7 +222,7 @@ Primero identificamos la base de datos mediante el comando:
 locate --help
 ```
 
-![img22](/images/Pasted%20image%2020260222111027.webp)
+![img22](/writeups/hackmyvm/sabulaji/media/22.webp)
 
 Vemos cómo nos da un parámetro para la base de datos y, además nos indica la ruta usual, que seria `/var/lib/mlocate/mlocate.db`.
 
@@ -232,7 +232,7 @@ Con la ruta de la base de datos podemos, mediante `strings`, listar toda cadena 
 strings /var/lib/mlocate/mlocate.db | grep -A 5 "/home"
 ```
 
-![img23](/images/Pasted%20image%2020260222123916.webp)
+![img23](/writeups/hackmyvm/sabulaji/media/23.webp)
 
 Vemos una lista grande aún de archivos, pero entre ellos encontramos las `flags`, el a archivo `notes.txt` y el archivo `creds.txt`. Aquí entra un concepto clave: cuando el usuario `root` hace un `updatedb` y se actualiza esta base de datos, lo hace de manera recursiva y si no ha sido alterado, por defecto lo hará desde la raíz . Al usar el comando `strings`, frecuentemente se puede encontrar rutas agrupadas por prefijos en común, y buscando correctamente, podemos ver que nos lista con detalle dentro de que directorios podríamos encontrar algunos archivos. En este caso, vemos que dentro de `/home/sabulaji/personal/` se listan `creds.txt` y `notes.txt`.
 
@@ -242,30 +242,30 @@ Pensando un poco, podemos deducir que el script `/opt/sync.sh` puede comparar co
 sudo -u sabulaji /opt/sync.sh personal/creds.txt
 ```
 
-![img24](/images/Pasted%20image%2020260222124835.webp)
+![img24](/writeups/hackmyvm/sabulaji/media/24.webp)
 
 Tenemos las posibles credenciales de `sabulaji`. Vamos a intentar ingresar:
 
-![img25](/images/Pasted%20image%2020260222124947.webp)
+![img25](/writeups/hackmyvm/sabulaji/media/25.webp)
 
 Vamos a volver a realizar reconocimiento con `sudo -l` :
 
-![img26](/images/Pasted%20image%2020260222125122.webp)
+![img26](/writeups/hackmyvm/sabulaji/media/26.webp)
 
 Como observamos, tenemos la posibilidad de ejecutar `rsync` como usuario `root`. Busquemos si este comando, al tener privilegios de sudo, podemos escalar privilegios, en este caso, a mi me gusta verificarlo primero en [gtfobins](https://gtfobins.org/gtfobins/rsync/#shell) y, al parecer si tenemos forma:
 
-![img27](/images/Pasted%20image%2020260222125336.webp)
+![img27](/writeups/hackmyvm/sabulaji/media/27.webp)
 
 Lo intentamos y logramos ingresar como usuario `root`:
 
-![img28](/images/Pasted%20image%2020260222125432.webp)
+![img28](/writeups/hackmyvm/sabulaji/media/28.webp)
 
 Ya podemos ver la Flag:
 
-![img29](/images/Pasted%20image%2020260222125459.webp)
+![img29](/writeups/hackmyvm/sabulaji/media/29.webp)
 
 Con esto Terminamos la máquina.
 
-![img30](/images/Pasted%20image%2020260222131524.webp)
+![img30](/writeups/hackmyvm/sabulaji/media/30.webp)
 
 Lab Terminado.
