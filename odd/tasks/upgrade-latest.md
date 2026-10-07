@@ -1,7 +1,8 @@
 # Feature: actualización a versiones estables más recientes
 
 - Rama: `chore/upgrade-latest` (apilada sobre `feat/content-kinds`)
-- Estado: en curso
+- Estado: completado (T1–T6). Dos hallazgos preexistentes quedan como
+  decisión pendiente del humano (ver Cierre).
 - Decisión humana: **todo a latest estable**, incluidos los saltos mayores.
 
 ## Inventario medido (`npm outdated`, Node 24.21.0 / npm 11.19.0)
@@ -54,17 +55,43 @@ Gate por tramo: `npm test` (169) + `npx tsc --noEmit` + `npm run build`.
 
 ## Tareas
 
-- [ ] T1. Rama, documento de feature y `todo`.
-- [ ] T2. Unidad 1 — upgrades de dependencias con gate por tramo.
-- [ ] T3. Unidad 1 — verificación independiente y commit.
-- [ ] T4. Unidad 2 — migración a Tailwind 4.
-- [ ] T5. Unidad 2 — verificación y commit.
-- [ ] T6. Verificación final completa + cierre del documento.
+- [x] T1. Rama, documento de feature y `todo`.
+- [x] T2. Unidad 1 — upgrades con gate por etapa (A–E). Dos paradas
+      justificadas por cambios upstream y resueltas con decisión explícita:
+      guard de bloque vacío/comentarios en `lib/frontmatter.js` (js-yaml 5
+      tira sobre entrada vacía) y `strict: false` +
+      `noUncheckedSideEffectImports: false` en `tsconfig.json` (TS7 cambió
+      los defaults; `@types/react` ni siquiera está instalado).
+- [x] T3. Verificación independiente + commit `0785f5b`.
+- [x] T4. Unidad 2 — Tailwind 4 vía `@config`, `tailwind.config.js` intacto.
+- [x] T5. Verificación + commit `062df5c`.
+- [x] T6. Verificación final: **PASS en las 8 verificaciones** + fix del
+      aviso `__dirname` de Vite 8 en `vite.config.ts`.
 
 ## Evidencia de commits
 
-- (pendiente)
+| Commit | Tareas |
+|---|---|
+| `d7ce99a` docs: plan de actualizacion a versiones estables recientes | T1 |
+| `0785f5b` chore: actualizar dependencias a latest estable | T2, T3 |
+| `062df5c` chore: migrar a Tailwind 4 | T4, T5 |
 
 ## Cierre
 
-- (pendiente)
+- **`npm outdated` vacío**: react/react-dom 19.3.0, router 7.18.4,
+  vite 8.3.3, plugin-react 6.1.2, @types/node 26.6.4, js-yaml 5.4.3,
+  react-markdown 10.1.0, typescript 7.0.2, tailwindcss 4.3.3,
+  @tailwindcss/postcss 4.3.3, postcss 8.5.29, autoprefixer 10.6.1.
+  Eliminados `gray-matter` y los dos `@tailwindcss/*` sin uso.
+- Verificación final PASS: 169/169 tests · `tsc` 0 · `build` 0 ·
+  `index.json` byte idéntico · CSS compilada sin directivas v3, con paleta
+  Nord y clases utilitarias presentes · árbol limpio.
+- **Pendiente (decisión humana): `scanline` (Layout.tsx:24) y `frosty-glow`
+  (Directory.tsx:322) no tienen definición CSS en ningún archivo del repo**
+  — huérfanas **antes** de la migración (verificado contra el build v3
+  previo: tampoco estaban). Definirlas es un cambio visual y solo el
+  humano decide si el efecto debe existir y cómo luce.
+- **Deuda documentada**: `tsconfig.json` con `strict: false` explícito
+  (semántica TS5.8 preservada); activar `strict` + `@types/react` es
+  trabajo propio de la fase del frontend. `vite.config.ts` dejó de usar
+  `__dirname` (aviso de Vite 8 resuelto).
