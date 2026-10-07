@@ -252,3 +252,23 @@ que inventar la forma de los datos.
   `e62b6c2`→`8bcadb3` (normalización + imágenes) queda **aceptado sin acuse
   de review** por decisión del dueño del repo. Esto NO es un acuse: es un
   waiver de gestión, y ningún documento debe citarlo como review aprobado.
+
+## Review de la extensión de grupos/tags: APPROVED
+
+- Slice con `baseRef = 8bcadb3` (15 archivos, sin imágenes) → linaje
+  `review-38a1cba31fc2a43b`, target `sha256:323bf7e3…`, **`approved`**,
+  autoridad quemada (`gentle-ai.review-acknowledged/v1`).
+- Cuatro hallazgos admisibles, **los cuatro corregidos en `384b706`**:
+  1. `R3-cert-date-fabricated` (WARNING) — `fetchCertificate` dejó de
+     inventar la fecha de hoy; `CertificateDoc` con `date` opcional para
+     que la firma no mienta. RED: `expected '2026-10-07' to be undefined`.
+  2. `R3-kinds-shallow-frozen` — `deepFreeze` sobre `KINDS`. RED:
+     `expected false to be true` / `expected [Function] to throw`.
+  3. `R3-order-fallback-unproved` — contrato de orden fijado con tests
+     (enteros ascendente, sin `order` al final, empates estables).
+     **Sin RED**: el código ya cumplía el spec, no se inventó evidencia.
+  4. `R3-unknown-group-silent-empty` — `getProjects` con grupo fuera de
+     `PROJECT_GROUPS` lanza nombrando el valor y las opciones válidas.
+     RED: `promise resolved "[]"`.
+- Resultado: **169/169 tests**, `tsc` 0, `build` 0,
+  `public/index.json` byte idéntico.
