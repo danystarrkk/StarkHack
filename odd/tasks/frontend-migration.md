@@ -92,12 +92,15 @@ Borrado de `pages/`, `components/`, `index.css` viejo, `index.tsx`,
 | Fase | Estado | Evidencia |
 |---|---|---|
 | 2.0 Andamiaje | ✅ Hecho | `src/` movido (26 archivos), `index.html` volcado al nuevo (favicon conservado), `tsconfig` unido, `lucide-react` + `@types/react*` añadidos, `newfrontend/` borrado, merge de `chore/upgrade-latest`, glob `./src/**` en `tailwind.config.js`. Gate: **193/193 · `tsc` 0 · `build` 0 · styling 6/6 · `index.json` byte idéntico** |
-| 2.1 Home | ⬜ pendiente | |
-| 2.1 Directory | ⬜ pendiente | |
-| 2.1 Writeups listado + detalle | ⬜ pendiente | |
-| 2.1 Projects + Certificates | ⬜ pendiente | |
-| 2.1 About | ⬜ pendiente | |
-| 2.3 Borrado del viejo | ⬜ pendiente | |
+| 2.1 Home | ✅ Hecho | `c65fd8e` (+ docs `3bd7e54`) — `src/lib/contentAdapter.ts` (mappers puros), 207 tests, RED observado |
+| 2.1 Router | ✅ Hecho | `a0d6a2e` — `src/lib/router.tsx`, `/directory` y `/machines/:id` redirect a `/writeups`, rutas viejas vivas |
+| 2.1 Writeups detalle | ✅ Hecho | `134a52a` — `src/lib/writeupView.ts`, gate `hasTemplateWriteupContent` eliminado, 16 writeups reales |
+| 2.1 Writeups listado | ✅ Hecho | `fae5964` — `src/lib/directoryModel.ts`, `?plataforma=` como fuente de verdad, sin campos mock |
+| 2.1 Projects | ⬜ pendiente | `ProjectsScreen` aún importa `FEATURED_PROJECTS`/`ALL_PROJECTS_ARCHIVE` de `src/data/portfolioData.ts` |
+| 2.1 Certificates | ⬜ pendiente | `CertificationsScreen` + `CertificationsModal` aún importan `CERTIFICATIONS` de portfolioData |
+| 2.1 Terminal modal | ⬜ pendiente | `MainframeTerminalModal` importa los 3 arrays de portfolioData; se renderiza en el layout raíz |
+| 2.1 About | ⬜ pendiente | Auditar contenido estático de `AboutScreen` + modales huérfanos |
+| 2.3 Borrado del viejo | ⬜ pendiente | `pages/`, `components/Layout.tsx`, raíz `App.tsx`/`index.tsx`/`index.css`, `src/data/` |
 
 ### Nota de ejecución (error corregido)
 
