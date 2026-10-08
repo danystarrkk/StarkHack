@@ -115,3 +115,30 @@ Gate por tramo: `npm test` (169) + `npx tsc --noEmit` + `npm run build`.
      **se mantiene como deuda de la Fase 2** por orden humana.
 - Resultado: **170/170 tests**, `tsc` 0, `build` 0, `npm audit` → **0
   vulnerabilidades** (las mejoras de versión limpiaron las 10 previas).
+
+## Review final de la rama: APPROVED con 3 hallazgos → DEUDA (decisión humana)
+
+- Linajes `review-703d2d4d1445438a`, `review-346673823f318010`,
+  `review-fd81b4e797165486`, `review-667288614caca725` → todos **`approved`**
+  con autoridad quemada, vía slice `baseRef = 8bcadb3` (29 archivos, sin
+  imágenes, ya que el candidato completo choca con `lens_context_budget_exceeded`).
+- Hallazgos corregidos en el camino: forma de cada entrada del índice
+  (`f0fef1f`), forma del array, determinismo de `readdir`, contrato de CSS,
+  `ContentIndexError` en vez de `[]` silencioso, pin exacto de `js-yaml`.
+- **Tres hallazgos finales que el humano decide dejar como deuda** (los tres
+  SUGGESTIÓN, ninguno bloqueante):
+  1. `R3-tags-boundary-unvalidated` — `lib/content-kinds.js:194-214`: el
+     validador de entradas chequea `group` pero **no `tags`**, aunque `KINDS`
+     expone los tres vocabularios. Un índice editado a mano con un tag ajeno
+     pasaría el borde. Mismo patrón que el fix de `group` (~6 líneas).
+  2. `R3-fetchdoc-return-type` — `lib/content.ts:215-219`: el loader
+     compartido declara `Promise<CertificateDoc | null>` pero lo usan
+     `fetchWriteup` y `fetchProject` además de `fetchCertificate` — el tipo
+     miente sobre qué devuelve.
+  3. `R3-styling-compiled-conditional-skip` — `tests/styling.test.ts:55`:
+     sin `dist/` la capa compilada se salta en silencio, así que un checkout
+     nuevo pasa el test sin verificar el contrato de estilo. Nuestro gate
+     corre `build` antes de `test`, por eso en la práctica sí se ejercita.
+- Resultado de esos ciclos: **193/193 tests**, `tsc` 0, `build` 0,
+  `index.json` byte idéntico.
+- **Decisión del humano: ninguno se ataca; se espera el frontend (Fase 2).**
