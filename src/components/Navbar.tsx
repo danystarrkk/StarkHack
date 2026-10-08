@@ -25,8 +25,33 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTerminal }) => {
     <header className="sticky top-0 z-40 w-full border-b border-[#1b1f29] bg-[#0b0e15]/90 backdrop-blur-md">
       {/* Full-bleed bar: no max-width cap, the header spans the whole viewport. */}
       <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Left Zone: nav links + online badge */}
-        <div className="flex min-w-0 items-center gap-6">
+        {/* Left Zone: brand logo (console easter egg) + wordmark (home) */}
+        <div className="flex shrink-0 items-center gap-3">
+          {/* Fun bit: the brand logo deploys the interactive shell. */}
+          <button
+            onClick={onOpenTerminal}
+            className="group flex items-center transition-transform focus:outline-none"
+            title="Abrir Shell Interactivo"
+            aria-label="Abrir Shell Interactivo"
+          >
+            <img
+              src="/ui/logo-general.png"
+              alt="StarkHack"
+              className="h-8 w-8 rounded border border-[#39bae6]/40 bg-[#10141c] object-contain p-0.5 shadow-[0_0_12px_rgba(57,186,230,0.25)] transition-all group-hover:border-[#39bae6] group-hover:shadow-[0_0_16px_rgba(57,186,230,0.5)]"
+            />
+          </button>
+
+          <button
+            onClick={() => navigate('/')}
+            className="group font-mono text-base font-bold tracking-wider text-[#e0e2ec] transition-colors focus:outline-none"
+            title="Ir al inicio"
+          >
+            STARK<span className="text-[#39bae6]">HACK</span>
+          </button>
+        </div>
+
+        {/* Right Zone: nav links + online badge + mobile hamburger */}
+        <div className="flex min-w-0 items-center justify-end gap-6">
           <nav className="hidden items-center gap-7 md:flex">
             {navItems.map((item) => (
               <NavLink
@@ -59,31 +84,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTerminal }) => {
               <span className="font-semibold tracking-wider text-[#7edc73]">ONLINE</span>
             </div>
           </div>
-        </div>
-
-        {/* Right Zone: brand wordmark (home) + logo icon (console easter egg) */}
-        <div className="flex shrink-0 items-center gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="group font-mono text-base font-bold tracking-wider text-[#e0e2ec] transition-colors focus:outline-none"
-            title="Ir al inicio"
-          >
-            STARK<span className="text-[#39bae6]">HACK</span>
-          </button>
-
-          {/* Fun bit: the brand logo deploys the interactive shell. */}
-          <button
-            onClick={onOpenTerminal}
-            className="group flex items-center transition-transform focus:outline-none"
-            title="Abrir Shell Interactivo"
-            aria-label="Abrir Shell Interactivo"
-          >
-            <img
-              src="/ui/logo-general.png"
-              alt="StarkHack"
-              className="h-8 w-8 rounded border border-[#39bae6]/40 bg-[#10141c] object-contain p-0.5 shadow-[0_0_12px_rgba(57,186,230,0.25)] transition-all group-hover:border-[#39bae6] group-hover:shadow-[0_0_16px_rgba(57,186,230,0.5)]"
-            />
-          </button>
 
           {/* Mobile Hamburger */}
           <button
