@@ -138,3 +138,21 @@ stack unificado en latest estable.
   rango que los incluía excedió el presupuesto del lente. Queda como deuda de
   cobertura registrada — se revisará por slices más chicos (p. ej. por archivo)
   en la fase 2.1.
+
+#### T3 — Home portado al pipeline ✅ (`c65fd8e`)
+- `src/lib/contentAdapter.ts` (nuevo): mappers puros y síncronos
+  `toUiWriteup` / `toUiProject`; solo campos reales del pipeline
+  (slug→id, title, description→summary, date, platform→platformId,
+  tags, image). `iconType` derivado con mapa documentado (platform →
+  wave/server/network/database/bug; group → gear/code/scan/shield).
+- `src/App.tsx`: Home carga con `getRecentWriteups(3)` + `getProjects()`
+  en `useEffect`; estados de carga y vacío honestos. Sin
+  `FEATURED_WRITEUPS`/`FEATURED_PROJECTS`.
+- `src/types/index.ts`: campos solo-de-plantilla ahora opcionales;
+  `NewsWriteups`/`FeaturedProjects` renderizan cada chip condicionalmente.
+- TDD: RED observado (`Cannot find module '../src/lib/contentAdapter'`),
+  GREEN 12 tests nuevos.
+- Gates: build ✓ · **207/207** · `tsc --noEmit` 0.
+- Riesgo registrado (T5): `WriteupPage:54` hace spread de
+  `vulnerabilities` cuando no hay tags; y la página de detalle consume
+  `markdownContent` de datos mock todavía.
