@@ -1,6 +1,20 @@
-import React, { useState } from 'react';
+// /certifications screen — real content pipeline, no mock data.
+//
+// Data flow: getCertificates() (public/index.json certificate entries via
+// lib/content.ts, already in canonical ascending `order`) in a
+// useState/useEffect load with honest loading/error/empty states, then the
+// PURE model builder (src/lib/certificationsModel.ts) derives everything the
+// screen renders: the filtered list, the category filter (driven by the real
+// `group` — universidad | hack4u | cisco — with the screen's uppercase labels)
+// and the "MOSTRANDO X ... Y TOTALES" counts.
+//
+// Template-only fields (badges, issuer, durations, status, ...) have no source
+// in the pipeline, so their chips/labels are hidden — never placeholders.
+import React, { useState, useEffect, useMemo } from 'react';
 import { Certification } from '../types';
-import { CERTIFICATIONS } from '../data/portfolioData';
+import type { ContentIndexItem } from '../../types';
+import { getCertificates } from '../../lib/content';
+import { buildCertificationsModel, type CertificationFilterId } from '../lib/certificationsModel';
 import {
   GraduationCap,
   Shield,
@@ -13,14 +27,49 @@ import {
   Fingerprint,
 } from 'lucide-react';
 
-export const CertificationsScreen: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<'TODOS' | 'UNIVERSIDAD' | 'HACK4U' | 'UDEMY'>('TODOS');
+// Real pipeline `date` first — an absent date stays absent and the UI renders
+// nothing there (never a fabricated date). issueDate/year remain only for the
+// legacy template mock data.
+const displayDate = (cert: Certification): string | undefined =>
+  cert.date ?? cert.issueDate ?? cert.year;
 
-  // Filter certifications according to selected category
-  const filteredCerts = CERTIFICATIONS.filter((c) => {
-    if (activeFilter === 'TODOS') return true;
-    return c.category === activeFilter;
-  });
+export const CertificationsScreen: React.FC = () => {
+  const [activeFilter, setActiveFilter] = useState<CertificationFilterId>('TODOS');
+
+  // Real pipeline loading (same honest states as Home / WriteupsScreen).
+  const [entries, setEntries] = useState<ContentIndexItem[]>([]);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState<string>('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCertificates = async () => {
+      try {
+        const certificates = await getCertificates();
+        if (cancelled) return;
+        setEntries(certificates);
+        setStatus('ready');
+      } catch (error) {
+        if (cancelled) return;
+        setLoadError(error instanceof Error ? error.message : String(error));
+        setStatus('error');
+      }
+    };
+
+    void loadCertificates();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Everything the screen renders comes from the pure model builder.
+  const model = useMemo(
+    () => buildCertificationsModel(entries, { category: activeFilter }),
+    [entries, activeFilter]
+  );
+
+  const filteredCerts = model.certificates;
 
   const getCategoryBadgeStyle = (category: Certification['category']) => {
     switch (category) {
@@ -48,6 +97,7 @@ export const CertificationsScreen: React.FC = () => {
 
   // Render a large, imposing and realistic diploma thumbnail preview
   const renderDiplomaThumbnail = (cert: Certification) => {
+    const dateText = displayDate(cert);
     const isUni = cert.category === 'UNIVERSIDAD';
     const isHack4u = cert.category === 'HACK4U';
     const accentColor = isUni ? '#39bae6' : isHack4u ? '#7edc73' : '#e6b450';
@@ -80,32 +130,40 @@ export const CertificationsScreen: React.FC = () => {
               )}
             </div>
 
-            <div>
-              <div className="text-[9px] sm:text-[10px] font-mono tracking-wider text-[#5a6673] uppercase">
-                ACREDITACIÓN DE COMPETENCIA TÉCNICA
-              </div>
-              <div className="text-xs sm:text-sm font-mono font-bold text-white truncate max-w-[220px] sm:max-w-[320px]">
-                {cert.issuer}
-              </div>
-            </div>
-          </div>
-
-          <div className="text-right font-mono text-[9px] sm:text-[10px] text-[#5a6673]">
-            {cert.isPending ? (
-              <div className="flex items-center justify-end gap-1.5 text-[#f4c05b] font-semibold">
-                <Clock className="h-3.5 w-3.5 animate-pulse" />
-                <span>EN CURSO</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-end gap-1 text-[#7edc73] font-semibold">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>VERIFICADO</span>
+            {cert.issuer && (
+              <div>
+                <div className="text-[9px] sm:text-[10px] font-mono tracking-wider text-[#5a6673] uppercase">
+                  ACREDITACIÓN DE COMPETENCIA TÉCNICA
+                </div>
+                <div className="text-xs sm:text-sm font-mono font-bold text-white truncate max-w-[220px] sm:max-w-[320px]">
+                  {cert.issuer}
+                </div>
               </div>
             )}
-            <div className={cert.isPending ? "text-[#f4c05b]/80 font-medium" : "text-[#bdc8cf] font-medium"}>
-              {cert.isPending ? 'EXPEDIENTE ACTIVO' : (cert.issueDate || cert.year)}
-            </div>
           </div>
+
+          {/* Status claim is template-only: rendered only when the entry
+              really carries one — real pipeline certificates never do. */}
+          {cert.status !== undefined && (
+            <div className="text-right font-mono text-[9px] sm:text-[10px] text-[#5a6673]">
+              {cert.isPending ? (
+                <div className="flex items-center justify-end gap-1.5 text-[#f4c05b] font-semibold">
+                  <Clock className="h-3.5 w-3.5 animate-pulse" />
+                  <span>EN CURSO</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-end gap-1 text-[#7edc73] font-semibold">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>VERIFICADO</span>
+                </div>
+              )}
+              {(cert.isPending || dateText !== undefined) && (
+                <div className={cert.isPending ? "text-[#f4c05b]/80 font-medium" : "text-[#bdc8cf] font-medium"}>
+                  {cert.isPending ? 'EXPEDIENTE ACTIVO' : dateText}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Certificate Body (Diploma Presentation) */}
@@ -128,45 +186,57 @@ export const CertificationsScreen: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center justify-center gap-3 text-[9px] sm:text-[10px] font-mono flex-wrap">
-            <div>
-              <span className="text-[#5a6673]">
-                {cert.isPending ? 'ESTADO: ' : 'EXPEDIDO EL: '}
-              </span>
-              <span className={`font-semibold ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#39bae6]'}`}>
-                {cert.isPending ? 'CURSANDO (EN TRÁMITE)' : (cert.issueDate || cert.year)}
-              </span>
+          {(cert.isPending || dateText !== undefined || cert.statValue !== undefined) && (
+            <div className="flex items-center justify-center gap-3 text-[9px] sm:text-[10px] font-mono flex-wrap">
+              {(cert.isPending || dateText !== undefined) && (
+                <div>
+                  <span className="text-[#5a6673]">
+                    {cert.isPending ? 'ESTADO: ' : 'EXPEDIDO EL: '}
+                  </span>
+                  <span className={`font-semibold ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#39bae6]'}`}>
+                    {cert.isPending ? 'CURSANDO (EN TRÁMITE)' : dateText}
+                  </span>
+                </div>
+              )}
+              {(cert.isPending || dateText !== undefined) && cert.statValue !== undefined && (
+                <span className="text-[#5a6673]">•</span>
+              )}
+              {cert.statValue !== undefined && (
+                <div>
+                  <span className="text-[#5a6673]">DURACIÓN: </span>
+                  <span className="text-[#7edc73] font-semibold">{cert.statValue}</span>
+                </div>
+              )}
             </div>
-            <span className="text-[#5a6673]">•</span>
-            <div>
-              <span className="text-[#5a6673]">DURACIÓN: </span>
-              <span className="text-[#7edc73] font-semibold">{cert.statValue}</span>
-            </div>
-          </div>
+          )}
 
-          <div className="text-[10px] sm:text-[11px] font-mono text-[#879299] tracking-wide">
-            {cert.subBadge}
-          </div>
+          {cert.subBadge && (
+            <div className="text-[10px] sm:text-[11px] font-mono text-[#879299] tracking-wide">
+              {cert.subBadge}
+            </div>
+          )}
         </div>
 
         {/* Certificate Bottom Security Strip */}
         <div className="relative z-10 flex items-end justify-between border-t border-[#1b1f29]/90 pt-2 font-mono text-[9px] sm:text-[10px]">
-          {/* Left: Signature line & Issue Date */}
-          <div className="space-y-0.5">
-            <div className="text-[8px] sm:text-[9px] text-[#5a6673]">
-              {cert.isPending ? 'ESTADO DE EMISIÓN' : 'FECHA DE EMISIÓN'}
+          {/* Left: Signature line & Issue Date (real date only) */}
+          {(cert.isPending || dateText !== undefined) && (
+            <div className="space-y-0.5">
+              <div className="text-[8px] sm:text-[9px] text-[#5a6673]">
+                {cert.isPending ? 'ESTADO DE EMISIÓN' : 'FECHA DE EMISIÓN'}
+              </div>
+              <div className="flex items-center gap-1 text-[#e0e2ec]">
+                {cert.isPending ? (
+                  <Clock className="h-2.5 w-2.5 text-[#f4c05b]" />
+                ) : (
+                  <Lock className="h-2.5 w-2.5 text-[#39bae6]" />
+                )}
+                <span className={`font-mono text-[9px] font-semibold ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#e0e2ec]'}`}>
+                  {cert.isPending ? 'Pendiente de Titulación' : dateText}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[#e0e2ec]">
-              {cert.isPending ? (
-                <Clock className="h-2.5 w-2.5 text-[#f4c05b]" />
-              ) : (
-                <Lock className="h-2.5 w-2.5 text-[#39bae6]" />
-              )}
-              <span className={`font-mono text-[9px] font-semibold ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#e0e2ec]'}`}>
-                {cert.isPending ? 'Pendiente de Titulación' : (cert.issueDate || cert.year)}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Center: Medallion Stamp */}
           <div className="flex flex-col items-center justify-center">
@@ -188,16 +258,18 @@ export const CertificationsScreen: React.FC = () => {
             </span>
           </div>
 
-          {/* Right: Security ID */}
-          <div className="text-right space-y-0.5">
-            <div className="text-[8px] sm:text-[9px] text-[#5a6673]">
-              {cert.isPending ? 'EXPEDIENTE ACADÉMICO' : 'IDENTIFICADOR ÚNICO'}
+          {/* Right: Security ID — real badgeId only, never a fabricated one */}
+          {cert.badgeId && (
+            <div className="text-right space-y-0.5">
+              <div className="text-[8px] sm:text-[9px] text-[#5a6673]">
+                {cert.isPending ? 'EXPEDIENTE ACADÉMICO' : 'IDENTIFICADOR ÚNICO'}
+              </div>
+              <div className={`flex items-center justify-end gap-1 ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#39bae6]'}`}>
+                <Fingerprint className="h-2.5 w-2.5" />
+                <span className="font-semibold text-[9px]">{cert.badgeId}</span>
+              </div>
             </div>
-            <div className={`flex items-center justify-end gap-1 ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#39bae6]'}`}>
-              <Fingerprint className="h-2.5 w-2.5" />
-              <span className="font-semibold text-[9px]">{cert.badgeId || 'CERT-SEC-901'}</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -251,7 +323,39 @@ export const CertificationsScreen: React.FC = () => {
         </p>
       </div>
 
+      {/* Honest loading / error states (same pattern as Home / WriteupsScreen) */}
+      {status === 'loading' && (
+        <div className="rounded-lg border border-[#1b1f29] bg-[#10141c] px-6 py-10 text-center">
+          <p className="font-mono text-xs text-[#879299]">
+            <span className="text-[#39bae6]">&gt;</span> CARGANDO CONTENIDO DESDE /index.json ...
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="rounded-lg border border-[#f07178]/30 bg-[#f07178]/5 px-6 py-10 text-center">
+          <p className="font-mono text-xs text-[#f07178]">
+            <span className="text-[#39bae6]">&gt;</span> ERROR: NO SE PUDO CARGAR EL ÍNDICE DE CONTENIDO
+          </p>
+          <p className="mt-2 break-words text-[11px] font-mono text-[#879299]">{loadError}</p>
+        </div>
+      )}
+
+      {/* Honest empty state: the real index has no certificate entries yet. */}
+      {status === 'ready' && model.totalCount === 0 && (
+        <div className="rounded-xl border border-dashed border-[#242936] bg-[#10141c]/50 p-12 text-center">
+          <Award className="mx-auto h-8 w-8 text-[#5a6673] mb-3" />
+          <h3 className="font-sans text-base font-bold text-white mb-1">
+            Aún no hay certificados publicados
+          </h3>
+          <p className="text-xs text-[#879299] max-w-md mx-auto">
+            El índice de contenido real todavía no contiene certificados. Cuando se publiquen aparecerán aquí, sin datos simulados.
+          </p>
+        </div>
+      )}
+
       {/* Filter Row with clean LED indicator dots */}
+      {status === 'ready' && model.totalCount > 0 && (
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-y border-[#1b1f29]/80 py-3 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[#5a6673] font-mono text-[11px] mr-1">• FILTRO:</span>
@@ -299,30 +403,34 @@ export const CertificationsScreen: React.FC = () => {
             <span>HACK4U</span>
           </button>
 
-          {/* Button: UDEMY */}
+          {/* Button: CISCO (canonical group; the template's UDEMY category has
+              no pipeline source and is simply gone) */}
           <button
-            onClick={() => setActiveFilter('UDEMY')}
+            onClick={() => setActiveFilter('CISCO')}
             className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
-              activeFilter === 'UDEMY'
+              activeFilter === 'CISCO'
                 ? 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]'
                 : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-[#e6b450] shadow-[0_0_6px_#e6b450]" />
-            <span>UDEMY</span>
+            <span>CISCO</span>
           </button>
         </div>
 
         {/* Right count */}
         <div className="text-[11px] text-[#5a6673] font-mono tracking-wider">
-          MOSTRANDO: <span className="text-[#bdc8cf] font-semibold">{filteredCerts.length} CERTIFICADOS</span> // {CERTIFICATIONS.length} TOTALES
+          MOSTRANDO: <span className="text-[#bdc8cf] font-semibold">{model.filteredCount} CERTIFICADOS</span> // {model.totalCount} TOTALES
         </div>
       </div>
+      )}
 
       {/* Grid of Imposing Certification Cards (MAXIMUM 2 CARDS WIDE) */}
+      {status === 'ready' && model.totalCount > 0 && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {filteredCerts.map((cert) => {
           const catStyle = getCategoryBadgeStyle(cert.category);
+          const dateText = displayDate(cert);
           return (
             <div
               key={cert.id}
@@ -332,11 +440,13 @@ export const CertificationsScreen: React.FC = () => {
                 {/* Header inside card: Category pill (without versions) & Index number */}
                 <div className="mb-2 flex items-center justify-between font-mono text-xs px-1">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded border ${catStyle.border} ${catStyle.bg} px-2.5 py-0.5 text-xs font-semibold tracking-wide ${catStyle.text}`}
-                    >
-                      {cert.category}
-                    </span>
+                    {cert.category && (
+                      <span
+                        className={`rounded border ${catStyle.border} ${catStyle.bg} px-2.5 py-0.5 text-xs font-semibold tracking-wide ${catStyle.text}`}
+                      >
+                        {cert.category}
+                      </span>
+                    )}
                     {cert.isPending && (
                       <span className="flex items-center gap-1 rounded border border-[#f4c05b]/40 bg-[#f4c05b]/15 px-2 py-0.5 text-[10px] font-bold text-[#f4c05b]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#f4c05b] animate-pulse" />
@@ -360,8 +470,10 @@ export const CertificationsScreen: React.FC = () => {
                   </h3>
                 </div>
 
-                {/* Issue Date & Duration in hours */}
+                {/* Issue Date & Duration in hours (real fields only) */}
+                {(dateText !== undefined || cert.statValue !== undefined) && (
                 <div className="mb-2.5 flex items-center gap-2 text-[11px] font-mono px-1 flex-wrap">
+                  {dateText !== undefined && (
                   <div className={`flex items-center gap-1.5 ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#39bae6]'}`}>
                     {cert.isPending ? (
                       <Clock className="h-3.5 w-3.5 shrink-0 animate-pulse" />
@@ -370,22 +482,29 @@ export const CertificationsScreen: React.FC = () => {
                     )}
                     <span className="text-[#5a6673]">{cert.isPending ? 'ESTADO:' : 'EMISIÓN:'}</span>
                     <span className={`font-medium ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#e0e2ec]'}`}>
-                      {cert.issueDate || cert.year}
+                      {dateText}
                     </span>
                   </div>
-                  <span className="text-[#5a6673]">•</span>
+                  )}
+                  {dateText !== undefined && cert.statValue !== undefined && <span className="text-[#5a6673]">•</span>}
+                  {cert.statValue !== undefined && (
                   <div className="flex items-center gap-1 text-[#7edc73] font-medium">
                     <span className="text-[#5a6673]">DURACIÓN:</span>
                     <span>{cert.statValue}</span>
                   </div>
+                  )}
                 </div>
+                )}
 
                 {/* Description */}
-                <p className="mb-3 text-xs font-mono leading-relaxed text-[#879299] px-1">
-                  {cert.description}
-                </p>
+                {cert.description && (
+                  <p className="mb-3 text-xs font-mono leading-relaxed text-[#879299] px-1">
+                    {cert.description}
+                  </p>
+                )}
 
                 {/* Tags */}
+                {cert.tags && cert.tags.length > 0 && (
                 <div className="mb-3.5 flex flex-wrap gap-1.5 px-1">
                   {cert.tags.map((tag, idx) => (
                     <div
@@ -397,11 +516,13 @@ export const CertificationsScreen: React.FC = () => {
                     </div>
                   ))}
                 </div>
+                )}
               </div>
 
-              {/* Action Link: VER CREDENCIAL link seco para abrir PDF en pestaña nueva */}
+              {/* Action Link: VER CREDENCIAL — rendered only when a real PDF exists */}
+              {cert.pdfUrl && (
               <a
-                href={cert.pdfUrl || '#'}
+                href={cert.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`group/btn mt-auto flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-xs font-mono font-semibold transition-all ${
@@ -413,10 +534,12 @@ export const CertificationsScreen: React.FC = () => {
                 <span>{cert.isPending ? 'VER EXPEDIENTE ACADÉMICO (EN CURSO)' : 'VER CREDENCIAL'}</span>
                 <ExternalLink className={`h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 ${cert.isPending ? 'text-[#f4c05b]' : 'text-[#39bae6]'}`} />
               </a>
+              )}
             </div>
           );
         })}
       </div>
+      )}
     </div>
   );
 };

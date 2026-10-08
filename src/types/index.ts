@@ -116,24 +116,35 @@ export interface Project {
 
 export interface Certification {
   id: string;
+  // Derived display position ('#01', '#02', ...) from the real loaded order
+  // (toUiCertification's documented contract) — ordering data, not invented.
   number: string;
   title: string;
-  category: 'UNIVERSIDAD' | 'HACK4U' | 'UDEMY' | 'OFFSEC';
-  version: string;
-  statusBadge: string;
-  subBadge: string;
-  iconType: 'grad-cap' | 'code' | 'shield';
-  description: string;
-  tags: string[];
-  statValue: string;
-  year: string;
+  // Display label derived from the REAL pipeline `group` (certificationsModel).
+  // Absent when the group is missing or non-canonical — never an invented
+  // category. The legacy template values below stay in the union only for the
+  // old mock data; the pipeline never produces them.
+  category?: 'UNIVERSIDAD' | 'HACK4U' | 'CISCO' | 'UDEMY' | 'OFFSEC';
+  // Real pipeline fields (frontmatter), present only when the source supplies
+  // them — never filled with placeholders.
+  description?: string;
+  tags?: string[];
+  date?: string;
+  // Template-only fields (no pipeline source — never invented for real data):
+  // optional so pipeline-backed certificates render without fake metadata and
+  // the UI hides their chips/labels.
+  version?: string;
+  statusBadge?: string;
+  subBadge?: string;
+  iconType?: 'grad-cap' | 'code' | 'shield';
+  statValue?: string;
+  year?: string;
   issueDate?: string;
-  issuer: string;
+  issuer?: string;
   badgeId?: string;
   pdfUrl?: string;
   verificationUrl?: string;
-  status: 'VERIFIED' | 'ACTIVE' | 'PENDING';
+  status?: 'VERIFIED' | 'ACTIVE' | 'PENDING';
   isPending?: boolean;
   skills?: string[];
-  date?: string;
 }

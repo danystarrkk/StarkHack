@@ -23,7 +23,7 @@
 //   'automatizaciones' → 'scan'
 //   missing/unknown group → 'shield'
 import type { ContentIndexItem, WriteupIndexItem } from '../../types';
-import type { Project, Writeup } from '../types';
+import type { Certification, Project, Writeup } from '../types';
 
 const WRITEUP_ICON_BY_PLATFORM: Readonly<Record<string, Writeup['iconType']>> = Object.freeze({
   hackmyvm: 'wave',
@@ -86,5 +86,29 @@ export const toUiProject = (item: ContentIndexItem, position: number): Project =
   ...(item.description !== undefined ? { description: item.description } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
   ...(item.image !== undefined ? { image: item.image } : {}),
+  ...(item.date !== undefined ? { date: item.date } : {}),
+});
+
+/**
+ * Certificate index item → UI Certification. Pure and synchronous.
+ *
+ * `position` is the 1-based display position of the certificate in the list
+ * the caller loaded (getCertificates' canonical `order`); it deterministically
+ * derives `number` (`#01`, `#02`, ...). That is ordering data the caller
+ * really has — nothing else is synthesized.
+ *
+ * Mapped (real pipeline data): slug→id, title→title, description→description,
+ * tags→tags, date→date, position→number. The group-derived `category` label is
+ * added by certificationsModel (same layering as projectsModel's groupLabel).
+ * Optional pipeline fields are omitted entirely when absent; every
+ * template-only field (version, badges, issuer, statValue, ...) stays ABSENT —
+ * never invented.
+ */
+export const toUiCertification = (item: ContentIndexItem, position: number): Certification => ({
+  id: item.slug,
+  title: item.title,
+  number: `#${String(position).padStart(2, '0')}`,
+  ...(item.description !== undefined ? { description: item.description } : {}),
+  ...(item.tags !== undefined ? { tags: item.tags } : {}),
   ...(item.date !== undefined ? { date: item.date } : {}),
 });
