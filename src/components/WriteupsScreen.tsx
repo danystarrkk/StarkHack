@@ -33,11 +33,6 @@ import {
 } from '../lib/directoryModel';
 import {
   Search,
-  Waves,
-  Server,
-  Network,
-  Database,
-  Bug,
   ArrowRight,
   ArrowLeft,
   Terminal,
@@ -136,22 +131,9 @@ export const WriteupsScreen: React.FC<WriteupsScreenProps> = ({ onSelectWriteup 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Map the deterministic platform iconType (shared with toUiWriteup) to icons.
-  const renderPlatformIcon = (iconType: Writeup['iconType']) => {
-    switch (iconType) {
-      case 'wave':
-        return <Waves className="h-5 w-5 text-[#39bae6]" />;
-      case 'server':
-        return <Server className="h-5 w-5 text-[#7edc73]" />;
-      case 'network':
-        return <Network className="h-5 w-5 text-[#39bae6]" />;
-      case 'database':
-        return <Database className="h-5 w-5 text-[#e6b450]" />;
-      case 'bug':
-      default:
-        return <Bug className="h-5 w-5 text-[#f07178]" />;
-    }
-  };
+  // Deterministic per-platform SVG icons are retired: every CTF platform
+  // card now carries the same generic CTF logo (public/ui/logo-plataformas.webp),
+  // so new platforms need no icon wiring at all.
 
   return (
     <div className="w-full space-y-8 font-mono">
@@ -313,8 +295,13 @@ export const WriteupsScreen: React.FC<WriteupsScreenProps> = ({ onSelectWriteup 
                 >
                   {/* Top Row: Icon + Node Count Pill */}
                   <div className="mb-5 flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded border border-[#1b1f29] bg-[#0d1017]">
-                      {renderPlatformIcon(platform.iconType)}
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017]">
+                      <img
+                        src="/ui/logo-plataformas.webp"
+                        alt="CTF"
+                        className="h-full w-full object-contain p-1"
+                        loading="lazy"
+                      />
                     </div>
 
                     <div className="flex items-center gap-1.5 rounded border border-[#1b1f29] bg-[#0d1017] px-2.5 py-1 text-[11px] font-mono text-[#bdc8cf]">
