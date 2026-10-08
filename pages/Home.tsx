@@ -9,10 +9,19 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getRecentWriteups(3).then((data) => {
-      setRecentWriteups(data);
-      setLoading(false);
-    });
+    // On infrastructure failure log and clear loading so the existing
+    // "[NULL] No writeups found" branch renders instead of spinning (R3-index-kind-silent-empty).
+    getRecentWriteups(3).then(
+      (data) => {
+        setRecentWriteups(data);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Failed to load recent writeups:", error);
+        setRecentWriteups([]);
+        setLoading(false);
+      },
+    );
   }, []);
 
   // Helper to generate a consistent looking pseudo-hash from slug

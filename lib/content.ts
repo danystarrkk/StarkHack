@@ -1,5 +1,5 @@
 import { parseFrontmatter } from './frontmatter.js';
-import { CERTIFICATE_GROUPS, PROJECT_GROUPS } from './content-kinds.js';
+import { CERTIFICATE_GROUPS, PROJECT_GROUPS, indexEntryProblems } from './content-kinds.js';
 import {
   CertificateDoc,
   ContentDoc,
@@ -14,23 +14,81 @@ import {
 
 const INDEX_URL = '/index.json';
 
-// Raw fetch of the generated index (every content kind, exactly as generated).
-const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
-  try {
-    const response = await fetch(INDEX_URL);
-    if (!response.ok) {
-      console.error("Index not found. Did you run 'node scripts/generate-index.js'?");
-      return [];
+// Actionable hint kept verbatim from the old console-only path: without a
+// generated index the fix is always to run the generator.
+const INDEX_HINT = "Did you run 'node scripts/generate-index.js'?";
+
+// Infrastructure failure while loading the generated content index (missing or
+// unreadable public/index.json). Thrown instead of resolving [] so callers can
+// tell a broken deployment apart from "this kind legitimately has no entries"
+// (R3-index-kind-silent-empty).
+export class ContentIndexError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message);
+    this.name = 'ContentIndexError';
+    if (options !== undefined && options.cause !== undefined) {
+      (this as Error & { cause?: unknown }).cause = options.cause;
     }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Failed to fetch content index:", error);
-    return [];
   }
+}
+
+// Raw fetch of the generated index (every content kind, exactly as generated).
+// REJECTS with ContentIndexError when the response is not ok, the body cannot
+// be parsed, or the request itself fails — never a silent [].
+const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
+  let response: Response;
+  try {
+    response = await fetch(INDEX_URL);
+  } catch (error) {
+    throw new ContentIndexError(
+      `Failed to fetch content index: ${error instanceof Error ? error.message : String(error)}. ${INDEX_HINT}`,
+      { cause: error }
+    );
+  }
+  if (!response.ok) {
+    throw new ContentIndexError(`Index not found. ${INDEX_HINT}`);
+  }
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ContentIndexError(
+      `Failed to parse content index: ${error instanceof Error ? error.message : String(error)}. ${INDEX_HINT}`,
+      { cause: error }
+    );
+  }
+
+  // JSON válido no implica índice válido: si no es array, un cast mentiría y
+  // el filtro de abajo revienta con un TypeError sin el hint. Fallamos acá,
+  // con el mismo error tipado (R3-001).
+  if (!Array.isArray(data)) {
+    throw new ContentIndexError(
+      `Invalid content index: expected an array, got ${typeof data}. ${INDEX_HINT}`,
+      { cause: data }
+    );
+  }
+
+  // Un array JSON válido tampoco implica entradas válidas: sin validar la forma
+  // de cada entry, un index corrupto pasa el cast y degrada en silencio a "no
+  // content" (o revienta con un TypeError pelado en getPlatforms sobre
+  // item.platform). Fallamos acá nombrando la entrada ofensora y el problema
+  // (R3-array-entry-shape-unvalidated). El vocabulario vive en
+  // lib/content-kinds.js; acá solo se arma el error con el hint accionable.
+  data.forEach((entry, index) => {
+    const problems = indexEntryProblems(entry);
+    if (problems.length > 0) {
+      throw new ContentIndexError(
+        `Invalid content index entry ${index}: ${problems.join('; ')}. ${INDEX_HINT}`,
+        { cause: entry }
+      );
+    }
+  });
+
+  return data as ContentIndexItem[];
 };
 
 // Raw accessor: every index entry of one content kind, in index order.
+// Rejects with ContentIndexError on infrastructure failure (R3-index-kind-silent-empty).
 export const fetchIndexByKind = async (kind: ContentKind): Promise<ContentIndexItem[]> => {
   const index = await fetchRawIndex();
   return index.filter((item) => item.kind === kind);
@@ -90,15 +148,21 @@ export const getProjectGroups = async (): Promise<GroupStats[]> =>
 export const getCertificateGroups = async (): Promise<GroupStats[]> =>
   groupStats('certificate', CERTIFICATE_GROUPS);
 
-// All certificate entries, sorted ascending by `order` (the display order).
-export const getCertificates = async (): Promise<ContentIndexItem[]> => {
-  const certificates = await fetchIndexByKind('certificate');
-  return certificates.sort((a, b) => {
+// Canonical certificate ordering (R3-order-fallback-unproved): real integer
+// orders ascending; an entry with no `order` sorts after every ordered entry;
+// ties keep input order. The no-order fallback is UNREACHABLE for validated
+// indexes — the entry-shape validator requires `order` on certificates — kept
+// as defense and pinned directly on this helper by its tests.
+export const sortCertificatesByOrder = (certificates: ContentIndexItem[]): ContentIndexItem[] =>
+  [...certificates].sort((a, b) => {
     if (a.order === undefined) return b.order === undefined ? 0 : 1;
     if (b.order === undefined) return -1;
     return a.order - b.order;
   });
-};
+
+// All certificate entries, sorted ascending by `order` (the display order).
+export const getCertificates = async (): Promise<ContentIndexItem[]> =>
+  sortCertificatesByOrder(await fetchIndexByKind('certificate'));
 
 // Get list of platforms from the index
 export const getPlatforms = async (): Promise<PlatformStats[]> => {

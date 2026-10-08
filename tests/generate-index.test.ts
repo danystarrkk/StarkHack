@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { generateIndex } from '../scripts/generate-index.js';
 
 // Fixtures always live outside the repository, in a fresh OS temp directory.
@@ -759,6 +759,48 @@ describe('generateIndex project/certificate group and tag validation', () => {
     writeFlat(source.certificate, 'b-draft-certificate.md', ['draft: true']);
 
     expect(generateIndex(source)).toEqual([]);
+  });
+});
+
+describe('generateIndex byte-stable ordering (R3-byte-stability-readdir)', () => {
+  it('orders equal-dated flat entries by filename even when readdir returns them scrambled', () => {
+    const source = makeTempSource();
+    // Same date for both files: nothing but the file-name tiebreak may decide.
+    writeFlat(source.project, 'z.md', ['title: "Zed"', 'date: 2026-01-01', 'image: "/z.webp"', ...projectTaxonomy]);
+    writeFlat(source.project, 'a.md', ['title: "Ay"', 'date: 2026-01-01', 'image: "/a.webp"', ...projectTaxonomy]);
+
+    // POSIX does not guarantee readdirSync order: force the scrambled listing
+    // ['z.md', 'a.md'] so the output must not inherit it.
+    const originalReaddirSync = fs.readdirSync;
+    vi.spyOn(fs, 'readdirSync').mockImplementation(
+      ((dir: fs.PathLike): string[] => {
+        if (String(dir) === source.project) return ['z.md', 'a.md'];
+        return originalReaddirSync(dir) as unknown as string[];
+      }) as unknown as typeof fs.readdirSync,
+    );
+
+    const slugs = generateIndex(source).map((item) => item.slug);
+
+    expect(slugs).toEqual(['a', 'z']);
+  });
+
+  it('orders equal-dated platformed entries by filename even when readdir returns them scrambled', () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'z.md', ['title: "Zed"', 'date: 2026-01-01']);
+    writeWriteup(source.writeup, 'hackmyvm', 'a.md', ['title: "Ay"', 'date: 2026-01-01']);
+
+    const platformDir = path.join(source.writeup, 'hackmyvm');
+    const originalReaddirSync = fs.readdirSync;
+    vi.spyOn(fs, 'readdirSync').mockImplementation(
+      ((dir: fs.PathLike): string[] => {
+        if (String(dir) === platformDir) return ['z.md', 'a.md'];
+        return originalReaddirSync(dir) as unknown as string[];
+      }) as unknown as typeof fs.readdirSync,
+    );
+
+    const slugs = generateIndex(source).map((item) => item.slug);
+
+    expect(slugs).toEqual(['a', 'z']);
   });
 });
 

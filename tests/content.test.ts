@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  ContentIndexError,
   fetchIndex,
+  fetchIndexByKind,
   fetchWriteup,
+  getCertificates,
   getMachinesByPlatform,
   getPlatforms,
+  getProjects,
   getRecentWriteups,
 } from '../lib/content';
 import type { WriteupIndexItem } from '../types';
@@ -53,16 +57,209 @@ describe('fetchIndex', () => {
     expect(fetchMock).toHaveBeenCalledWith('/index.json');
   });
 
-  it('returns an empty list when the index response is not ok', async () => {
+  // CONTRACT CHANGE (R3-index-kind-silent-empty): the old contract resolved [] on
+  // a failed response, indistinguishable from "this kind has no entries". The
+  // index accessors now REJECT with ContentIndexError so callers can tell a
+  // broken deployment from empty content.
+  it('rejects with a ContentIndexError when the index response is not ok', async () => {
     fetchMock.mockResolvedValue(notOkResponse());
 
-    await expect(fetchIndex()).resolves.toEqual([]);
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
   });
 
-  it('returns an empty list when the request rejects', async () => {
+  it('rejects with a ContentIndexError when the request rejects', async () => {
     fetchMock.mockRejectedValue(new Error('network down'));
 
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+  });
+
+  it('rejects with a ContentIndexError when the index body is not parseable', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => {
+        throw new SyntaxError('Unexpected token < in JSON');
+      },
+    } as unknown as Response);
+
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
+  });
+
+  it('rejects with a ContentIndexError when the index JSON is not an array', async () => {
+    // JSON válido no implica índice válido: sin validación de forma, el filtro
+    // el filtro de abajo revienta con un TypeError sin el hint (R3-001).
+    fetchMock.mockResolvedValue(jsonResponse({ not: 'an array' }));
+
+    await expect(fetchIndex()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(fetchIndex()).rejects.toThrow('expected an array');
+    await expect(fetchIndex()).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
+  });
+
+  it('still resolves [] for a legitimately empty index', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([]));
+
     await expect(fetchIndex()).resolves.toEqual([]);
+    await expect(getPlatforms()).resolves.toEqual([]);
+    await expect(getRecentWriteups()).resolves.toEqual([]);
+  });
+});
+
+// CONTRACT CHANGE (R3-array-entry-shape-unvalidated): the index boundary also
+// validates every ENTRY. A corrupt entry must fail loudly with ContentIndexError
+// naming the offending entry — never degrade into "no content" via the cast and
+// a silent filter (or a bare TypeError in getPlatforms on item.platform).
+describe('index entry shape validation (R3-array-entry-shape-unvalidated)', () => {
+  it('rejects an entry missing its required fields, naming entry 0 and the missing fields', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([{ kind: 'writeup' }]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('title');
+    await expect(rejection).rejects.toThrow('date');
+    await expect(rejection).rejects.toThrow('platform');
+    await expect(rejection).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
+  });
+
+  it('rejects non-object entries, naming the first offending entry index', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([1, 2, 3]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow("Did you run 'node scripts/generate-index.js'?");
+  });
+
+  it('still resolves a valid writeup index (regression guard)', async () => {
+    const items = [makeItem()];
+    fetchMock.mockResolvedValue(jsonResponse(items));
+
+    await expect(fetchIndex()).resolves.toEqual(items);
+  });
+
+  it('names the offending entry index even when earlier entries are valid', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([makeItem(), 7]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toThrow(/entry 1/);
+    await expect(rejection).rejects.toThrow('expected a plain object entry, got number');
+  });
+
+  it('rejects a null entry', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([null]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('null');
+  });
+
+  it('rejects an unknown kind, naming the offending value and every valid kind', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([{ ...makeItem(), kind: 'book' }]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('book');
+    await expect(rejection).rejects.toThrow('"writeup", "project", "certificate"');
+  });
+
+  it('rejects a blank index-level slug', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([{ ...makeItem(), slug: '   ' }]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('slug');
+  });
+
+  it('rejects a blank platform on a platformed kind', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([{ ...makeItem(), platform: '  ' }]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('platform');
+  });
+
+  it('applies the required-field rule to certificates too: an entry without `order` rejects (R3-order-fallback-unproved seam)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([
+      {
+        kind: 'certificate',
+        title: 'Cert',
+        slug: 'cert',
+        path: '/certificates/cert.md',
+        image: '/certificates/cert/media/cover.webp',
+        description: 'd',
+      },
+    ]));
+
+    const rejection = getCertificates();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('order');
+  });
+
+  it('rejects a project entry without a group, naming the valid options', async () => {
+    // `group` no vive en `required`: el generador lo valida con assertValidGroup,
+    // así que el borde tiene que chequearlo aparte o un proyecto sin grupo
+    // pasa en silencio y la UI no puede seccionarlo.
+    fetchMock.mockResolvedValue(jsonResponse([
+      {
+        kind: 'project',
+        title: 'Proj',
+        date: '2026-02-02',
+        slug: 'proj',
+        path: '/projects/proj.md',
+        image: '/projects/proj/media/cover.webp',
+      },
+    ]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('group');
+    await expect(rejection).rejects.toThrow('scripts');
+  });
+
+  it('rejects a group outside PROJECT_GROUPS, naming the offending value', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([
+      {
+        kind: 'project',
+        title: 'Proj',
+        date: '2026-02-02',
+        slug: 'proj',
+        path: '/projects/proj.md',
+        image: '/projects/proj/media/cover.webp',
+        group: 'no-existe',
+      },
+    ]));
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow('no-existe');
+    await expect(rejection).rejects.toThrow('herramientas');
+  });
+});
+
+describe('index accessors reject on infrastructure failure (R3-index-kind-silent-empty)', () => {
+  it('fetchIndexByKind, getPlatforms, getMachinesByPlatform, getRecentWriteups, getProjects and getCertificates reject instead of resolving []', async () => {
+    fetchMock.mockResolvedValue(notOkResponse());
+
+    await expect(fetchIndexByKind('writeup')).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getPlatforms()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getMachinesByPlatform('hackmyvm')).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getRecentWriteups()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getProjects()).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(getCertificates()).rejects.toBeInstanceOf(ContentIndexError);
   });
 });
 
