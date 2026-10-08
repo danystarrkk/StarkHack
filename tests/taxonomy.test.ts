@@ -199,6 +199,12 @@ const APPROVED_CERTIFICATE_TAGS = [
   'Systems',
   'Incident Response',
   'Auditing',
+  // Extended for certificate content (human decision): OWASP Top 10, Linux,
+  // privilege escalation and pivoting are real certificate subjects.
+  'OWASP Top 10',
+  'Linux',
+  'Escalada de privilegios',
+  'Pivoting',
 ];
 
 const APPROVED_PROJECT_GROUPS = ['scripts', 'automatizaciones', 'herramientas'];
@@ -234,8 +240,8 @@ describe('per-kind group lists and tag vocabularies', () => {
     expect(valuesInCommon(PROJECT_GROUPS, CERTIFICATE_GROUPS)).toEqual([]);
     expect(PROJECT_GROUPS).not.toEqual(CERTIFICATE_GROUPS);
 
-    // Groups never double as tags, and the writeup TAGS never leak into the
-    // other kinds' vocabularies.
+    // Groups never double as tags, and the writeup TAGS stay out of the other
+    // kinds' vocabularies EXCEPT the deliberately approved overlap below.
     const tagVocabularies: Array<[string, readonly string[]]> = [
       ['TAGS', TAGS],
       ['PROJECT_TAGS', PROJECT_TAGS],
@@ -247,7 +253,10 @@ describe('per-kind group lists and tag vocabularies', () => {
       }
     }
     expect(valuesInCommon(TAGS, PROJECT_TAGS)).toEqual([]);
-    expect(valuesInCommon(TAGS, CERTIFICATE_TAGS)).toEqual([]);
+    // 'Pivoting' is the one approved TAGS↔CERTIFICATE_TAGS overlap: privilege
+    // escalation & pivoting are real certificate subjects (human decision),
+    // same precedent as 'Networking'/'Cryptography' below. Pinned verbatim.
+    expect(valuesInCommon(TAGS, CERTIFICATE_TAGS)).toEqual(['Pivoting']);
   });
 
   it('keeps PROJECT_TAGS and CERTIFICATE_TAGS as independent vocabularies', () => {
