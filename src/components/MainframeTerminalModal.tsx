@@ -1,10 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Terminal as TerminalIcon, Maximize2, Minimize2 } from 'lucide-react';
-import { FEATURED_WRITEUPS, FEATURED_PROJECTS, CERTIFICATIONS } from '../data/portfolioData';
+import type { ContentIndexItem, WriteupIndexItem } from '../../types';
+import { getCertificates, getProjects, getRecentWriteups } from '../../lib/content';
+import {
+  TERMINAL_WRITEUP_COUNT,
+  buildTerminalCertificateLines,
+  buildTerminalProjectLines,
+  buildTerminalWriteupLines,
+} from '../lib/terminalData';
 
 interface MainframeTerminalModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+// The three real content datasets the terminal commands render (raw
+// public/index.json entries via the lib/content.ts pipeline API).
+interface TerminalContentEntries {
+  writeups: WriteupIndexItem[];
+  projects: ContentIndexItem[];
+  certificates: ContentIndexItem[];
 }
 
 interface CommandHistoryItem {
@@ -47,6 +62,41 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Real content pipeline (public/index.json via lib/content.ts), no mock
+  // data. Loaded ONCE on FIRST OPEN: the modal is mounted by the root layout
+  // for the whole session, so deferring the fetch until the user really
+  // opens the terminal keeps startup free of content requests; the ref guard
+  // makes the load one-shot even under StrictMode's double-invoked effects.
+  // The modal stays mounted when closed (it renders null below), so the load
+  // always completes into live state.
+  const [entries, setEntries] = useState<TerminalContentEntries | null>(null);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [loadError, setLoadError] = useState('');
+  const hasStartedLoading = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen || hasStartedLoading.current) return;
+    hasStartedLoading.current = true;
+    setStatus('loading');
+
+    const loadContent = async () => {
+      try {
+        const [writeups, projects, certificates] = await Promise.all([
+          getRecentWriteups(TERMINAL_WRITEUP_COUNT),
+          getProjects(),
+          getCertificates(),
+        ]);
+        setEntries({ writeups, projects, certificates });
+        setStatus('ready');
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+        setStatus('error');
+      }
+    };
+
+    void loadContent();
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 150);
@@ -56,6 +106,31 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
   useEffect(() => {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, isMatrixActive]);
+
+  // The three content commands render exclusively through the pure row
+  // builders of src/lib/terminalData.ts (real fields or honest empty rows).
+  const writeupLines = useMemo(
+    () => buildTerminalWriteupLines(entries?.writeups ?? []),
+    [entries]
+  );
+  const projectLines = useMemo(
+    () => buildTerminalProjectLines(entries?.projects ?? []),
+    [entries]
+  );
+  const certificateLines = useMemo(
+    () => buildTerminalCertificateLines(entries?.certificates ?? []),
+    [entries]
+  );
+
+  // Honest pipeline state shared by the three content commands.
+  const pipelineStatusNode: React.ReactNode =
+    status === 'error' ? (
+      <p className="text-[11px] text-[#f07178]">
+        &gt; ERROR: NO SE PUDO CARGAR EL ÍNDICE DE CONTENIDO: {loadError}
+      </p>
+    ) : (
+      <p className="text-[11px] text-[#879299]">&gt; CARGANDO CONTENIDO DESDE /index.json ...</p>
+    );
 
   if (!isOpen) return null;
 
@@ -127,12 +202,20 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
         resultNode = (
           <div className="space-y-1.5 text-xs">
             <p className="text-[#39bae6] font-semibold">// ÚLTIMOS WRITEUPS AUDITADOS:</p>
-            {FEATURED_WRITEUPS.map((w) => (
-              <div key={w.id} className="flex items-center justify-between text-[11px] text-[#bdc8cf]">
-                <span>• {w.title} ({w.os}) - {w.difficulty}</span>
-                <span className="text-[#5a6673]">{w.ports}</span>
-              </div>
-            ))}
+            {status === 'ready'
+              ? writeupLines.map((line) =>
+                  line.kind === 'empty' ? (
+                    <div key="empty" className="text-[11px] text-[#5a6673] italic">
+                      &gt; {line.text}
+                    </div>
+                  ) : (
+                    <div key={line.id} className="flex items-center justify-between text-[11px] text-[#bdc8cf]">
+                      <span>• {line.title} ({line.platform}){line.date !== undefined ? ` - ${line.date}` : ''}</span>
+                      <span className="text-[#5a6673]">{(line.tags ?? []).join(' • ')}</span>
+                    </div>
+                  )
+                )
+              : pipelineStatusNode}
           </div>
         );
         break;
@@ -141,12 +224,20 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
         resultNode = (
           <div className="space-y-1.5 text-xs">
             <p className="text-[#39bae6] font-semibold">// REPOSITORIOS DESTACADOS:</p>
-            {FEATURED_PROJECTS.map((p) => (
-              <div key={p.id} className="flex items-center justify-between text-[11px] text-[#bdc8cf]">
-                <span>• {p.title} ({p.tagCategory})</span>
-                <span className="text-[#e6b450]">★ {p.stars}</span>
-              </div>
-            ))}
+            {status === 'ready'
+              ? projectLines.map((line) =>
+                  line.kind === 'empty' ? (
+                    <div key="empty" className="text-[11px] text-[#5a6673] italic">
+                      &gt; {line.text}
+                    </div>
+                  ) : (
+                    <div key={line.id} className="flex items-center justify-between text-[11px] text-[#bdc8cf]">
+                      <span>• {line.title}{line.groupLabel !== undefined ? ` (${line.groupLabel})` : ''}</span>
+                      <span className="text-[#e6b450]">{line.date ?? ''}</span>
+                    </div>
+                  )
+                )
+              : pipelineStatusNode}
           </div>
         );
         break;
@@ -155,11 +246,22 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
         resultNode = (
           <div className="space-y-1.5 text-xs">
             <p className="text-[#39bae6] font-semibold">// ACREDITACIONES:</p>
-            {CERTIFICATIONS.map((c) => (
-              <div key={c.id} className="text-[11px] text-[#bdc8cf]">
-                • <span className="text-white font-semibold">{c.title}</span> ({c.issuer} - {c.isPending ? 'EN CURSO' : (c.issueDate || c.year || c.date)})
-              </div>
-            ))}
+            {status === 'ready'
+              ? certificateLines.map((line) =>
+                  line.kind === 'empty' ? (
+                    <div key="empty" className="text-[11px] text-[#5a6673] italic">
+                      &gt; {line.text}
+                    </div>
+                  ) : (
+                    <div key={line.id} className="text-[11px] text-[#bdc8cf]">
+                      • <span className="text-white font-semibold">{line.title}</span>
+                      {line.groupLabel !== undefined || line.date !== undefined
+                        ? ` (${[line.groupLabel, line.date].filter(Boolean).join(' - ')})`
+                        : ''}
+                    </div>
+                  )
+                )
+              : pipelineStatusNode}
           </div>
         );
         break;
