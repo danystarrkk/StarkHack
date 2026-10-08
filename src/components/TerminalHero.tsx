@@ -133,7 +133,7 @@ export const TerminalHero: React.FC<TerminalHeroProps> = ({ onOpenTerminal }) =>
               onClick={onOpenTerminal}
               className="group relative inline-flex items-center justify-center gap-2 rounded bg-[#39bae6] px-5 py-2.5 font-mono text-xs font-bold text-[#0b0e15] shadow-[0_0_16px_rgba(57,186,230,0.35)] transition-all duration-200 hover:bg-[#59c2ff] hover:shadow-[0_0_22px_rgba(57,186,230,0.55)] active:translate-y-[1px]"
             >
-              <span>ACCESS_MAINFRAME &gt;_ &gt;_</span>
+              <span>ACCESS_MAINFRAME &gt;_</span>
             </button>
 
             {/* Telemetry Buffer State */}

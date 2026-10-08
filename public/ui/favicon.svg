@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="10" fill="#10141c"/>
   <rect x="2" y="2" width="60" height="60" rx="8" fill="none" stroke="#39bae6" stroke-opacity="0.5" stroke-width="2"/>
-  <text x="32" y="32" text-anchor="middle" dominant-baseline="central"
-        font-family="'JetBrains Mono','Fira Code',monospace" font-size="26" font-weight="700"
-        fill="#39bae6">&#215;&#750;&#215;</text>
+  <!-- × left -->
+  <path d="M14 24 L24 34 M24 24 L14 34" stroke="#39bae6" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- × right -->
+  <path d="M40 24 L50 34 M50 24 L40 34" stroke="#39bae6" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- smile (mouth up) between them -->
+  <path d="M27 36 Q32 42 37 36" fill="none" stroke="#39bae6" stroke-width="3.4" stroke-linecap="round"/>
 </svg>
