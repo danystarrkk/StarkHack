@@ -446,33 +446,28 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       renderedElements.push(
         <div
           key={`img-${renderedElements.length}`}
-          className="my-6 rounded-lg border border-[#242936] bg-[#0c0f16] p-3 text-center transition-all hover:border-[#39bae6]/50 group/img"
+          className="group/img relative my-6 overflow-hidden rounded-lg border border-[#242936] bg-[#0c0f16] transition-all hover:border-[#39bae6]/50"
         >
-          <div className="flex items-center justify-between border-b border-[#1b1f29] pb-2 mb-3 text-[11px] font-mono text-[#879299]">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-              <span className="text-[#39bae6] font-semibold">[TELEMETRY EVIDENCE // CAPTURE]</span>
-            </div>
-            <button
-              onClick={() => setZoomedImage({ src, alt, caption })}
-              className="flex items-center gap-1 rounded bg-[#161a24] px-2 py-0.5 text-[10px] text-[#879299] hover:text-[#6ad5ff]"
-            >
-              <Maximize2 className="h-3 w-3" />
-              <span>ZOOM</span>
-            </button>
-          </div>
-
-          <div
+          <img
+            src={src}
+            alt={alt}
             onClick={() => setZoomedImage({ src, alt, caption })}
-            className="cursor-zoom-in relative overflow-hidden rounded border border-[#1b1f29] bg-[#080a0f] p-2"
+            className="max-h-[480px] w-full cursor-zoom-in object-contain transition-transform duration-300 group-hover/img:scale-[1.01]"
+            loading="lazy"
+          />
+
+          {/* Minimal label + zoom, overlaid on the frame */}
+          <span className="pointer-events-none absolute bottom-2 left-2 rounded bg-[#0b0e15]/80 px-2 py-0.5 font-mono text-[10px] tracking-wider text-[#879299] opacity-0 transition-opacity group-hover/img:opacity-100">
+            captura
+          </span>
+          <button
+            onClick={() => setZoomedImage({ src, alt, caption })}
+            className="absolute right-2 top-2 flex items-center gap-1 rounded border border-[#242936] bg-[#0b0e15]/85 px-2 py-1 font-mono text-[10px] text-[#879299] opacity-0 transition-all hover:border-[#39bae6] hover:text-[#6ad5ff] group-hover/img:opacity-100"
+            title="Ampliar captura"
           >
-            <img
-              src={src}
-              alt={alt}
-              className="max-h-[480px] w-full rounded object-contain mx-auto transition-transform duration-300 group-hover/img:scale-[1.01]"
-              loading="lazy"
-            />
-          </div>
+            <Maximize2 className="h-3 w-3" />
+            <span>ZOOM</span>
+          </button>
         </div>
       );
       i++;
@@ -659,12 +654,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               onClick={(e) => e.stopPropagation()}
               className="relative max-h-[90vh] max-w-5xl rounded-lg border border-[#39bae6]/40 bg-[#0d1017] p-4 shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
-                <div className="font-mono text-xs text-[#6ad5ff] font-bold">
-                  {zoomedImage.caption && zoomedImage.caption !== zoomedImage.alt
-                    ? zoomedImage.caption
-                    : 'Detalle de evidencia forense'}
-                </div>
+              <div className="flex justify-end border-b border-[#1b1f29] pb-3 mb-3">
                 <button
                   onClick={() => setZoomedImage(null)}
                   className="rounded border border-[#242936] bg-[#161a24] px-2 py-1 font-mono text-[11px] text-[#879299] hover:text-white"
