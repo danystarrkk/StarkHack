@@ -401,8 +401,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
             <span className="text-[#39bae6]">##</span>
             <span>CAREER &amp; ACADEMIC TIMELINE</span>
           </div>
-
-          <span className="text-xs text-[#5a6673]">[ 2019 - PRESENT ]</span>
         </div>
 
         <div className="space-y-3.5">
@@ -415,9 +413,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
                 <h3 className="font-sans text-base sm:text-lg font-bold text-white tracking-tight">
                   Investigador Independiente &amp; Creador de Starkhack
                 </h3>
-                <span className="rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2.5 py-0.5 text-xs text-[#39bae6] font-semibold self-start sm:self-auto">
-                  2024 - PRESENTE
-                </span>
               </div>
 
               <p className="text-xs text-[#879299] leading-relaxed">
@@ -435,9 +430,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
                 <h3 className="font-sans text-base sm:text-lg font-bold text-white tracking-tight">
                   Especialización en Seguridad Ofensiva &amp; Red Team
                 </h3>
-                <span className="rounded border border-[#7edc73]/30 bg-[#7edc73]/10 px-2.5 py-0.5 text-xs text-[#7edc73] font-semibold self-start sm:self-auto">
-                  2023 - 2024
-                </span>
               </div>
 
               <p className="text-xs text-[#879299] leading-relaxed">
