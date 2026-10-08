@@ -1,33 +1,32 @@
 import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, Terminal, Code, FileText, Award, User } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: string;
-  onNavigate: (tab: string) => void;
   onOpenTerminal: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
-  onNavigate,
-  onOpenTerminal,
-}) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+// Router-driven navigation: every item is a real URL (NavLink gives the same
+// active-state styling the tabbed shell had). Paths match the route table in
+// src/lib/router.tsx.
+const navItems = [
+  { id: 'home', label: 'Home', to: '/', icon: Terminal },
+  { id: 'writeups', label: 'Writeups', to: '/writeups', icon: FileText },
+  { id: 'projects', label: 'Projects', to: '/projects', icon: Code },
+  { id: 'certifications', label: 'Certifications', to: '/certifications', icon: Award },
+  { id: 'about', label: 'About', to: '/about', icon: User },
+] as const;
 
-  const navItems = [
-    { id: 'home', label: 'Home' },
-    { id: 'writeups', label: 'Writeups' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'certifications', label: 'Certifications' },
-    { id: 'about', label: 'About' },
-  ];
+export const Navbar: React.FC<NavbarProps> = ({ onOpenTerminal }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#1b1f29] bg-[#0b0e15]/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Zone */}
         <button
-          onClick={() => onNavigate('home')}
+          onClick={() => navigate('/')}
           className="group flex items-center gap-2.5 transition-colors focus:outline-none"
         >
           {/* Custom cyber skull / mask icon matching screenshot */}
@@ -56,25 +55,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Desktop Nav Zone */}
         <nav className="hidden items-center gap-7 md:flex">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`relative py-1 font-mono text-xs tracking-wider transition-colors hover:text-[#6ad5ff] ${
-                  isActive
-                    ? 'font-medium text-[#39bae6]'
-                    : 'text-[#879299]'
-                }`}
-              >
-                {item.label}
-                {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#39bae6] shadow-[0_0_8px_rgba(57,186,230,0.6)]" />
-                )}
-              </button>
-            );
-          })}
+          {navItems.map((item) => (
+            <NavLink
+              key={item.id}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                `relative py-1 font-mono text-xs tracking-wider transition-colors hover:text-[#6ad5ff] ${
+                  isActive ? 'font-medium text-[#39bae6]' : 'text-[#879299]'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {item.label}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#39bae6] shadow-[0_0_8px_rgba(57,186,230,0.6)]" />
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Right Status Badge matching screenshot: • STARK • ONLINE */}
@@ -112,27 +113,27 @@ export const Navbar: React.FC<NavbarProps> = ({
       {mobileMenuOpen && (
         <div className="border-b border-[#1b1f29] bg-[#10141c] px-4 py-3 md:hidden">
           <div className="flex flex-col gap-2">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`flex items-center gap-2 rounded px-3 py-2 text-left font-mono text-xs tracking-wider ${
-                  activeTab === item.id
-                    ? 'bg-[#1b1f29] text-[#39bae6]'
-                    : 'text-[#bdc8cf] hover:bg-[#141821] hover:text-white'
-                }`}
-              >
-                {item.id === 'home' && <Terminal className="h-4 w-4" />}
-                {item.id === 'writeups' && <FileText className="h-4 w-4" />}
-                {item.id === 'projects' && <Code className="h-4 w-4" />}
-                {item.id === 'certifications' && <Award className="h-4 w-4" />}
-                {item.id === 'about' && <User className="h-4 w-4" />}
-                <span>{item.label}</span>
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.id}
+                  to={item.to}
+                  end={item.to === '/'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded px-3 py-2 text-left font-mono text-xs tracking-wider ${
+                      isActive
+                        ? 'bg-[#1b1f29] text-[#39bae6]'
+                        : 'text-[#bdc8cf] hover:bg-[#141821] hover:text-white'
+                    }`
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
             <div className="flex items-center justify-between border-t border-[#1b1f29] pt-2 mt-1 px-3 text-xs text-[#7edc73]">
               <span>• STARK • ONLINE</span>
               <button
