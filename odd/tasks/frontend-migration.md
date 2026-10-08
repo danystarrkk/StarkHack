@@ -134,13 +134,34 @@ stack unificado en latest estable.
 
 ### Registro de reviews (RDD) — fase 2.0 y sus derivados
 
+**Cobertura al cierre**: los commits `6e9bbff..HEAD` (todo el cuerpo de la
+2.1 + 2.3 + docs) y `654f1e6..77e6eaa` (resolución del merge + cierre 2.0)
+quedan **sellados con receipt `approved` quemado** — 7 lineages nuevos en
+desta sesión. Única deuda permanente: `86859b3..654f1e6` (la fusión bruta
+de `newfrontend/`, 30 archivos / 7826 ins en un commit indivisible) que
+excede `lens_context_budget_exceeded` sin forma de partirlo — se mantiene
+como deuda ya registrada.
+
+**Lección operativa**: el presupuesto del lente no se mide en líneas sino
+en evidencia materializada (~119-174 KB por prompt). Lo que funciona son
+slices por worktree con HEAD aislado en el commit intermedio, que permiten
+revisar rangos históricos que en el worktree principal siempre arrastran
+HEAD completo.
+
 | Rango (`baseRef`) | Archivos | Resultado |
 |---|---|---|
 | `8bcadb3` (primer intento) | ~50 | ❌ `lens_context_budget_exceeded` — sin autoridad creada |
 | `adf907d` (feature completa) | ~35 | ❌ `lens_context_budget_exceeded` — sin autoridad creada |
 | `77e6eaa` (solo `0e9e06c`) | 3 | ✅ **`approved`** — lineage `review-2e026cc9b8068d75`, receipt `gentle-ai.review-acknowledged/v1`, consumed `0b1a7a9` |
-| `d9d9915..HEAD` (tanda completa) | ~36 | ❌ `lens_context_budget_exceeded` — sin autoridad creada (×2, reintentos con slices más chicos) |
-| `d48c37a..HEAD` (slice 2.3) | 15 | ⚠️ lineage `review-1946460ac68d471e` creado (high, 4 lentes), **abandonado** con `reason: operator_disposition` — `pi-host-relay-timeout` (prompt 117 KB, corte a 1000.6s / límite 1000.6s; 0 resultados admitidos, 0 hallazgos). Registro nativo: `review-reclaim-record/v1` en `.git/gentle-ai/review-transactions/quarantine/review-1946460ac68d471e-4262340504` |
+| `d48c37a..HEAD` (slice 2.3) | 15 | ✅ **`approved`** — lineage `review-25220ca0f8bdf7f3`, 4 lentes, 5 hallazgos informativos, receipt quemado |
+| `ae1b795..HEAD` (modales+ProjectPage+2.3+docs) | 20 | ✅ **`approved`** — lineage `review-2555c0e51da89dbf`, 4 lentes, 5 informativos, receipt quemado (1 reintentó por payload truncado) |
+| `fae5964..ab677ef` (worktree: docs+Projects+Certs+terminal) | 12 | ✅ **`approved`** — lineage `review-90f42233cf3af292`, medium/1 lente, 3 informativos, receipt quemado |
+| `3bd7e54..fae5964` (worktree: router+detalle+listado) | 19 | ✅ **`approved`** — lineage `review-5b9833e548ee2e42`, medium/1 lente, 2 informativos, receipt quemado |
+| `0e9e06c..3bd7e54` (worktree: Home+docs) | 7 | ✅ **`approved`** — lineage `review-c656e3eae531f23f`, medium/1 lente, 4 informativos, receipt quemado |
+| `6e9bbff..77e6eaa` (worktree: fix+docs cierre 2.0) | 4 | ✅ **`approved`** — lineage `review-191881155cb42766`, medium/1 lente, 2 informativos, receipt quemado |
+| `654f1e6..6e9bbff` (worktree: resolución del merge) | 19 | ✅ **`approved`** — lineage `review-90a3dd6dda1f4fa2`, medium/1 lente, 5 informativos, receipt quemado |
+| `86859b3..654f1e6` (fusion newfrontend, commit indivisible) | 30 | ❌ `lens_context_budget_exceeded` — sin autoridad creada; **deuda permanente** (commit no divisible) |
+| `d9d9915..HEAD` y `ab677ef..HEAD` | ~36/26 | ❌ `lens_context_budget_exceeded` — sin autoridad creada (reemplazados por los slices worktree de arriba) |
 
 - **Aprobado**: `lib/frontmatter.js` (tolerancia a `---` vacío) + el script
   `test` (build + vitest). 4 hallazgos **informativos** (no bloqueantes):
@@ -200,14 +221,13 @@ stack unificado en latest estable.
 - **Deuda abierta conocida**: `package-lock.json` trae churn transitorio
   además del subárbol de `react-markdown` (re-resolución de npm de entradas
   dev); generado por `npm uninstall`, no editado a mano.
-- **Waiver de review (autorizado por el humano)**: la tanda completa de la
-  2.1 + 2.3 no entró en el presupuesto del lente (`lens_context_budget_exceeded`);
-  el slice más fino que aceptó la autoridad (2.3, 15 archivos) murió por
-  `pi-host-relay-timeout` y el humano autorizó **abandon** con
-  `operator_disposition`. Cobertura queda como deuda registrada, no sellada.
-  Para futuras tandas: partir por commit slices menores (cada uno <~1000
-  líneas materializadas) o subir `GENTLE_PI_REVIEW_RELAY_PI_TIMEOUT_MS`
-  (techo 7200000) al lanzar Pi.
+- **Waiver de review (autorizado por el humano) — RESUELTO**: la tanda de
+  la 2.1 + 2.3 falló por `lens_context_budget_exceeded` y un
+  `pi-host-relay-timeout` (abandon del lineage `review-1946460ac68d471e`
+  con `operator_disposition`). Después de que el humano subiera
+  `GENTLE_PI_REVIEW_RELAY_PI_TIMEOUT_MS`, la tanda completa se selló con
+  **7 receipts `approved` quemados** (ver tabla RDD arriba). Cobertura
+  cerrada salvo el commit indivisible `86859b3..654f1e6`.
 - **Nota About**: `AboutScreen` no consume datos del pipeline; su contenido
   (bio, stats "5+/100%", timeline) es editorial/estático — decisión del
   usuario si algún dato debe derivarse del índice en el futuro.
