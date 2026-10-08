@@ -27,18 +27,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTerminal }) => {
       <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Left Zone: brand logo (console easter egg) + wordmark (home) */}
         <div className="flex shrink-0 items-center gap-3">
-          {/* Fun bit: the brand logo deploys the interactive shell. */}
+          {/* Fun bit: the ×͜× mascot deploys the interactive shell. */}
           <button
             onClick={onOpenTerminal}
-            className="group flex items-center transition-transform focus:outline-none"
+            className="group flex h-8 w-8 items-center justify-center rounded border border-[#39bae6]/40 bg-[#10141c] font-mono text-sm font-bold text-[#39bae6] shadow-[0_0_12px_rgba(57,186,230,0.25)] transition-all hover:border-[#39bae6] hover:shadow-[0_0_16px_rgba(57,186,230,0.5)] focus:outline-none"
             title="Abrir Shell Interactivo"
             aria-label="Abrir Shell Interactivo"
           >
-            <img
-              src="/ui/logo-general.png"
-              alt="StarkHack"
-              className="h-8 w-8 rounded border border-[#39bae6]/40 bg-[#10141c] object-contain p-0.5 shadow-[0_0_12px_rgba(57,186,230,0.25)] transition-all group-hover:border-[#39bae6] group-hover:shadow-[0_0_16px_rgba(57,186,230,0.5)]"
-            />
+            <span className="-translate-y-px">×͜×</span>
           </button>
 
           <button
