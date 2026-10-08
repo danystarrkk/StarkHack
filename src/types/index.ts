@@ -19,11 +19,16 @@ export interface Writeup {
   id: string;
   title: string;
   platformId?: string;
-  os: 'LINUX' | 'WINDOWS';
-  ports: string;
-  difficulty: 'FÁCIL' | 'MEDIO' | 'DIFÍCIL' | 'INSANE';
-  vulnerabilities: string[];
+  // Template-only fields below have NO source in the real content pipeline
+  // (public/index.json / lib/content.ts), so they are optional: pipeline-backed
+  // writeups leave them absent and the UI hides their chips/labels.
+  os?: 'LINUX' | 'WINDOWS';
+  ports?: string;
+  difficulty?: 'FÁCIL' | 'MEDIO' | 'DIFÍCIL' | 'INSANE';
+  vulnerabilities?: string[];
   tags?: string[];
+  // Real pipeline cover image (frontmatter `image`), when one exists.
+  image?: string;
   iconType: 'wave' | 'bug' | 'network' | 'server' | 'database';
   ipAddress?: string;
   points?: number;
@@ -77,19 +82,25 @@ export interface RichProjectData {
 
 export interface Project {
   id: string;
-  number: string;
+  // Template-only fields below have NO source in the real content pipeline:
+  // they are optional so pipeline-backed projects can render without invented
+  // data (stars, versions, badges...) and the UI hides their chips/labels.
+  number?: string;
   title: string;
-  tagCategory: 'HERRAMIENTA' | 'SCRIPT' | 'AUTOMATIZACIÓN' | 'EXPLOIT';
-  version: string;
+  tagCategory?: 'HERRAMIENTA' | 'SCRIPT' | 'AUTOMATIZACIÓN' | 'EXPLOIT';
+  version?: string;
   isNew?: boolean;
   statusBadge?: string;
-  subBadge: string;
+  subBadge?: string;
   iconType: 'scan' | 'kernel' | 'gear' | 'shield' | 'code';
-  description: string;
-  tags: string[];
-  stars: number;
-  forks: number;
-  releaseVersion: string;
+  description?: string;
+  tags?: string[];
+  stars?: number;
+  forks?: number;
+  releaseVersion?: string;
+  // Real pipeline fields (frontmatter), present when the source supplies them.
+  image?: string;
+  date?: string;
   githubUrl?: string;
   readme?: string;
   codeSnippet?: string;

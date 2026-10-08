@@ -50,41 +50,58 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
 
         <div className="flex items-center gap-2 rounded border border-[#1b1f29] bg-[#10141c] px-2.5 py-1 text-[11px] font-mono text-[#879299]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-          <span>INDEX: 03 REPOSITORIOS</span>
+          <span>INDEX: {String(projects.length).padStart(2, '0')} REPOSITORIOS</span>
         </div>
       </div>
 
-      {/* Cards Grid */}
+      {/* Cards Grid (honest empty state: getProjects() returns [] today) */}
+      {projects.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[#1b1f29] bg-[#10141c]/60 px-6 py-10 text-center">
+          <p className="font-mono text-xs text-[#879299]">
+            <span className="text-[#39bae6]">&gt;</span> getProjects() → 0 entradas
+          </p>
+          <p className="mt-2 text-[11px] font-mono text-[#5a6673]">
+            SIN PROYECTOS PUBLICADOS // EL PIPELINE DE CONTENIDO AÚN NO TIENE FICHEROS DE PROYECTO
+          </p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((p) => (
           <div
             key={p.id}
             className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-[#1b1f29] bg-[#10141c] p-4 transition-all duration-300 hover:border-[#242936] hover:bg-[#141821] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
           >
-            {/* Top metadata strip */}
-            <div className="mb-2 flex items-center justify-between font-mono text-[11px]">
-              <div className="flex items-center gap-2">
-                <span className="rounded border border-[#e6b450]/30 bg-[#e6b450]/10 px-2 py-0.5 text-[10px] font-medium text-[#e6b450]">
-                  {p.tagCategory}
-                </span>
-              </div>
-
-              {p.isNew && (
-                <div className="flex items-center gap-1.5 rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2 py-0.5 text-[10px] text-[#39bae6]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-                  <span>NEW</span>
+            {/* Top metadata strip (only when the data exists) */}
+            {(p.tagCategory || p.isNew) && (
+              <div className="mb-2 flex items-center justify-between font-mono text-[11px]">
+                <div className="flex items-center gap-2">
+                  {p.tagCategory && (
+                    <span className="rounded border border-[#e6b450]/30 bg-[#e6b450]/10 px-2 py-0.5 text-[10px] font-medium text-[#e6b450]">
+                      {p.tagCategory}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {p.isNew && (
+                  <div className="flex items-center gap-1.5 rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2 py-0.5 text-[10px] text-[#39bae6]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
+                    <span>NEW</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Dotted Blueprint Grid Banner */}
             <div className="relative mb-4 flex h-28 w-full flex-col items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017] bg-grid-dots">
               <div className="transition-transform duration-300 group-hover:scale-105">
                 {renderBannerIcon(p.iconType)}
               </div>
-              <span className="mt-2 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
-                {p.subBadge}
-              </span>
+              {/* Sub badge label (only when the data exists) */}
+              {p.subBadge && (
+                <span className="mt-2 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
+                  {p.subBadge}
+                </span>
+              )}
             </div>
 
             {/* Title & Index */}
@@ -92,26 +109,30 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
               <h3 className="font-sans text-lg font-semibold tracking-tight text-[#e0e2ec] group-hover:text-white transition-colors">
                 {p.title}
               </h3>
-              <span className="font-mono text-xs text-[#5a6673]">{p.number}</span>
+              {p.number && <span className="font-mono text-xs text-[#5a6673]">{p.number}</span>}
             </div>
 
-            {/* Description */}
-            <p className="mb-4 text-xs font-mono leading-relaxed text-[#879299] line-clamp-3">
-              {p.description}
-            </p>
+            {/* Description (only when the data exists) */}
+            {p.description && (
+              <p className="mb-4 text-xs font-mono leading-relaxed text-[#879299] line-clamp-3">
+                {p.description}
+              </p>
+            )}
 
-            {/* Language / Tech Tags */}
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              {p.tags.map((tag, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017]/80 px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
-                >
-                  <span className="text-[#39bae6]">•</span>
-                  <span>{tag}</span>
-                </div>
-              ))}
-            </div>
+            {/* Language / Tech Tags (only when the data exists) */}
+            {p.tags && p.tags.length > 0 && (
+              <div className="mb-5 flex flex-wrap items-center gap-2">
+                {p.tags.map((tag, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017]/80 px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
+                  >
+                    <span className="text-[#39bae6]">•</span>
+                    <span>{tag}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Action Button: LEER REPO */}
             <button
@@ -124,6 +145,7 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
           </div>
         ))}
       </div>
+      )}
 
       {/* Bottom Exploration CTA */}
       <div className="flex flex-col items-center justify-center pt-3 pb-2 text-center">
@@ -136,7 +158,7 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
         </button>
 
         <p className="mt-2 text-[11px] font-mono text-[#5a6673]">
-          • MOSTRANDO 3 DE 12 REPOSITORIOS // ARCHIVO PÚBLICO •
+          • {projects.length} REPOSITORIOS INDEXADOS // ARCHIVO PÚBLICO •
         </p>
       </div>
     </section>

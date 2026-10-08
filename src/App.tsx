@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { TerminalHero } from './components/TerminalHero';
 import { NewsWriteups } from './components/NewsWriteups';
@@ -13,9 +13,10 @@ import { ProjectPage } from './components/ProjectPage';
 import { WriteupModal } from './components/WriteupModal';
 import { MainframeTerminalModal } from './components/MainframeTerminalModal';
 import {
-  FEATURED_WRITEUPS,
-  FEATURED_PROJECTS,
-} from './data/portfolioData';
+  getProjects,
+  getRecentWriteups,
+} from '../lib/content';
+import { toUiProject, toUiWriteup } from './lib/contentAdapter';
 import { Writeup, Project } from './types';
 
 export default function App() {
@@ -23,6 +24,40 @@ export default function App() {
   const [selectedWriteup, setSelectedWriteup] = useState<Writeup | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+
+  // Home content: loaded from the real content pipeline (public/index.json via
+  // lib/content.ts) and mapped to UI types by the pure adapters in
+  // src/lib/contentAdapter.ts. No mock data on the Home screen.
+  const [homeWriteups, setHomeWriteups] = useState<Writeup[]>([]);
+  const [homeProjects, setHomeProjects] = useState<Project[]>([]);
+  const [homeStatus, setHomeStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [homeError, setHomeError] = useState<string>('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadHomeContent = async () => {
+      try {
+        const [recentWriteups, projects] = await Promise.all([
+          getRecentWriteups(3),
+          getProjects(),
+        ]);
+        if (cancelled) return;
+        setHomeWriteups(recentWriteups.map(toUiWriteup));
+        setHomeProjects(projects.map((item, index) => toUiProject(item, index + 1)));
+        setHomeStatus('ready');
+      } catch (error) {
+        if (cancelled) return;
+        setHomeError(error instanceof Error ? error.message : String(error));
+        setHomeStatus('error');
+      }
+    };
+
+    void loadHomeContent();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleNavigate = (tab: string) => {
     setActiveTab(tab as any);
@@ -71,17 +106,38 @@ export default function App() {
               <div className="space-y-12 sm:space-y-16">
                 <TerminalHero onOpenTerminal={() => setIsTerminalOpen(true)} />
 
-                <NewsWriteups
-                  writeups={FEATURED_WRITEUPS}
-                  onSelectWriteup={(w) => setSelectedWriteup(w)}
-                  onExploreAll={() => handleNavigate('writeups')}
-                />
+                {homeStatus === 'loading' && (
+                  <div className="rounded-lg border border-[#1b1f29] bg-[#10141c] px-6 py-10 text-center">
+                    <p className="font-mono text-xs text-[#879299]">
+                      <span className="text-[#39bae6]">&gt;</span> CARGANDO CONTENIDO DESDE /index.json ...
+                    </p>
+                  </div>
+                )}
 
-                <FeaturedProjects
-                  projects={FEATURED_PROJECTS}
-                  onSelectProject={(p) => setSelectedProject(p)}
-                  onExploreAll={() => handleNavigate('projects')}
-                />
+                {homeStatus === 'error' && (
+                  <div className="rounded-lg border border-[#f07178]/30 bg-[#f07178]/5 px-6 py-10 text-center">
+                    <p className="font-mono text-xs text-[#f07178]">
+                      <span className="text-[#39bae6]">&gt;</span> ERROR: NO SE PUDO CARGAR EL ÍNDICE DE CONTENIDO
+                    </p>
+                    <p className="mt-2 break-words text-[11px] font-mono text-[#879299]">{homeError}</p>
+                  </div>
+                )}
+
+                {homeStatus === 'ready' && (
+                  <>
+                    <NewsWriteups
+                      writeups={homeWriteups}
+                      onSelectWriteup={(w) => setSelectedWriteup(w)}
+                      onExploreAll={() => handleNavigate('writeups')}
+                    />
+
+                    <FeaturedProjects
+                      projects={homeProjects}
+                      onSelectProject={(p) => setSelectedProject(p)}
+                      onExploreAll={() => handleNavigate('projects')}
+                    />
+                  </>
+                )}
               </div>
             )}
 

@@ -80,7 +80,7 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
     }
   };
 
-  const getDifficultyColor = (diff: Writeup['difficulty']) => {
+  const getDifficultyColor = (diff: NonNullable<Writeup['difficulty']>) => {
     switch (diff) {
       case 'FÁCIL':
         return {
@@ -104,6 +104,8 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
           border: 'border-[#f07178]/30',
           bg: 'bg-[#f07178]/10',
         };
+      default:
+        return null;
     }
   };
 
@@ -120,14 +122,27 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
 
         <div className="flex items-center gap-2 rounded border border-[#1b1f29] bg-[#10141c] px-2.5 py-1 text-[11px] font-mono text-[#879299]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-          <span>FEED: 03 ENTRIES</span>
+          <span>FEED: {String(writeups.length).padStart(2, '0')} ENTRIES</span>
         </div>
       </div>
 
-      {/* Cards Grid */}
+      {/* Cards Grid (honest empty state when the pipeline has no writeups) */}
+      {writeups.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[#1b1f29] bg-[#10141c]/60 px-6 py-10 text-center">
+          <p className="font-mono text-xs text-[#879299]">
+            <span className="text-[#39bae6]">&gt;</span> getRecentWriteups() → 0 entradas
+          </p>
+          <p className="mt-2 text-[11px] font-mono text-[#5a6673]">
+            SIN WRITEUPS PUBLICADOS // EL ÍNDICE DE CONTENIDO AÚN NO TIENE ENTRADAS
+          </p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {writeups.map((w) => {
-          const diffStyle = getDifficultyColor(w.difficulty);
+          const diffStyle = w.difficulty ? getDifficultyColor(w.difficulty) : null;
+          // Real pipeline writeups carry tags, not template-only vulnerability
+          // lists: show vulnerabilities when they exist, else the real tags.
+          const chips = w.vulnerabilities?.length ? w.vulnerabilities : w.tags ?? [];
           return (
             <div
               key={w.id}
@@ -135,21 +150,25 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
             >
               {/* Graphic Banner Top Box */}
               <div className="relative mb-4 flex h-32 w-full flex-col items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017] bg-blueprint-grid">
-                {/* Top Right OS Tag */}
-                <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded border border-[#1b1f29] bg-[#10141c]/90 px-2 py-0.5 text-[10px] font-mono text-[#879299]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6]" />
-                  <span>{w.os}</span>
-                </div>
+                {/* Top Right OS Tag (only when the data exists) */}
+                {w.os && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded border border-[#1b1f29] bg-[#10141c]/90 px-2 py-0.5 text-[10px] font-mono text-[#879299]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6]" />
+                    <span>{w.os}</span>
+                  </div>
+                )}
 
                 {/* Central Icon */}
                 <div className="transition-transform duration-300 group-hover:scale-105">
                   {renderIcon(w.iconType)}
                 </div>
 
-                {/* Bottom Center Port Badge */}
-                <div className="absolute bottom-2 flex items-center justify-center rounded border border-[#1b1f29] bg-[#0b0e15]/90 px-2.5 py-0.5 text-[10px] font-mono text-[#39bae6]">
-                  <span>{w.ports}</span>
-                </div>
+                {/* Bottom Center Port Badge (only when the data exists) */}
+                {w.ports && (
+                  <div className="absolute bottom-2 flex items-center justify-center rounded border border-[#1b1f29] bg-[#0b0e15]/90 px-2.5 py-0.5 text-[10px] font-mono text-[#39bae6]">
+                    <span>{w.ports}</span>
+                  </div>
+                )}
               </div>
 
               {/* Title & Difficulty Row */}
@@ -157,26 +176,31 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
                 <h3 className="font-sans text-lg font-semibold tracking-tight text-[#e0e2ec] group-hover:text-white transition-colors">
                   {w.title}
                 </h3>
-                <div
-                  className={`flex items-center gap-1.5 rounded border ${diffStyle.border} ${diffStyle.bg} px-2 py-0.5 text-[10px] font-mono font-medium ${diffStyle.text}`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${diffStyle.dot}`} />
-                  <span>{w.difficulty}</span>
-                </div>
+                {/* Difficulty chip (only when the data exists) */}
+                {w.difficulty && diffStyle && (
+                  <div
+                    className={`flex items-center gap-1.5 rounded border ${diffStyle.border} ${diffStyle.bg} px-2 py-0.5 text-[10px] font-mono font-medium ${diffStyle.text}`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${diffStyle.dot}`} />
+                    <span>{w.difficulty}</span>
+                  </div>
+                )}
               </div>
 
-              {/* Vulnerabilities Chips */}
-              <div className="mb-5 flex flex-1 flex-col gap-1.5">
-                {w.vulnerabilities.map((vuln, idx) => (
-                  <div
-                    key={idx}
-                    className="truncate rounded border border-[#1b1f29] bg-[#0d1017]/70 px-2.5 py-1 text-[11px] font-mono text-[#bdc8cf] transition-colors hover:border-[#242936]"
-                    title={vuln}
-                  >
-                    {vuln}
-                  </div>
-                ))}
-              </div>
+              {/* Content chips (vulnerabilities when present, else real tags) */}
+              {chips.length > 0 && (
+                <div className="mb-5 flex flex-1 flex-col gap-1.5">
+                  {chips.map((chip, idx) => (
+                    <div
+                      key={idx}
+                      className="truncate rounded border border-[#1b1f29] bg-[#0d1017]/70 px-2.5 py-1 text-[11px] font-mono text-[#bdc8cf] transition-colors hover:border-[#242936]"
+                      title={chip}
+                    >
+                      {chip}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Action Button: LEER WRITEUP */}
               <button
@@ -190,6 +214,7 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
           );
         })}
       </div>
+      )}
 
       {/* Bottom Exploration CTA */}
       <div className="flex flex-col items-center justify-center pt-3 pb-2 text-center">
@@ -202,7 +227,7 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
         </button>
 
         <p className="mt-2 text-[11px] font-mono text-[#5a6673]">
-          • MOSTRANDO 3 DE 16 WRITEUPS // ARCHIVO DE AUDITORÍAS CTF •
+          • {writeups.length} WRITEUPS RECIENTES // ARCHIVO DE AUDITORÍAS CTF •
         </p>
       </div>
     </section>
