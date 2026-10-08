@@ -350,6 +350,54 @@ describe('generateIndex multi-kind sources', () => {
     expect(message).toContain('7');
   });
 
+  it('rejects a writeup level outside Easy | Medium | Hard', () => {
+    const source = makeTempSource();
+    const filePath = writeWriteup(source.writeup, 'hackmyvm', 'bad-level.md', [
+      'title: "Bad Level"',
+      'date: 2026-01-01',
+      'level: Medio', // Spanish value — the level-derived cover would silently break
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    // Fail-loud with the offending path and the full closed vocabulary.
+    expect(message).toContain(filePath);
+    expect(message).toContain('Medio');
+    expect(message).toContain('"Easy"');
+    expect(message).toContain('"Medium"');
+    expect(message).toContain('"Hard"');
+  });
+
+  it('accepts every valid level and a writeup without level (level stays optional)', () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'easy.md', [
+      'title: "Easy"', 'date: 2026-01-03', 'level: Easy',
+    ]);
+    writeWriteup(source.writeup, 'hackmyvm', 'hard.md', [
+      'title: "Hard"', 'date: 2026-01-02', 'level: Hard',
+    ]);
+    writeWriteup(source.writeup, 'hackmyvm', 'nolevel.md', [
+      'title: "No Level"', 'date: 2026-01-01',
+    ]);
+
+    const index = generateIndex(source);
+    expect(index).toHaveLength(3);
+  });
+
+  it('skips draft writeups with an invalid level (drafts are never validated)', () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'draft-bad-level.md', [
+      'draft: true', 'level: Medio',
+    ]);
+
+    expect(generateIndex(source)).toEqual([]);
+  });
+
   it('throws with the file path when a writeup lacks title', () => {
     const source = makeTempSource();
     const filePath = writeWriteup(source.writeup, 'hackmyvm', 'no-title.md', ['date: 2026-01-01']);

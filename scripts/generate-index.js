@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { parseFrontmatter } from "../lib/frontmatter.js";
 import { assertRequiredTags, assertValidTags } from "../lib/taxonomy.js";
 import { KINDS, assertValidGroup, missingFields } from "../lib/content-kinds.js";
+import { WRITEUP_LEVELS } from "../lib/content-ingest.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -165,6 +166,18 @@ export function generateIndex(source) {
       //   tags ≥1 del vocabulario propio del kind.
       if (kind === "writeup") {
         assertValidTags(data.tags, filePath);
+        // El cover del UI se deriva del level (Easy|Medium|Hard): un valor
+        // fuera del vocabulario rompería ese cover en silencio. Validación
+        // opcional — level NO es required, pero si está debe ser exacto.
+        if (data.level !== undefined && data.level !== null) {
+          const listed = WRITEUP_LEVELS.map((entry) => JSON.stringify(entry)).join(", ");
+          const shown = typeof data.level === "string" ? data.level : String(data.level);
+          if (!WRITEUP_LEVELS.includes(data.level)) {
+            throw new Error(
+              `Invalid writeup level in ${filePath}: expected one of ${listed}, got ${JSON.stringify(shown)}.`
+            );
+          }
+        }
       } else {
         assertValidGroup(data.group, kind, filePath);
         assertRequiredTags(data.tags, kind, filePath);
