@@ -1,6 +1,26 @@
-import React, { useState, useMemo } from 'react';
+// /projects screen — real content pipeline, no mock data.
+//
+// Data flow: getProjects() (public/index.json project entries via
+// lib/content.ts) in a useState/useEffect load with honest loading/error/
+// empty states, then the PURE model builder (src/lib/projectsModel.ts)
+// derives everything the screen renders: the featured/recientes slice, the
+// full archive list, the filter categories and the "MOSTRANDO X DE Y"
+// counts.
+//
+// Filters back REAL pipeline fields only: the category filter is driven by
+// the real `group` (herramientas | scripts | automatizaciones) keeping the
+// screen's uppercase Spanish labels; search matches real title/description/
+// tags. Template-only fields (stars, versions, badges, ...) have no source
+// in the pipeline, so their chips/labels are hidden — never placeholders.
+import React, { useState, useEffect, useMemo } from 'react';
 import { Project } from '../types';
-import { FEATURED_PROJECTS, ALL_PROJECTS_ARCHIVE } from '../data/portfolioData';
+import type { ContentIndexItem } from '../../types';
+import { getProjects } from '../../lib/content';
+import {
+  buildProjectsModel,
+  type ProjectFilterId,
+  type ProjectGroupLabel,
+} from '../lib/projectsModel';
 import {
   Search,
   Code2,
@@ -25,56 +45,44 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
   initialExploreAll = false,
 }) => {
   const [isExploringAll, setIsExploringAll] = useState(initialExploreAll);
-  const [activeFilter, setActiveFilter] = useState<'TODOS' | 'HERRAMIENTAS' | 'SCRIPTS' | 'AUTOMATIZACIÓN'>('TODOS');
+  const [activeFilter, setActiveFilter] = useState<ProjectFilterId>('TODOS');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter projects for the featured view
-  const getFilteredFeaturedProjects = () => {
-    if (activeFilter === 'TODOS') return FEATURED_PROJECTS;
-    if (activeFilter === 'HERRAMIENTAS') {
-      return ALL_PROJECTS_ARCHIVE.filter((p) => p.tagCategory === 'HERRAMIENTA').slice(0, 3);
-    }
-    if (activeFilter === 'SCRIPTS') {
-      return ALL_PROJECTS_ARCHIVE.filter((p) => p.tagCategory === 'SCRIPT').slice(0, 3);
-    }
-    if (activeFilter === 'AUTOMATIZACIÓN') {
-      return ALL_PROJECTS_ARCHIVE.filter((p) => p.tagCategory === 'AUTOMATIZACIÓN').slice(0, 3);
-    }
-    return FEATURED_PROJECTS;
-  };
+  // Real pipeline loading (same honest states as Home / WriteupsScreen).
+  const [entries, setEntries] = useState<ContentIndexItem[]>([]);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState<string>('');
 
-  const displayedFeaturedProjects = getFilteredFeaturedProjects();
+  useEffect(() => {
+    let cancelled = false;
 
-  // Filter projects for the ALL PROJECTS explorer view
-  const allFilteredProjects = useMemo(() => {
-    let list = ALL_PROJECTS_ARCHIVE;
-
-    if (activeFilter !== 'TODOS') {
-      const categoryMap: Record<string, Project['tagCategory']> = {
-        HERRAMIENTAS: 'HERRAMIENTA',
-        SCRIPTS: 'SCRIPT',
-        AUTOMATIZACIÓN: 'AUTOMATIZACIÓN',
-      };
-      const targetCategory = categoryMap[activeFilter];
-      if (targetCategory) {
-        list = list.filter((p) => p.tagCategory === targetCategory);
+    const loadProjects = async () => {
+      try {
+        const projects = await getProjects();
+        if (cancelled) return;
+        setEntries(projects);
+        setStatus('ready');
+      } catch (error) {
+        if (cancelled) return;
+        setLoadError(error instanceof Error ? error.message : String(error));
+        setStatus('error');
       }
-    }
+    };
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q)) ||
-          p.tagCategory.toLowerCase().includes(q) ||
-          p.number.toLowerCase().includes(q)
-      );
-    }
+    void loadProjects();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    return list;
-  }, [activeFilter, searchQuery]);
+  // Everything the screen renders comes from the pure model builder.
+  const model = useMemo(
+    () => buildProjectsModel(entries, { category: activeFilter, search: searchQuery }),
+    [entries, activeFilter, searchQuery]
+  );
+
+  const displayedFeaturedProjects = model.featured;
+  const allFilteredProjects = model.archive;
 
   const renderBannerCenterIcon = (type: Project['iconType']) => {
     switch (type) {
@@ -112,7 +120,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
     }
   };
 
-  const getCategoryBadgeStyle = (category: Project['tagCategory']) => {
+  const getCategoryBadgeStyle = (category: ProjectGroupLabel) => {
     switch (category) {
       case 'HERRAMIENTA':
         return {
@@ -186,8 +194,39 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
         </p>
       </div>
 
+      {/* Honest loading / error states (same pattern as Home / WriteupsScreen) */}
+      {status === 'loading' && (
+        <div className="rounded-lg border border-[#1b1f29] bg-[#10141c] px-6 py-10 text-center">
+          <p className="font-mono text-xs text-[#879299]">
+            <span className="text-[#39bae6]">&gt;</span> CARGANDO CONTENIDO DESDE /index.json ...
+          </p>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="rounded-lg border border-[#f07178]/30 bg-[#f07178]/5 px-6 py-10 text-center">
+          <p className="font-mono text-xs text-[#f07178]">
+            <span className="text-[#39bae6]">&gt;</span> ERROR: NO SE PUDO CARGAR EL ÍNDICE DE CONTENIDO
+          </p>
+          <p className="mt-2 break-words text-[11px] font-mono text-[#879299]">{loadError}</p>
+        </div>
+      )}
+
+      {/* Honest empty state: the real index has no project entries yet. */}
+      {status === 'ready' && model.totalCount === 0 && (
+        <div className="rounded-xl border border-dashed border-[#242936] bg-[#10141c]/50 p-12 text-center">
+          <Terminal className="mx-auto h-8 w-8 text-[#5a6673] mb-3" />
+          <h3 className="font-sans text-base font-bold text-white mb-1">
+            Aún no hay proyectos publicados
+          </h3>
+          <p className="text-xs text-[#879299] max-w-md mx-auto">
+            El índice de contenido real todavía no contiene proyectos. Cuando se publiquen aparecerán aquí, sin datos simulados.
+          </p>
+        </div>
+      )}
+
       {/* DYNAMIC VIEW: Featured 3 Projects OR All Projects Explorer */}
-      {!isExploringAll ? (
+      {status === 'ready' && model.totalCount > 0 && (!isExploringAll ? (
         /* 1. VISTA DESTACADOS (3 Proyectos iniciales) */
         <div className="space-y-7">
           {/* Filter Row matching screenshot */}
@@ -252,16 +291,27 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
               </button>
             </div>
 
-            {/* Right count: MOSTRANDO: 3 RECIENTES // 12 TOTALES */}
+            {/* Right count: MOSTRANDO: X RECIENTES // Y TOTALES */}
             <div className="text-[11px] text-[#5a6673] font-mono tracking-wider">
-              MOSTRANDO: <span className="text-[#bdc8cf] font-semibold">{displayedFeaturedProjects.length} RECIENTES</span> // {ALL_PROJECTS_ARCHIVE.length} TOTALES
+              MOSTRANDO: <span className="text-[#bdc8cf] font-semibold">{model.featuredCount} RECIENTES</span> // {model.totalCount} TOTALES
             </div>
           </div>
 
           {/* Grid of Featured Project Cards */}
+          {displayedFeaturedProjects.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#242936] bg-[#10141c]/50 p-12 text-center">
+              <Terminal className="mx-auto h-8 w-8 text-[#5a6673] mb-3" />
+              <h3 className="font-sans text-base font-bold text-white mb-1">
+                No hay repositorios en esta categoría
+              </h3>
+              <p className="text-xs text-[#879299] max-w-md mx-auto">
+                Ningún proyecto real del índice de contenido pertenece a esta categoría todavía.
+              </p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {displayedFeaturedProjects.map((project) => {
-              const catStyle = getCategoryBadgeStyle(project.tagCategory);
+              const catStyle = getCategoryBadgeStyle(project.groupLabel);
               return (
                 <div
                   key={project.id}
@@ -269,18 +319,22 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                 >
                   {/* Header inside card: Category pill group + status */}
                   <div className="mb-3 flex items-center justify-between font-mono text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`rounded border ${catStyle.border} ${catStyle.bg} px-2 py-0.5 text-[10px] font-medium ${catStyle.text}`}
-                      >
-                        {project.tagCategory}
-                      </span>
-                    </div>
+                    {project.groupLabel && (
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded border ${catStyle.border} ${catStyle.bg} px-2 py-0.5 text-[10px] font-medium ${catStyle.text}`}
+                        >
+                          {project.groupLabel}
+                        </span>
+                      </div>
+                    )}
 
-                    <div className="flex items-center gap-1.5 text-[10px] text-[#7edc73] font-semibold">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-                      <span>• {project.statusBadge?.replace('• • ', '') || 'ACTIVE'}</span>
-                    </div>
+                    {project.statusBadge && (
+                      <div className="flex items-center gap-1.5 text-[10px] text-[#7edc73] font-semibold">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
+                        <span>• {project.statusBadge.replace('• • ', '')}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Dotted Blueprint Grid Banner */}
@@ -289,9 +343,11 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                       {renderBannerCenterIcon(project.iconType)}
                     </div>
 
-                    <span className="mt-2.5 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
-                      {project.subBadge}
-                    </span>
+                    {project.subBadge && (
+                      <span className="mt-2.5 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
+                        {project.subBadge}
+                      </span>
+                    )}
                   </div>
 
                   {/* Title & Index #01 */}
@@ -303,22 +359,26 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                   </div>
 
                   {/* Description */}
-                  <p className="mb-4 text-xs font-mono leading-relaxed text-[#879299] line-clamp-3">
-                    {project.description}
-                  </p>
+                  {project.description && (
+                    <p className="mb-4 text-xs font-mono leading-relaxed text-[#879299] line-clamp-3">
+                      {project.description}
+                    </p>
+                  )}
 
                   {/* Tags with two dots matching screenshot: • • Tag */}
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {project.tags.map((tag, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017] px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
-                      >
-                        <span className="text-[#39bae6]">• •</span>
-                        <span>{tag}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {project.tags && (
+                    <div className="mb-5 flex flex-wrap gap-2">
+                      {project.tags.map((tag, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017] px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
+                        >
+                          <span className="text-[#39bae6]">• •</span>
+                          <span>{tag}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Action Button: LEER REPO full width */}
                   <button
@@ -332,6 +392,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
               );
             })}
           </div>
+          )}
 
           {/* Bottom CTA Button: Triggers All Projects in-page deployment */}
           <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
@@ -349,7 +410,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
             </button>
 
             <p className="mt-2.5 text-[11px] font-mono text-[#5a6673]">
-              • MOSTRANDO {displayedFeaturedProjects.length} DE {ALL_PROJECTS_ARCHIVE.length} REPOSITORIOS // ARCHIVO PÚBLICO •
+              • MOSTRANDO {model.featuredCount} DE {model.totalCount} REPOSITORIOS // ARCHIVO PÚBLICO •
             </p>
           </div>
         </div>
@@ -375,14 +436,14 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                 <span>/</span>
                 <span className="text-[#39bae6] font-semibold">TODOS LOS REPOSITORIOS</span>
                 <span>//</span>
-                <span className="text-[#bdc8cf]">{allFilteredProjects.length} DE {ALL_PROJECTS_ARCHIVE.length} PROYECTOS</span>
+                <span className="text-[#bdc8cf]">{model.archiveCount} DE {model.totalCount} PROYECTOS</span>
               </div>
             </div>
 
             {/* Category Filter Pills */}
             <div className="flex items-center gap-1.5 text-xs flex-wrap">
               <span className="text-[#5a6673] mr-1">• CATEGORÍA:</span>
-              {(['TODOS', 'HERRAMIENTAS', 'SCRIPTS', 'AUTOMATIZACIÓN'] as const).map((cat) => (
+              {model.filterCategories.map(({ id: cat }) => (
                 <button
                   key={cat}
                   onClick={() => setActiveFilter(cat)}
@@ -424,7 +485,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
             </div>
           </div>
 
-          {/* All Projects Grid - All 12 projects rendered with cards */}
+          {/* All Projects Grid - every matching project rendered with cards */}
           {allFilteredProjects.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[#242936] bg-[#10141c]/50 p-12 text-center">
               <Terminal className="mx-auto h-8 w-8 text-[#5a6673] mb-3" />
@@ -447,7 +508,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {allFilteredProjects.map((project) => {
-                const catStyle = getCategoryBadgeStyle(project.tagCategory);
+                const catStyle = getCategoryBadgeStyle(project.groupLabel);
                 return (
                   <div
                     key={project.id}
@@ -455,18 +516,22 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                   >
                     {/* Header inside card: Category pill group + status */}
                     <div className="mb-3 flex items-center justify-between font-mono text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded border ${catStyle.border} ${catStyle.bg} px-2 py-0.5 text-[10px] font-medium ${catStyle.text}`}
-                        >
-                          {project.tagCategory}
-                        </span>
-                      </div>
+                      {project.groupLabel && (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded border ${catStyle.border} ${catStyle.bg} px-2 py-0.5 text-[10px] font-medium ${catStyle.text}`}
+                          >
+                            {project.groupLabel}
+                          </span>
+                        </div>
+                      )}
 
-                      <div className="flex items-center gap-1.5 text-[10px] text-[#7edc73] font-semibold">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-                        <span>• {project.statusBadge?.replace('• • ', '') || 'ACTIVE'}</span>
-                      </div>
+                      {project.statusBadge && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-[#7edc73] font-semibold">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
+                          <span>• {project.statusBadge.replace('• • ', '')}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Dotted Blueprint Grid Banner */}
@@ -475,9 +540,11 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                         {renderBannerCenterIcon(project.iconType)}
                       </div>
 
-                      <span className="mt-2.5 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
-                        {project.subBadge}
-                      </span>
+                      {project.subBadge && (
+                        <span className="mt-2.5 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
+                          {project.subBadge}
+                        </span>
+                      )}
                     </div>
 
                     {/* Title & Index #01 */}
@@ -489,22 +556,26 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                     </div>
 
                     {/* Description */}
-                    <p className="mb-4 text-xs font-mono leading-relaxed text-[#879299] line-clamp-3">
-                      {project.description}
-                    </p>
+                    {project.description && (
+                      <p className="mb-4 text-xs font-mono leading-relaxed text-[#879299] line-clamp-3">
+                        {project.description}
+                      </p>
+                    )}
 
                     {/* Tags with two dots matching screenshot: • • Tag */}
-                    <div className="mb-5 flex flex-wrap gap-2">
-                      {project.tags.map((tag, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017] px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
-                        >
-                          <span className="text-[#39bae6]">• •</span>
-                          <span>{tag}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {project.tags && (
+                      <div className="mb-5 flex flex-wrap gap-2">
+                        {project.tags.map((tag, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017] px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
+                          >
+                            <span className="text-[#39bae6]">• •</span>
+                            <span>{tag}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Action Button: LEER REPO full width */}
                     <button
@@ -520,7 +591,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
             </div>
           )}
         </div>
-      )}
+      ))}
     </div>
   );
 };
