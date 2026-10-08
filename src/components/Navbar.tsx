@@ -23,85 +23,72 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTerminal }) => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#1b1f29] bg-[#0b0e15]/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Brand Zone */}
-        <button
-          onClick={() => navigate('/')}
-          className="group flex items-center gap-2.5 transition-colors focus:outline-none"
-        >
-          {/* Custom cyber skull / mask icon matching screenshot */}
-          <div className="flex h-7 w-7 items-center justify-center rounded border border-[#39bae6]/40 bg-[#10141c] text-[#39bae6] shadow-[0_0_12px_rgba(57,186,230,0.25)] group-hover:border-[#39bae6]">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-            >
-              <circle cx="8" cy="9" r="1.5" fill="currentColor" />
-              <circle cx="16" cy="9" r="1.5" fill="currentColor" />
-              <path d="M5 14v1a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4v-1" />
-              <line x1="10" y1="16" x2="10" y2="18" />
-              <line x1="14" y1="16" x2="14" y2="18" />
-              <path d="M4 8l3-3m13 3l-3-3" />
-            </svg>
+      {/* Full-bleed bar: no max-width cap, the header spans the whole viewport. */}
+      <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        {/* Left Zone: nav links + online badge */}
+        <div className="flex min-w-0 items-center gap-6">
+          <nav className="hidden items-center gap-7 md:flex">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.id}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `relative py-1 font-mono text-xs tracking-wider transition-colors hover:text-[#6ad5ff] ${
+                    isActive ? 'font-medium text-[#39bae6]' : 'text-[#879299]'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {item.label}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#39bae6] shadow-[0_0_8px_rgba(57,186,230,0.6)]" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="hidden items-center md:flex">
+            <div className="flex items-center gap-2 rounded border border-[#1b1f29] bg-[#10141c] px-3 py-1 font-mono text-[11px] text-[#7edc73]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
+              <span className="font-semibold tracking-wider">STARK</span>
+              <span className="text-[#3d484e]">•</span>
+              <span className="font-semibold tracking-wider text-[#7edc73]">ONLINE</span>
+            </div>
           </div>
-          <span className="font-mono text-base font-bold tracking-wider text-[#e0e2ec] group-hover:text-[#6ad5ff] transition-colors">
-            STARK<span className="text-[#39bae6]">HACK</span>
-          </span>
-        </button>
-
-        {/* Desktop Nav Zone */}
-        <nav className="hidden items-center gap-7 md:flex">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.id}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `relative py-1 font-mono text-xs tracking-wider transition-colors hover:text-[#6ad5ff] ${
-                  isActive ? 'font-medium text-[#39bae6]' : 'text-[#879299]'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {item.label}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#39bae6] shadow-[0_0_8px_rgba(57,186,230,0.6)]" />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Right Status Badge matching screenshot: • STARK • ONLINE */}
-        <div className="hidden items-center gap-3 md:flex">
-          <div className="flex items-center gap-2 rounded border border-[#1b1f29] bg-[#10141c] px-3 py-1 font-mono text-[11px] text-[#7edc73]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-            <span className="font-semibold tracking-wider">STARK</span>
-            <span className="text-[#3d484e]">•</span>
-            <span className="font-semibold tracking-wider text-[#7edc73]">ONLINE</span>
-          </div>
-
-          <button
-            onClick={onOpenTerminal}
-            className="flex items-center gap-1.5 rounded border border-[#242936] bg-[#10141c] px-2.5 py-1 font-mono text-[11px] text-[#bdc8cf] transition-all hover:border-[#39bae6] hover:text-[#6ad5ff] hover:shadow-[0_0_10px_rgba(57,186,230,0.2)]"
-            title="Abrir Shell Interactivo"
-          >
-            <Terminal className="h-3.5 w-3.5 text-[#39bae6]" />
-            <span>&gt;_</span>
-          </button>
         </div>
 
-        {/* Mobile Hamburger */}
-        <div className="flex md:hidden">
+        {/* Right Zone: brand wordmark (home) + logo icon (console easter egg) */}
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="group font-mono text-base font-bold tracking-wider text-[#e0e2ec] transition-colors focus:outline-none"
+            title="Ir al inicio"
+          >
+            STARK<span className="text-[#39bae6]">HACK</span>
+          </button>
+
+          {/* Fun bit: the brand logo deploys the interactive shell. */}
+          <button
+            onClick={onOpenTerminal}
+            className="group flex items-center transition-transform focus:outline-none"
+            title="Abrir Shell Interactivo"
+            aria-label="Abrir Shell Interactivo"
+          >
+            <img
+              src="/ui/logo-general.png"
+              alt="StarkHack"
+              className="h-8 w-8 rounded border border-[#39bae6]/40 bg-[#10141c] object-contain p-0.5 shadow-[0_0_12px_rgba(57,186,230,0.25)] transition-all group-hover:border-[#39bae6] group-hover:shadow-[0_0_16px_rgba(57,186,230,0.5)]"
+            />
+          </button>
+
+          {/* Mobile Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded border border-[#1b1f29] p-2 text-[#bdc8cf] hover:text-[#39bae6]"
+            className="rounded border border-[#1b1f29] p-2 text-[#bdc8cf] hover:text-[#39bae6] md:hidden"
             aria-label="Abrir menú"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
