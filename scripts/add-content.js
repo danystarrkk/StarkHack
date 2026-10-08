@@ -179,8 +179,7 @@ export function buildFrontmatterText(data) {
  * @returns {string} the printable plan
  */
 export function formatPlan(plan, sourcePath) {
-  const destName = `${plan.slug}.md`;
-  const destPath = path.resolve(REPO_ROOT, plan.targetDir, destName);
+  const destPath = path.resolve(REPO_ROOT, plan.markdownPath);
   const inPlace = path.resolve(sourcePath) === destPath;
 
   const lines = [];
@@ -190,7 +189,7 @@ export function formatPlan(plan, sourcePath) {
   lines.push(`target dir: ${plan.targetDir}`);
   lines.push('');
   lines.push('files to create:');
-  lines.push(`  ${plan.targetDir}/${destName}${inPlace ? '   (rewrite in place)' : ''}`);
+  lines.push(`  ${plan.markdownPath}${inPlace ? '   (rewrite in place)' : ''}`);
   for (const entry of plan.imagePlan) {
     lines.push(`  ${plan.targetDir}/${entry.target}`);
   }
@@ -480,10 +479,12 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(`converted ${entry.source} -> ${plan.targetDir}/${entry.target}`);
   }
 
-  const destMd = path.join(targetAbs, `${plan.slug}.md`);
+  // El .md va AL LADO de targetDir (markdownPath), no dentro: es la
+  // disposición que lee generate-index.js (public/writeups/<p>/<slug>.md).
+  const destMd = path.join(REPO_ROOT, plan.markdownPath);
   const inPlace = path.resolve(sourcePath) === destMd;
   fs.writeFileSync(destMd, buildFrontmatterText(plan.frontmatter) + plan.rewrittenBody);
-  console.log(`${inPlace ? 'rewrote' : 'wrote'} ${plan.targetDir}/${plan.slug}.md`);
+  console.log(`${inPlace ? 'rewrote' : 'wrote'} ${plan.markdownPath}`);
 
   // generate-index.js no tiene script npm que encadenar: se invoca tal cual
   // para que public/index.json refleje la entrada nueva (fail-loud si no).

@@ -174,7 +174,8 @@ describe('formatPlan', () => {
 
     expect(out).toContain('/tmp/somewhere/Wave Fixture.md');
     expect(out).toContain('public/writeups/zztest/wave-fixture');
-    expect(out).toContain('public/writeups/zztest/wave-fixture/wave-fixture.md');
+    // The .md is a SIBLING of its media folder — the layout the indexer scans.
+    expect(out).toContain('public/writeups/zztest/wave-fixture.md');
     expect(out).toContain('01.png -> public/writeups/zztest/wave-fixture/media/01.webp');
     expect(out).toContain('02.jpg -> public/writeups/zztest/wave-fixture/media/02.webp');
     // Writeups NEVER get a cover row (the UI derives it from `level`).

@@ -58,6 +58,9 @@ describe('planContentIngestion — writeup happy path', () => {
     expect(plan.slug).toBe('wave'); // strip .md, lowercase, spaces → '-'
     expect(plan.sitePath).toBe('/writeups/hackmyvm/wave');
     expect(plan.targetDir).toBe('public/writeups/hackmyvm/wave');
+    // The .md is a SIBLING of its media/ folder (the repo convention the
+    // indexer scans: public/writeups/<platform>/<slug>.md), never inside it.
+    expect(plan.markdownPath).toBe('public/writeups/hackmyvm/wave.md');
   });
 
   it('numbers every source image in ascending name order (byte-stable)', () => {
@@ -229,6 +232,7 @@ describe('planContentIngestion — project', () => {
     expect(plan.problems).toEqual([]);
     expect(plan.sitePath).toBe('/projects/autorecon-ng');
     expect(plan.targetDir).toBe('public/projects/autorecon-ng');
+    expect(plan.markdownPath).toBe('public/projects/autorecon-ng.md');
     expect(plan.imagePlan).toEqual([
       { source: '01.png', target: 'media/01.webp' },
       { source: 'cover.jpg', target: 'media/02.webp' },
@@ -324,6 +328,7 @@ describe('planContentIngestion — certificate', () => {
     expect(plan.problems).toEqual([]);
     expect(plan.sitePath).toBe('/certificates/ejpt');
     expect(plan.targetDir).toBe('public/certificates/ejpt');
+    expect(plan.markdownPath).toBe('public/certificates/ejpt.md');
     expect(plan.imagePlan).toEqual([
       { source: 'cert.png', target: 'media/01.webp' },
       { source: 'cert-scan.png', target: 'media/cover.webp' },
