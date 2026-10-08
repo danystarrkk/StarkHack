@@ -1,11 +1,15 @@
+// Project detail page. Everything it renders comes from the PURE view-model
+// builder (src/lib/projectView.ts) fed by the project resolved from the REAL
+// content pipeline: the body is the real readme (project.readme, the pipeline
+// doc.content from public/projects/<slug>.md) — the template's
+// SAMPLE_PROJECTS_CONTENT / getProjectContent is never a source. Chips render
+// only fields that really exist (group-derived badge + real date, no invented
+// "• • ACTIVE" status); the link sections render only when the real data
+// supplies a link source (githubUrl / explicit link lists).
 import React, { useState, useEffect, useMemo } from 'react';
-import { Project, ProjectLink, ToolLink } from '../types';
-import {
-  MarkdownRenderer,
-  extractHeadingsFromMarkdown,
-  TocHeading,
-} from './MarkdownRenderer';
-import { getProjectContent } from '../data/projectContents';
+import { Project } from '../types';
+import { buildProjectView, type ProjectViewChipTone } from '../lib/projectView';
+import { MarkdownRenderer, TocHeading } from './MarkdownRenderer';
 import {
   ArrowLeft,
   Share2,
@@ -23,28 +27,32 @@ interface ProjectPageProps {
   onBack: () => void;
 }
 
+const CHIP_TONE_CLASS: Record<ProjectViewChipTone, string> = {
+  group: 'flex items-center gap-1.5 border-[#39bae6]/30 bg-[#39bae6]/10 text-[#39bae6]',
+  neutral: 'border-[#242936] bg-[#0b0e15] text-[#879299]',
+};
+
 export const ProjectPage: React.FC<ProjectPageProps> = ({
   project,
   onBack,
 }) => {
-  // Retrieve or compute full markdown, project links, and tools
-  const projectData = useMemo(() => {
-    return getProjectContent(project);
-  }, [project]);
+  // Pure view model of the resolved pipeline project: real readme body, real
+  // tags, chips only for fields that exist, real-source sidebar links and the
+  // sections TOC extracted from the real body. Absent optional fields
+  // (group / date / description / tags / readme / links) can never crash this
+  // (the old getProjectContent fallback threw on pipeline-mapped objects).
+  const view = useMemo(() => buildProjectView(project), [project]);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedMarkdown, setCopiedMarkdown] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
 
-  // Links lists
-  const [projectLinks] = useState<ProjectLink[]>(projectData.projectLinks);
-  const [toolLinks] = useState<ToolLink[]>(projectData.toolLinks);
+  // Sidebar link lists (real sources only; empty → the section stays hidden)
+  const { projectLinks, toolLinks } = view;
 
-  // Headings extracted from markdown
-  const headings: TocHeading[] = useMemo(() => {
-    return extractHeadingsFromMarkdown(projectData.markdown);
-  }, [projectData.markdown]);
+  // Headings extracted from the real readme markdown
+  const headings: TocHeading[] = view.headings;
 
   // Track scroll position & update active heading and reading progress
   useEffect(() => {
@@ -110,7 +118,7 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
   };
 
   const handleCopyMarkdown = () => {
-    navigator.clipboard.writeText(projectData.markdown);
+    navigator.clipboard.writeText(view.markdownContent);
     setCopiedMarkdown(true);
     setTimeout(() => setCopiedMarkdown(false), 2000);
   };
@@ -138,12 +146,18 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
               <span className="font-semibold uppercase tracking-wider">VOLVER</span>
             </button>
 
+            {/* Breadcrumb: real group-derived badge only; hidden when the group
+                is missing or non-canonical — never an invented category. */}
             <div className="hidden sm:flex items-center gap-2 text-xs text-[#5a6673]">
               <span className="text-[#39bae6] font-semibold">// PROYECTOS</span>
+              {view.groupBadge && (
+                <>
+                  <span>/</span>
+                  <span className="text-[#bdc8cf] font-semibold">{view.groupBadge}</span>
+                </>
+              )}
               <span>/</span>
-              <span className="text-[#bdc8cf] font-semibold">{project.tagCategory}</span>
-              <span>/</span>
-              <span className="text-white font-bold">{project.title.toUpperCase()}</span>
+              <span className="text-white font-bold">{view.title.toUpperCase()}</span>
             </div>
           </div>
 
@@ -161,7 +175,7 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
               <span className="text-[11px]">VER ÍNDICE</span>
             </button>
 
-            {/* Copy markdown docs */}
+            {/* Copy markdown docs (the real readme) */}
             <button
               onClick={handleCopyMarkdown}
               className="hidden md:flex items-center gap-1.5 rounded border border-[#242936] bg-[#141821] px-3 py-1.5 text-xs text-[#879299] transition-all hover:border-[#7edc73] hover:text-[#7edc73]"
@@ -199,10 +213,10 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
               )}
             </button>
 
-            {/* External Repo link if exists */}
-            {project.githubUrl && (
+            {/* External Repo link — only when the real data has a repo URL */}
+            {view.repoUrl && (
               <a
-                href={project.githubUrl}
+                href={view.repoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded border border-[#39bae6]/40 bg-[#39bae6]/10 px-3 py-1.5 text-xs text-[#6ad5ff] transition-all hover:bg-[#39bae6]/20 hover:border-[#39bae6]"
@@ -224,49 +238,58 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
           <div className="pointer-events-none absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#39bae6_1px,transparent_1px),linear-gradient(to_bottom,#39bae6_1px,transparent_1px)] bg-[size:24px_24px]" />
 
           <div className="relative z-10 space-y-4">
-            {/* Top Badges */}
-            <div className="flex flex-wrap items-center gap-2.5 text-xs">
-              <span className="flex items-center gap-1.5 rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-3 py-1 text-[#39bae6] font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-                {project.tagCategory}
-              </span>
-
-              <span className="rounded border border-[#7edc73]/30 bg-[#7edc73]/10 px-3 py-1 text-[11px] font-bold text-[#7edc73]">
-                {project.statusBadge || '• • ACTIVE'}
-              </span>
-
-              <span className="rounded border border-[#3d484e] bg-[#191b23] px-3 py-1 text-[11px] text-[#bdc8cf]">
-                {project.subBadge}
-              </span>
-            </div>
+            {/* Top Badges — only fields the real data has (no invented values:
+                the old hardcoded "• • ACTIVE" status and the template-only
+                subBadge are gone for good) */}
+            {view.chips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                {view.chips.map((chip) => (
+                  <span
+                    key={chip.kind}
+                    className={`rounded border px-3 py-1 text-[11px] font-bold ${CHIP_TONE_CLASS[chip.tone]}`}
+                  >
+                    {chip.kind === 'group' && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
+                    )}
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Project Title with Glowing Gradient */}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <span className="font-mono text-xs font-semibold text-[#5a6673] tracking-widest uppercase block mb-1">
-                  ID: {project.number} // REPOSITORIO DE SEGURIDAD
-                </span>
+                {view.number && (
+                  <span className="font-mono text-xs font-semibold text-[#5a6673] tracking-widest uppercase block mb-1">
+                    ID: {view.number} // REPOSITORIO DE SEGURIDAD
+                  </span>
+                )}
                 <h1 className="font-sans text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-white via-[#6ad5ff] to-[#7edc73] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(106,213,255,0.25)]">
-                  {project.title}
+                  {view.title}
                 </h1>
               </div>
             </div>
 
-            {/* Description and tags */}
-            <p className="text-sm sm:text-base text-[#bdc8cf] max-w-4xl leading-relaxed">
-              {project.description}
-            </p>
+            {/* Description and tags (real entry data only; hidden when absent) */}
+            {view.description && (
+              <p className="text-sm sm:text-base text-[#bdc8cf] max-w-4xl leading-relaxed">
+                {view.description}
+              </p>
+            )}
 
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              {project.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded border border-[#242936] bg-[#141821] px-2.5 py-1 text-[11px] font-mono text-[#879299]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {view.tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                {view.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded border border-[#242936] bg-[#141821] px-2.5 py-1 text-[11px] font-mono text-[#879299]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -275,9 +298,11 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
           {/* Main Article Content Column (Left, spacious) */}
           <main className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 min-w-0">
             <div className="rounded-xl border border-[#1b1f29] bg-[#121620]/70 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-sm">
+              {/* Body: the REAL readme (project.readme from the pipeline),
+                  never template content. */}
               <MarkdownRenderer
-                content={projectData.markdown}
-                machineTitle={project.title}
+                content={view.markdownContent}
+                machineTitle={view.title}
               />
             </div>
           </main>
@@ -354,96 +379,103 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
                 </div>
               </div>
 
-              {/* 2. SECCIÓN ENLACES DEL PROYECTO // REPOSITORIO OFICIAL */}
-              <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
-                <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Code2 className="h-4 w-4 text-[#7edc73]" />
-                    <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
-                      ENLACES DEL PROYECTO
-                    </h3>
+              {/* 2. SECCIÓN ENLACES DEL PROYECTO // REPOSITORIO OFICIAL
+                  (solo fuentes reales: githubUrl o projectLinks explícitos;
+                  oculta si no hay ninguna) */}
+              {projectLinks.length > 0 && (
+                <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Code2 className="h-4 w-4 text-[#7edc73]" />
+                      <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
+                        ENLACES DEL PROYECTO
+                      </h3>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  {projectLinks.slice(0, 1).map((link, idx) => (
-                    <a
-                      key={idx}
-                      href={link.url}
-                      target={link.url.startsWith('http') ? '_blank' : '_self'}
-                      rel="noopener noreferrer"
-                      className="group flex flex-col rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#7edc73]/40 hover:bg-[#141924]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-xs text-white group-hover:text-[#7edc73] transition-colors truncate">
-                          {link.title}
-                        </span>
-                        <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#7edc73] shrink-0" />
-                      </div>
-                      {link.badge && (
-                        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-[#879299]">
-                          <span className="h-1 w-1 rounded-full bg-[#7edc73]" />
-                          <span className="text-[#7edc73] font-semibold">{link.badge}</span>
+                  <div className="space-y-2">
+                    {projectLinks.map((link, idx) => (
+                      <a
+                        key={idx}
+                        href={link.url}
+                        target={link.url.startsWith('http') ? '_blank' : '_self'}
+                        rel="noopener noreferrer"
+                        className="group flex flex-col rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#7edc73]/40 hover:bg-[#141924]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-xs text-white group-hover:text-[#7edc73] transition-colors truncate">
+                            {link.title}
+                          </span>
+                          <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#7edc73] shrink-0" />
                         </div>
-                      )}
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. SECCIÓN HERRAMIENTAS & OTROS LINKS // TOOLS & RESOURCES */}
-              <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
-                <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Wrench className="h-4 w-4 text-[#f4c05b]" />
-                    <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
-                      HERRAMIENTAS & OTROS LINKS
-                    </h3>
+                        {link.badge && (
+                          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-[#879299]">
+                            <span className="h-1 w-1 rounded-full bg-[#7edc73]" />
+                            <span className="text-[#7edc73] font-semibold">{link.badge}</span>
+                          </div>
+                        )}
+                      </a>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                <div className="space-y-3">
-                  {toolLinks.map((tool, idx) => (
-                    <a
-                      key={idx}
-                      href={tool.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#f4c05b]/40 hover:bg-[#141924]"
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="font-semibold text-xs text-white group-hover:text-[#f4c05b] transition-colors truncate">
-                          {tool.name}
-                        </span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {tool.githubStars && (
-                            <span className="rounded bg-[#1a202c] px-1.5 py-0.5 text-[9px] text-[#f4c05b]">
-                              {tool.githubStars}
+              {/* 3. SECCIÓN HERRAMIENTAS & OTROS LINKS // TOOLS & RESOURCES
+                  (solo toolLinks con fuente real; oculta si no hay) */}
+              {toolLinks.length > 0 && (
+                <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-[#f4c05b]" />
+                      <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
+                        HERRAMIENTAS & OTROS LINKS
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {toolLinks.map((tool, idx) => (
+                      <a
+                        key={idx}
+                        href={tool.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#f4c05b]/40 hover:bg-[#141924]"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="font-semibold text-xs text-white group-hover:text-[#f4c05b] transition-colors truncate">
+                            {tool.name}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {tool.githubStars && (
+                              <span className="rounded bg-[#1a202c] px-1.5 py-0.5 text-[9px] text-[#f4c05b]">
+                                {tool.githubStars}
+                              </span>
+                            )}
+                            <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#f4c05b]" />
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] leading-relaxed text-[#879299] line-clamp-2">
+                          {tool.description}
+                        </p>
+
+                        <div className="mt-2.5 flex items-center gap-1.5">
+                          {tool.developedByAuthor ? (
+                            <span className="rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2 py-0.5 text-[9px] font-bold text-[#6ad5ff]">
+                              [DESARROLLADA POR MÍ]
+                            </span>
+                          ) : (
+                            <span className="rounded border border-[#1b1f29] bg-[#141822] px-2 py-0.5 text-[9px] text-[#879299]">
+                              [RECURSO / REF]
                             </span>
                           )}
-                          <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#f4c05b]" />
                         </div>
-                      </div>
-
-                      <p className="text-[11px] leading-relaxed text-[#879299] line-clamp-2">
-                        {tool.description}
-                      </p>
-
-                      <div className="mt-2.5 flex items-center gap-1.5">
-                        {tool.developedByAuthor ? (
-                          <span className="rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2 py-0.5 text-[9px] font-bold text-[#6ad5ff]">
-                            [DESARROLLADA POR MÍ]
-                          </span>
-                        ) : (
-                          <span className="rounded border border-[#1b1f29] bg-[#141822] px-2 py-0.5 text-[9px] text-[#879299]">
-                            [RECURSO / REF]
-                          </span>
-                        )}
-                      </div>
-                    </a>
-                  ))}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </aside>
         </div>

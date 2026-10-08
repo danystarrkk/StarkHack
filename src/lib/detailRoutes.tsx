@@ -15,16 +15,17 @@
 // the sidebar; its generated fallback (getWriteupContent) fabricates data and
 // is never used.
 //
-// Project detail (honest limitation, unchanged):
-// ProjectPage still renders from the template content map in
-// src/data/projectContents.ts (getProjectContent), whose generated fallback
-// fabricates data and crashes on pipeline-mapped objects. Per the task's
-// honesty rule ("never fake data") the project route renders ProjectPage ONLY
-// where the template holds curated content for the resolved slug, and shows
-// the honest CONTENIDO PENDIENTE state otherwise (with the real resolved
-// metadata — never invented fields). Loading, missing and error states are
-// always honest, and a render error boundary converts any residual render
-// crash into an honest visible state instead of crashing the app.
+// Project detail (real readme, mirrors the writeup port):
+// ProjectPage renders the REAL markdown body (project.readme = the pipeline
+// doc.content) through the pure view-model builder in src/lib/projectView.ts.
+// Every project that resolves from the pipeline gets the full detail page —
+// there is no template-content gate anymore. The template content map
+// (SAMPLE_PROJECTS_CONTENT) is only consulted by hasTemplateProjectContent to
+// report whether curated template content EXISTS for a slug (the same
+// availability-report role as hasTemplateWriteupContent); it is never a
+// rendering source. Loading, missing and error states are always honest, and a
+// render error boundary converts any residual render crash into an honest
+// visible state instead of crashing the app.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchIndex, fetchProject, fetchWriteup, getProjects } from '../../lib/content';
@@ -33,7 +34,7 @@ import { findCuratedTemplateExtras } from './writeupView';
 import { ProjectPage } from '../components/ProjectPage';
 import { WriteupPage } from '../components/WriteupPage';
 import { SAMPLE_PROJECTS_CONTENT } from '../data/projectContents';
-import type { Project, Writeup } from '../types';
+import type { Project, ProjectViewSource, Writeup } from '../types';
 import type { ContentDoc, ContentIndexItem, WriteupContent, WriteupIndexItem } from '../../types';
 import { projectDetailPath, writeupDetailPath } from './paths';
 
@@ -81,14 +82,13 @@ export const resolveProjectDetail = async (slug: string): Promise<ResolvedProjec
 };
 
 // ---------------------------------------------------------------------------
-// Template-component compatibility gate (projects only)
+// Curated-template availability report
 // ---------------------------------------------------------------------------
 
 // True when the template content map holds CURATED content for the slug
-// (lookup keys: id, then `hmv-${id}`). The writeup detail route no longer
-// gates rendering on this — it reports whether the view's optional sidebar
-// links have a curated template source. Kept for the project route, whose
-// template component cannot render real data yet (see the file header).
+// (lookup keys: id, then `hmv-${id}`). These are availability reports only —
+// the detail routes never gate rendering on them and the template content is
+// never the source of a rendered body (see the file header).
 export const hasTemplateWriteupContent = (slug: string): boolean =>
   findCuratedTemplateExtras(slug) !== null;
 
@@ -398,11 +398,20 @@ export const ProjectDetailRoute: React.FC = () => {
     );
   }
 
-  const project: Project = {
+  // Real mapped data ONLY (toUiProject); the real group and the real markdown
+  // body ride along (detail.entry.group / detail.doc.content) and are what
+  // ProjectPage renders through the pure view-model builder
+  // (src/lib/projectView.ts). The source type is ProjectViewSource = the
+  // pipeline Project + its real raw group (src/types/index.ts).
+  const project: ProjectViewSource = {
     ...toUiProject(detail.entry, detail.position),
+    ...(detail.entry.group !== undefined ? { group: detail.entry.group } : {}),
     readme: detail.doc.content,
   };
 
+  // Honest fallback kept for the error boundary below (and reusable for
+  // missing/error states): shows the REAL resolved metadata, never invented
+  // fields.
   const pendingFallback = (
     <ContenidoPendiente
       kind="PROYECTO"
@@ -416,8 +425,9 @@ export const ProjectDetailRoute: React.FC = () => {
     />
   );
 
-  if (!hasTemplateProjectContent(slug)) return pendingFallback;
-
+  // Any project that resolves from the real pipeline renders the full detail
+  // page — no template-content gate. A render crash becomes the honest
+  // CONTENIDO PENDIENTE state below instead of crashing the app.
   return (
     <DetailErrorBoundary fallback={pendingFallback}>
       <ProjectPage project={project} onBack={() => navigate('/projects')} />

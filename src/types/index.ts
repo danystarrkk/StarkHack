@@ -114,6 +114,23 @@ export interface Project {
   toolLinks?: ToolLink[];
 }
 
+/**
+ * The project the detail page is built from: the pipeline `Project`
+ * (toUiProject mapping) plus its REAL raw `group`, exactly as
+ * ProjectDetailRoute assembles it (entry.group and doc.content ride along).
+ *
+ * `group` is the raw pipeline classifier — a free string (root types.ts
+ * Frontmatter.group), because matching against the kind's documented
+ * vocabulary (lib/projectsModel.ts PROJECT_GROUP_LABELS) is case-insensitive
+ * and unknown groups must stay visible-but-unlabeled, never relabeled. It is
+ * deliberately NOT on `Project`: lib/projectsModel.ts narrows `group` to the
+ * canonical `ProjectGroup` union in `ProjectsViewProject extends Project`, and
+ * widening the shared `Project` with a free string breaks that contract.
+ */
+export interface ProjectViewSource extends Project {
+  group?: string;
+}
+
 export interface Certification {
   id: string;
   // Derived display position ('#01', '#02', ...) from the real loaded order
