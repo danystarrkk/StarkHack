@@ -3,33 +3,17 @@ import {
   Shield,
   Terminal,
   Mail,
-  MessageSquare,
   Code,
   Bug,
   Share2,
-  Lock,
   ArrowRight,
-  CheckCircle2,
-  Copy,
-  Check,
-  X,
-  ExternalLink,
-  Cpu,
-  Layers,
-  Globe,
 } from 'lucide-react';
 
 interface AboutScreenProps {
-  onOpenTerminal: () => void;
+  // No props: contact happens through the GitHub / LinkedIn / Email cards.
 }
 
-export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [contactMode, setContactMode] = useState<'message' | 'email'>('message');
-  const [messageText, setMessageText] = useState('');
-  const [senderName, setSenderName] = useState('');
-  const [senderEmail, setSenderEmail] = useState('');
-  const [messageSent, setMessageSent] = useState(false);
+export const AboutScreen: React.FC<AboutScreenProps> = () => {
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const emailAddress = 'stark@starkhack.local';
@@ -39,19 +23,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
     navigator.clipboard.writeText(emailAddress);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2200);
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim()) return;
-    setMessageSent(true);
-    setTimeout(() => {
-      setMessageSent(false);
-      setMessageText('');
-      setSenderName('');
-      setSenderEmail('');
-      setIsContactModalOpen(false);
-    }, 2000);
   };
 
   return (
@@ -136,7 +107,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
             <div className="flex items-start justify-between gap-3">
               <span className="text-[#5a6673] shrink-0">[PERFIL]</span>
               <span className="text-[#39bae6] font-semibold text-right">
-                Cursando Grado Ing. Informática &amp; Dev
+                Cursando Ing. Tecnologías de la Información
               </span>
             </div>
 
@@ -160,30 +131,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
             </div>
           </div>
 
-          {/* 2 Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <button
-              onClick={() => {
-                setContactMode('email');
-                setIsContactModalOpen(true);
-              }}
-              className="group flex items-center justify-center gap-2 rounded-lg border border-[#242936] bg-[#0d1017] py-2.5 px-3 text-xs font-mono font-semibold text-[#bdc8cf] transition-all hover:border-[#39bae6] hover:bg-[#141821] hover:text-[#6ad5ff] hover:shadow-[0_0_12px_rgba(57,186,230,0.2)]"
-            >
-              <Mail className="h-4 w-4 text-[#39bae6] transition-transform group-hover:scale-110" />
-              <span>Conectar / Email</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setContactMode('message');
-                setIsContactModalOpen(true);
-              }}
-              className="group flex items-center justify-center gap-2 rounded-lg border border-[#242936] bg-[#0d1017] py-2.5 px-3 text-xs font-mono font-semibold text-[#bdc8cf] transition-all hover:border-[#7edc73] hover:bg-[#141821] hover:text-[#7edc73] hover:shadow-[0_0_12px_rgba(126,220,115,0.2)]"
-            >
-              <MessageSquare className="h-4 w-4 text-[#7edc73] transition-transform group-hover:scale-110" />
-              <span>Mensaje Directo</span>
-            </button>
-          </div>
+          {/* Contact links live in the GitHub / LinkedIn / Email cards below */}
         </div>
 
         {/* Right Column: Terminal Presentation & Stats Card (7 cols on lg) */}
@@ -206,7 +154,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
           <div className="p-5 sm:p-6 space-y-4 font-mono text-xs sm:text-[13px] leading-relaxed text-[#bdc8cf]">
             <p>
               ¡Hola! Soy <strong className="text-white font-bold">Stark</strong>, actualmente{' '}
-              <strong className="text-white font-bold">cursando el Grado en Ingeniería Informática</strong> con vocación multidisciplinar y pasión continua por entender cómo funcionan la tecnología y los sistemas desde su base.
+              <strong className="text-white font-bold">cursando el Grado en Ingeniería en Tecnologías de la Información</strong> con vocación multidisciplinar y pasión continua por entender cómo funcionan la tecnología y los sistemas desde su base.
             </p>
 
             <div className="rounded border-l-2 border-[#39bae6] bg-[#0d1017]/80 p-3.5 text-[#e0e2ec] font-mono text-xs sm:text-[13px] leading-relaxed">
@@ -237,7 +185,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
             <div className="p-4 sm:p-5 text-center">
               <div className="font-sans text-2xl sm:text-3xl font-bold text-[#f4c05b] mb-1">En Curso</div>
               <div className="font-mono text-[11px] text-[#879299] leading-tight">
-                Grado en Ing. Informática
+                Grado en Ing. Tecnologías de la Información
               </div>
             </div>
 
@@ -445,7 +393,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
             <div className="space-y-1.5 flex-1 font-mono">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h3 className="font-sans text-base sm:text-lg font-bold text-white tracking-tight">
-                  Cursando Grado en Ingeniería Informática
+                  Cursando Grado en Ingeniería en Tecnologías de la Información
                 </h3>
                 <span className="rounded border border-[#39bae6]/40 bg-[#39bae6]/10 px-2.5 py-0.5 text-xs text-[#6ad5ff] font-semibold self-start sm:self-auto flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#6ad5ff] animate-ping" />
@@ -454,7 +402,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
               </div>
 
               <p className="text-xs text-[#879299] leading-relaxed">
-                Estudios universitarios de grado en progreso activo. Asimilación y profundización de sólidos fundamentos de ingeniería del software, arquitectura de sistemas, ingeniería inversa, redes de computadores y protocolos criptográficos.
+                Estudios universitarios de grado en progreso activo. Asimilación y profundización de fundamentos en redes de computadores, sistemas, seguridad de la información, protocolos criptográficos e ingeniería inversa.
               </p>
             </div>
           </div>
@@ -546,106 +494,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onOpenTerminal }) => {
         </div>
       </div>
 
-      {/* Interactive Contact / Direct Message Dialog */}
-      {isContactModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#242936] bg-[#10141c] shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#1b1f29] bg-[#141821] px-5 py-3.5">
-              <div className="flex items-center gap-2.5 text-xs text-[#39bae6] font-semibold">
-                <Terminal className="h-4 w-4" />
-                <span>handshake://connect/stark.msg</span>
-              </div>
-
-              <button
-                onClick={() => setIsContactModalOpen(false)}
-                className="rounded p-1 text-[#879299] hover:bg-[#1b1f29] hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-5 sm:p-6 space-y-4 text-xs font-mono">
-              <div className="border-b border-[#1b1f29] pb-3">
-                <h3 className="font-sans text-lg font-bold text-white mb-1">
-                  {contactMode === 'email' ? 'Conectar por Correo' : 'Mensaje Directo Seguro'}
-                </h3>
-                <p className="text-[#879299]">
-                  Transmisión directa al nodo operativo de Stark. Cifrado local PGP compatible.
-                </p>
-              </div>
-
-              {messageSent ? (
-                <div className="rounded border border-[#7edc73]/40 bg-[#7edc73]/10 p-4 text-center space-y-2">
-                  <CheckCircle2 className="h-8 w-8 text-[#7edc73] mx-auto animate-bounce" />
-                  <div className="font-sans text-base font-bold text-white">¡Mensaje Transmitido con Éxito!</div>
-                  <p className="text-xs text-[#879299]">
-                    ACK recibido. Stark procesará tu mensaje y responderá a la brevedad.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSendMessage} className="space-y-3.5">
-                  <div>
-                    <label className="block text-[11px] text-[#5a6673] mb-1">REMITENTE / IDENTIDAD</label>
-                    <input
-                      type="text"
-                      required
-                      value={senderName}
-                      onChange={(e) => setSenderName(e.target.value)}
-                      placeholder="Tu nombre o alias..."
-                      className="w-full rounded border border-[#242936] bg-[#0d1017] px-3 py-2 text-white placeholder-[#5a6673] focus:border-[#39bae6] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] text-[#5a6673] mb-1">CANAL DE RESPUESTA (EMAIL / TELEGRAM / GITHUB)</label>
-                    <input
-                      type="text"
-                      required
-                      value={senderEmail}
-                      onChange={(e) => setSenderEmail(e.target.value)}
-                      placeholder="usuario@dominio.com o @handle"
-                      className="w-full rounded border border-[#242936] bg-[#0d1017] px-3 py-2 text-white placeholder-[#5a6673] focus:border-[#39bae6] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] text-[#5a6673] mb-1">MENSAJE / PROPUESTA / PREGUNTA TÉCNICA</label>
-                    <textarea
-                      rows={4}
-                      required
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      placeholder="Escribe tu mensaje o propuesta de colaboración..."
-                      className="w-full rounded border border-[#242936] bg-[#0d1017] px-3 py-2 text-white placeholder-[#5a6673] focus:border-[#39bae6] focus:outline-none resize-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <button
-                      type="button"
-                      onClick={onOpenTerminal}
-                      className="flex items-center gap-1.5 text-[11px] text-[#879299] hover:text-[#39bae6] transition-colors"
-                    >
-                      <Terminal className="h-3.5 w-3.5" />
-                      <span>Abrir consola PTY</span>
-                    </button>
-
-                    <button
-                      type="submit"
-                      className="flex items-center gap-2 rounded bg-[#39bae6] px-5 py-2 font-mono text-xs font-bold text-[#0d1017] transition-all hover:bg-[#59c2ff] hover:shadow-[0_0_16px_rgba(57,186,230,0.4)] cursor-pointer"
-                    >
-                      <span>TRANSMITIR</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
