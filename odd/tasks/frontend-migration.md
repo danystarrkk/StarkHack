@@ -1,7 +1,7 @@
 # Feature: migración al nuevo frontend (Fase 2)
 
 - Rama: `feat/frontend-migration` (apilada sobre `feat/content-kinds`)
-- Estado: plan aprobado, ejecución pendiente
+- Estado: Fase 2.0–2.3 ejecutadas y en verde (ver tabla de estado abajo)
 
 ## Decisiones tomadas por el humano (verbatim)
 
@@ -81,11 +81,20 @@ Borrado de `pages/`, `components/`, `index.css` viejo, `index.tsx`,
 
 ## Evidencia de commits
 
-- (pendiente)
+- `c65fd8e` Home → pipeline · `3bd7e54` docs T3
+- `a0d6a2e` react-router + rutas viejas · `134a52a` detalle de writeup real
+- `fae5964` listado de writeups · `d3f0f21` docs estado 2.1
+- `b546580` Projects · `4bfc206` Certificates · `ab677ef` terminal modal
+- `ae1b795` modales huérfanos · `d48c37a` ProjectPage real
+- `07e5853` fase 2.3 borrado
 
 ## Cierre
 
-- (pendiente)
+- Fase 2 completa: la UI renderiza 100% desde el pipeline de contenido;
+  el frontend viejo y `src/data/portfolioData.ts` no existen más.
+- Gate: **336/336** · `tsc` 0 · `build` 0 · greps de cero rastros vacíos.
+- Quedan como deuda registrada: reviews RDD de esta tanda (pendiente de
+  slices dentro de presupuesto) y el churn transitorio del lockfile.
 
 ## Estado de ejecución
 
@@ -96,11 +105,12 @@ Borrado de `pages/`, `components/`, `index.css` viejo, `index.tsx`,
 | 2.1 Router | ✅ Hecho | `a0d6a2e` — `src/lib/router.tsx`, `/directory` y `/machines/:id` redirect a `/writeups`, rutas viejas vivas |
 | 2.1 Writeups detalle | ✅ Hecho | `134a52a` — `src/lib/writeupView.ts`, gate `hasTemplateWriteupContent` eliminado, 16 writeups reales |
 | 2.1 Writeups listado | ✅ Hecho | `fae5964` — `src/lib/directoryModel.ts`, `?plataforma=` como fuente de verdad, sin campos mock |
-| 2.1 Projects | ⬜ pendiente | `ProjectsScreen` aún importa `FEATURED_PROJECTS`/`ALL_PROJECTS_ARCHIVE` de `src/data/portfolioData.ts` |
-| 2.1 Certificates | ⬜ pendiente | `CertificationsScreen` + `CertificationsModal` aún importan `CERTIFICATIONS` de portfolioData |
-| 2.1 Terminal modal | ⬜ pendiente | `MainframeTerminalModal` importa los 3 arrays de portfolioData; se renderiza en el layout raíz |
-| 2.1 About | ⬜ pendiente | Auditar contenido estático de `AboutScreen` + modales huérfanos |
-| 2.3 Borrado del viejo | ⬜ pendiente | `pages/`, `components/Layout.tsx`, raíz `App.tsx`/`index.tsx`/`index.css`, `src/data/` |
+| 2.1 Projects | ✅ Hecho | `b546580` — `src/lib/projectsModel.ts` (18 tests RED-first), `getProjects()`, grupos reales, 0 proyectos → vacío honesto |
+| 2.1 Certificates | ✅ Hecho | `4bfc206` — `src/lib/certificationsModel.ts` + `toUiCertification` (14 tests), `getCertificates()`, 0 certs → vacío honesto |
+| 2.1 Terminal modal | ✅ Hecho | `ab677ef` — `src/lib/terminalData.ts` (21 tests), carga en primer open, sin campos mock (`os`/`difficulty`/`ports`/`stars`/`issuer` eliminados) |
+| 2.1 About | ✅ Hecho | `ae1b795` — AboutScreen sin datos mock (contenido editorial estático del autor); borrados 6 modales huérfanos (0 importadores) |
+| 2.1 ProjectPage detalle | ✅ Hecho | `d48c37a` — `src/lib/projectView.ts` (25 tests), readme real vía `MarkdownRenderer`, gate `hasTemplateProjectContent` fuera del route (export intacto, pineado por `router.test.ts`) |
+| 2.3 Borrado del viejo | ✅ Hecho | `07e5853` — `pages/`, `components/Layout.tsx`, raíz `App.tsx`/`index.tsx`/`index.css`, `src/data/portfolioData.ts`, dep `react-markdown`; -3631/+81; greps de cero rastros vacíos |
 
 ### Nota de ejecución (error corregido)
 
@@ -159,3 +169,35 @@ stack unificado en latest estable.
 - Riesgo registrado (T5): `WriteupPage:54` hace spread de
   `vulnerabilities` cuando no hay tags; y la página de detalle consume
   `markdownContent` de datos mock todavía.
+  (Ambos resueltos: `134a52a` portó el detalle al markdown real y la fase
+  2.3 borró `portfolioData.ts` completo.)
+
+#### Fase 2.1 restante + 2.3 — commits de esta tanda
+
+| Commit | Contenido |
+|---|---|
+| `d3f0f21` | docs: estado real de la 2.1 (router/detalle/listado ya hechos) |
+| `b546580` | ProjectsScreen → pipeline (`projectsModel.ts`, 18 tests, RED `Cannot find module`) |
+| `4bfc206` | CertificationsScreen → pipeline (`certificationsModel.ts`, 14 tests, RED `Cannot find module`) |
+| `ab677ef` | Terminal modal → pipeline (`terminalData.ts`, 21 tests, carga en primer open) |
+| `ae1b795` | -6 modales huérfanos de la plantilla (0 importadores; `CertificationsModal` era el último uso de `portfolioData`) |
+| `d48c37a` | ProjectPage renderiza readme real (`projectView.ts`, 25 tests); gate de plantilla fuera del route |
+| `07e5853` | Fase 2.3: -3631 líneas, `react-markdown` fuera, greps de cero rastros vacíos |
+
+- **Gate final**: `npm test` (build + vitest) → **336/336 (18 archivos)** ·
+  `npx tsc --noEmit` → 0 · `npm run build` → 0 · cero rastros de
+  `portfolioData`, `react-markdown`, `pages/`, `components/Layout`,
+  `App.tsx` raíz.
+- **Decisión de contrato (nord0)**: al borrar el frontend viejo, `nord0`
+  (`#2e3440`) perdió su último consumidor y Tailwind 4 ya no lo emite; la
+  aserción compilada de `styling.test.ts` se re-apuntó a `#8fbcbb` (nord7,
+  sí emitido) conservando la intención de verificar la paleta Nord en el
+  CSS construido. Diff: 1 línea + comentario justificativo.
+- **Contrato de `styling.test.ts` re-apuntado**: lee ahora `src/index.css`
+  (antes `index.css` raíz, borrado) y espera `@config "../tailwind.config.js"`.
+- **Deuda abierta conocida**: `package-lock.json` trae churn transitorio
+  además del subárbol de `react-markdown` (re-resolución de npm de entradas
+  dev); generado por `npm uninstall`, no editado a mano.
+- **Nota About**: `AboutScreen` no consume datos del pipeline; su contenido
+  (bio, stats "5+/100%", timeline) es editorial/estático — decisión del
+  usuario si algún dato debe derivarse del índice en el futuro.
