@@ -118,3 +118,23 @@ stack unificado en latest estable.
   `steps`…) se agregan **a esa page y a su frontmatter** cuando toca.
   `ports` queda descartado por decisión humana.
 - `react-router` se conserva; solo se ajustan los elementos que renderiza.
+
+### Registro de reviews (RDD) — fase 2.0 y sus derivados
+
+| Rango (`baseRef`) | Archivos | Resultado |
+|---|---|---|
+| `8bcadb3` (primer intento) | ~50 | ❌ `lens_context_budget_exceeded` — sin autoridad creada |
+| `adf907d` (feature completa) | ~35 | ❌ `lens_context_budget_exceeded` — sin autoridad creada |
+| `77e6eaa` (solo `0e9e06c`) | 3 | ✅ **`approved`** — lineage `review-2e026cc9b8068d75`, receipt `gentle-ai.review-acknowledged/v1`, consumed `0b1a7a9` |
+
+- **Aprobado**: `lib/frontmatter.js` (tolerancia a `---` vacío) + el script
+  `test` (build + vitest). 4 hallazgos **informativos** (no bloqueantes):
+  acoplamiento al mensaje de error en `frontmatter.js:49`, cobertura de
+  directivas y de frontera negativa, y divergencia de `test`/`test:unit`.
+- **Cobertura pendiente (no sellada)**: el cuerpo de la fase 2.0 (integración
+  de los 26 archivos `src/`, `index.html`, `tailwind.config.js`, `tsconfig.json`,
+  `src/index.css` vía `@import "tailwindcss"` + `@config`) y el merge
+  `6e9bbff` **no entraron en ningún slice aprobado**: cada intento con un
+  rango que los incluía excedió el presupuesto del lente. Queda como deuda de
+  cobertura registrada — se revisará por slices más chicos (p. ej. por archivo)
+  en la fase 2.1.
