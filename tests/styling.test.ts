@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('styling source contract (Tailwind 4 migration)', () => {
-  const css = fs.readFileSync(path.join(repoRoot, 'index.css'), 'utf8');
+  const css = fs.readFileSync(path.join(repoRoot, 'src', 'index.css'), 'utf8');
   const postcss = fs.readFileSync(path.join(repoRoot, 'postcss.config.js'), 'utf8');
   const tailwind = fs.readFileSync(path.join(repoRoot, 'tailwind.config.js'), 'utf8');
 
@@ -24,8 +24,8 @@ describe('styling source contract (Tailwind 4 migration)', () => {
     expect(css).toMatch(/^\s*@import "tailwindcss";/);
   });
 
-  it('index.css declares @config "./tailwind.config.js";', () => {
-    expect(css).toContain('@config "./tailwind.config.js";');
+  it('index.css declares @config "../tailwind.config.js";', () => {
+    expect(css).toContain('@config "../tailwind.config.js";');
   });
 
   it('index.css contains no v3 @tailwind base|components|utilities directive', () => {
@@ -68,7 +68,10 @@ describeCompiled('styling compiled contract (dist/assets/*.css)', () => {
 
     expect(compiled).toContain('.bg-deep-bg');
     expect(compiled).toContain('.text-nord7');
-    expect(compiled.toLowerCase()).toContain('#2e3440');
+    // Phase 2.3: nord0 (#2e3440) lost its last consumer with the old frontend,
+    // so Tailwind no longer emits it. The hex-level palette check pins nord7
+    // (emitted via .text-nord7) instead — same intent, surviving utility.
+    expect(compiled.toLowerCase()).toContain('#8fbcbb');
     expect(compiled).not.toContain('@tailwind ');
   });
 });
