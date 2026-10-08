@@ -5,7 +5,7 @@ export const SAMPLE_PROJECTS_CONTENT: Record<string, RichProjectData> = {
     projectLinks: [
       {
         title: 'GitHub // starkhack/autorecon-ng',
-        url: 'https://github.com/starkhack/autorecon-ng',
+        url: 'https://github.com/danystarrkk/autorecon-ng',
         badge: 'REPOSITORIO OFICIAL',
         type: 'github',
       },
@@ -13,7 +13,7 @@ export const SAMPLE_PROJECTS_CONTENT: Record<string, RichProjectData> = {
     toolLinks: [
       {
         name: 'stark-recon-suite',
-        url: 'https://github.com/danystark/stark-recon-suite',
+        url: 'https://github.com/danystarrkk/stark-recon-suite',
         description: 'Orquestador complementario para piping automático de resultados hacia subfinder y httpx.',
         category: 'CUSTOM_TOOL',
         developedByAuthor: true,
@@ -81,7 +81,7 @@ Se requiere **Python 3.10+** y privilegios suficientes para apertura de sockets 
 
 \`\`\`bash:install.sh
 # Clonación del repositorio oficial
-git clone https://github.com/starkhack/autorecon-ng.git
+git clone https://github.com/danystarrkk/autorecon-ng.git
 cd autorecon-ng
 
 # Creación de entorno virtual aislado
@@ -197,7 +197,7 @@ Este software ha sido creado para **auditorías de seguridad autorizadas, ejerci
     projectLinks: [
       {
         title: 'GitHub // starkhack/k-injector',
-        url: 'https://github.com/starkhack/k-injector',
+        url: 'https://github.com/danystarrkk/k-injector',
         badge: 'REPOSITORIO OFICIAL',
         type: 'github',
       },
@@ -213,7 +213,7 @@ Este software ha sido creado para **auditorías de seguridad autorizadas, ejerci
       },
       {
         name: 'stark-jwt-forge',
-        url: 'https://github.com/danystark/stark-jwt-forge',
+        url: 'https://github.com/danystarrkk/stark-jwt-forge',
         description: 'Herramienta de forja criptográfica y manipulador de tokens.',
         category: 'CUSTOM_TOOL',
         developedByAuthor: true,
@@ -255,7 +255,7 @@ Para garantizar compatibilidad binaria estricta con Windows x86_64, se recomiend
 
 \`\`\`bash:build.sh
 # Clonación de fuentes
-git clone https://github.com/starkhack/k-injector.git
+git clone https://github.com/danystarrkk/k-injector.git
 cd k-injector
 
 # Compilación con perfil de Release y stripped de símbolos
@@ -304,7 +304,7 @@ pub unsafe fn direct_syscall_invoke(ssn: u32, args: *const c_void) -> NTSTATUS {
     projectLinks: [
       {
         title: 'GitHub // starkhack/htb-toolkit',
-        url: 'https://github.com/starkhack/htb-toolkit',
+        url: 'https://github.com/danystarrkk/htb-toolkit',
         badge: 'REPOSITORIO OFICIAL',
         type: 'github',
       },
@@ -319,7 +319,7 @@ pub unsafe fn direct_syscall_invoke(ssn: u32, args: *const c_void) -> NTSTATUS {
       },
       {
         name: 'stark-recon-suite',
-        url: 'https://github.com/danystark/stark-recon-suite',
+        url: 'https://github.com/danystarrkk/stark-recon-suite',
         description: 'Suite automatizada de reconocimiento y generación de plantillas.',
         category: 'CUSTOM_TOOL',
         developedByAuthor: true,
@@ -386,12 +386,12 @@ export function getProjectContent(project: Project): RichProjectData {
 
   // Generación dinámica estructurada para proyectos del archivo
   const officialGithubUrl =
-    project.githubUrl || `https://github.com/starkhack/${project.id}`;
+    project.githubUrl || `https://github.com/danystarrkk/${project.id}`;
 
   const defaultToolLinks: ToolLink[] = [
     {
       name: 'stark-recon-suite',
-      url: 'https://github.com/danystark/stark-recon-suite',
+      url: 'https://github.com/danystarrkk/stark-recon-suite',
       description: 'Orquestador complementario y conjunto de scripts para auditorías ofensivas.',
       category: 'CUSTOM_TOOL',
       developedByAuthor: true,

@@ -30,7 +30,7 @@ export const SAMPLE_WRITEUPS_CONTENT: Record<string, RichWriteupData> = {
     toolLinks: [
       {
         name: 'stark-jwt-forge',
-        url: 'https://github.com/danystark/stark-jwt-forge',
+        url: 'https://github.com/danystarrkk/stark-jwt-forge',
         description: 'Herramienta CLI propia en Python para forja de tokens JWT con algoritmos None, inyección SpEL y bypass de HMAC secrets débiles.',
         category: 'CUSTOM_TOOL',
         developedByAuthor: true,
@@ -38,7 +38,7 @@ export const SAMPLE_WRITEUPS_CONTENT: Record<string, RichWriteupData> = {
       },
       {
         name: 'stark-recon-suite',
-        url: 'https://github.com/danystark/stark-recon-suite',
+        url: 'https://github.com/danystarrkk/stark-recon-suite',
         description: 'Script automatizado de enumeración agresiva de puertos, wrappers de nmap, ffuf y análisis de cabeceras HTTP.',
         category: 'CUSTOM_TOOL',
         developedByAuthor: true,
@@ -318,7 +318,7 @@ export function getWriteupContent(writeup: Writeup): RichWriteupData {
   const toolLinks: ToolLink[] = [
     {
       name: 'stark-recon-suite',
-      url: 'https://github.com/danystark/stark-recon-suite',
+      url: 'https://github.com/danystarrkk/stark-recon-suite',
       description: 'Framework de automatización de reconocimiento, enumeración de puertos TCP/UDP y trazado de vectores.',
       category: 'CUSTOM_TOOL',
       developedByAuthor: true,
@@ -326,7 +326,7 @@ export function getWriteupContent(writeup: Writeup): RichWriteupData {
     },
     {
       name: 'stark-privesc-finder',
-      url: 'https://github.com/danystark/stark-privesc-finder',
+      url: 'https://github.com/danystarrkk/stark-privesc-finder',
       description: 'Herramienta de auditoría de capabilities, permisos SUID, cronjobs y vectores de kernel en entornos Linux.',
       category: 'CUSTOM_TOOL',
       developedByAuthor: true,
