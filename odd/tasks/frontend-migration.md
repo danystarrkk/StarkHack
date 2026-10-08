@@ -139,6 +139,8 @@ stack unificado en latest estable.
 | `8bcadb3` (primer intento) | ~50 | ❌ `lens_context_budget_exceeded` — sin autoridad creada |
 | `adf907d` (feature completa) | ~35 | ❌ `lens_context_budget_exceeded` — sin autoridad creada |
 | `77e6eaa` (solo `0e9e06c`) | 3 | ✅ **`approved`** — lineage `review-2e026cc9b8068d75`, receipt `gentle-ai.review-acknowledged/v1`, consumed `0b1a7a9` |
+| `d9d9915..HEAD` (tanda completa) | ~36 | ❌ `lens_context_budget_exceeded` — sin autoridad creada (×2, reintentos con slices más chicos) |
+| `d48c37a..HEAD` (slice 2.3) | 15 | ⚠️ lineage `review-1946460ac68d471e` creado (high, 4 lentes), **abandonado** con `reason: operator_disposition` — `pi-host-relay-timeout` (prompt 117 KB, corte a 1000.6s / límite 1000.6s; 0 resultados admitidos, 0 hallazgos). Registro nativo: `review-reclaim-record/v1` en `.git/gentle-ai/review-transactions/quarantine/review-1946460ac68d471e-4262340504` |
 
 - **Aprobado**: `lib/frontmatter.js` (tolerancia a `---` vacío) + el script
   `test` (build + vitest). 4 hallazgos **informativos** (no bloqueantes):
@@ -198,6 +200,14 @@ stack unificado en latest estable.
 - **Deuda abierta conocida**: `package-lock.json` trae churn transitorio
   además del subárbol de `react-markdown` (re-resolución de npm de entradas
   dev); generado por `npm uninstall`, no editado a mano.
+- **Waiver de review (autorizado por el humano)**: la tanda completa de la
+  2.1 + 2.3 no entró en el presupuesto del lente (`lens_context_budget_exceeded`);
+  el slice más fino que aceptó la autoridad (2.3, 15 archivos) murió por
+  `pi-host-relay-timeout` y el humano autorizó **abandon** con
+  `operator_disposition`. Cobertura queda como deuda registrada, no sellada.
+  Para futuras tandas: partir por commit slices menores (cada uno <~1000
+  líneas materializadas) o subir `GENTLE_PI_REVIEW_RELAY_PI_TIMEOUT_MS`
+  (techo 7200000) al lanzar Pi.
 - **Nota About**: `AboutScreen` no consume datos del pipeline; su contenido
   (bio, stats "5+/100%", timeline) es editorial/estático — decisión del
   usuario si algún dato debe derivarse del índice en el futuro.
