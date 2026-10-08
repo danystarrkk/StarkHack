@@ -34,30 +34,52 @@ export function slugify(text: string): string {
     .replace(/\s+/g, '-');
 }
 
-// Extract headings directly from markdown content
+// Shared anchor registration for the TOC extractor and the renderer: both call
+// it with the same deterministic inputs (raw heading text, 1-based heading
+// ordinal, seen ids) so every TOC entry's `id` always matches the `id` the
+// renderer puts on the heading — duplicates and punctuation-only headings
+// included.
+function registerHeadingAnchor(
+  rawText: string,
+  ordinal: number,
+  seenIds: Set<string>
+): { id: string; cleanText: string } {
+  // Remove basic markdown inside headings like ** or *
+  const cleanText = rawText.replace(/[*_~`]/g, '');
+  const baseId = slugify(cleanText) || `heading-${ordinal}`;
+  let id = baseId;
+  let counter = 1;
+  while (seenIds.has(id)) {
+    id = `${baseId}-${counter++}`;
+  }
+  seenIds.add(id);
+  return { id, cleanText };
+}
+
+// Extract headings directly from markdown content. Fenced code blocks are
+// skipped: shell `#` comments inside them are NOT headings (GFM), so the TOC
+// holds exactly the sections the renderer shows.
 export function extractHeadingsFromMarkdown(markdown: string): TocHeading[] {
   const lines = markdown.split('\n');
   const headings: TocHeading[] = [];
   const seenIds = new Set<string>();
+  let inFence = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
     const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
       const level = headingMatch[1].length as 1 | 2 | 3 | 4 | 5 | 6;
       const rawText = headingMatch[2].trim();
-      // Remove basic markdown inside headings like ** or *
-      const cleanText = rawText.replace(/[*_~`]/g, '');
-      let baseId = slugify(cleanText) || `heading-${headings.length + 1}`;
-      let finalId = baseId;
-      let counter = 1;
-      while (seenIds.has(finalId)) {
-        finalId = `${baseId}-${counter++}`;
-      }
-      seenIds.add(finalId);
+      const { id, cleanText } = registerHeadingAnchor(rawText, headings.length + 1, seenIds);
 
       headings.push({
-        id: finalId,
+        id,
         level,
         text: rawText,
         cleanText,
@@ -178,19 +200,24 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   // Parse blocks
   const lines = content.split('\n');
   const renderedElements: React.ReactNode[] = [];
-  const headingTracker = new Map<string, number>();
+  const seenHeadingIds = new Set<string>();
+  let headingCount = 0;
 
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // 1. Code blocks: ```lang ... ```
-    if (trimmed.startsWith('```')) {
+    // 1. Code blocks: ```lang ... ``` (or ~~~ fences)
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
       const langHeader = trimmed.slice(3).trim();
       const codeLines: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+      while (
+        i < lines.length &&
+        !lines[i].trim().startsWith('```') &&
+        !lines[i].trim().startsWith('~~~')
+      ) {
         codeLines.push(lines[i]);
         i++;
       }
@@ -298,11 +325,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     if (headingMatch) {
       const level = headingMatch[1].length as 1 | 2 | 3 | 4 | 5 | 6;
       const text = headingMatch[2].trim();
-      const cleanText = text.replace(/[*_~`]/g, '');
-      let baseId = slugify(cleanText) || `heading-${renderedElements.length}`;
-      let occ = headingTracker.get(baseId) || 0;
-      headingTracker.set(baseId, occ + 1);
-      const headingId = occ > 0 ? `${baseId}-${occ}` : baseId;
+      // Same registration as the TOC extractor: rendered ids === TOC anchors.
+      const { id: headingId } = registerHeadingAnchor(text, headingCount + 1, seenHeadingIds);
+      headingCount += 1;
 
       const headingColorClasses: Record<number, string> = {
         1: 'text-[#6ad5ff] text-2xl sm:text-3xl font-extrabold border-b border-[#242936] pb-3 pt-6 mt-8',

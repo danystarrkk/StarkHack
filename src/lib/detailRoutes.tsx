@@ -6,38 +6,33 @@
 // src/lib/contentAdapter.ts. Nothing is fabricated: fields the pipeline does
 // not supply stay absent.
 //
-// Template-era detail components (honest limitation):
-// WriteupPage/ProjectPage render exclusively from the template content maps in
-// src/data/writeupContents.ts / projectContents.ts (getWriteupContent /
-// getProjectContent), which either return CURATED sample content for a slug or
-// a GENERATED fallback. The generated fallback cannot render real data:
-//   - it throws on pipeline-mapped objects (`writeup.vulnerabilities.join`,
-//     `project.tags.join` when the optional fields are absent), and
-//   - even when it does not throw it fabricates data (invented IPs, scan
-//     output, guessed GitHub URLs, fake tool links with fake star counts,
-//     literal "undefined" fields).
-// The components also have no injection point for the real markdown body
-// (they ignore `writeup.markdownContent` / `project.readme`).
+// Writeup detail (real markdown):
+// WriteupPage renders the REAL markdown body (writeup.markdownContent = the
+// pipeline doc.content) through the pure view-model builder in
+// src/lib/writeupView.ts. Every writeup that resolves from the pipeline gets
+// the full detail page — there is no template-content gate anymore. Template
+// data (SAMPLE_WRITEUPS_CONTENT) only ever supplies optional curated links for
+// the sidebar; its generated fallback (getWriteupContent) fabricates data and
+// is never used.
 //
-// Therefore, per the task's honesty rule ("never fake data") and its fallback
-// ("if a detail page cannot work yet with real data, it must fail visibly and
-// honestly — a clear 'contenido pendiente' state — not crash"), the routes:
-//   - render WriteupPage/ProjectPage ONLY where the template component holds
-//     curated content for the resolved slug (its non-fabricating branch), with
-//     the real mapped data attached (including the real markdown on
-//     markdownContent/readme for the upcoming real-data wiring), and
-//   - otherwise render the honest CONTENIDO PENDIENTE state with the real
-//     resolved metadata. Loading, missing and error states are always honest.
-// A render error boundary converts any residual template crash into the same
-// honest pending state instead of crashing the app.
+// Project detail (honest limitation, unchanged):
+// ProjectPage still renders from the template content map in
+// src/data/projectContents.ts (getProjectContent), whose generated fallback
+// fabricates data and crashes on pipeline-mapped objects. Per the task's
+// honesty rule ("never fake data") the project route renders ProjectPage ONLY
+// where the template holds curated content for the resolved slug, and shows
+// the honest CONTENIDO PENDIENTE state otherwise (with the real resolved
+// metadata — never invented fields). Loading, missing and error states are
+// always honest, and a render error boundary converts any residual render
+// crash into an honest visible state instead of crashing the app.
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchIndex, fetchProject, fetchWriteup, getProjects } from '../../lib/content';
 import { toUiProject, toUiWriteup } from './contentAdapter';
+import { findCuratedTemplateExtras } from './writeupView';
 import { ProjectPage } from '../components/ProjectPage';
 import { WriteupPage } from '../components/WriteupPage';
 import { SAMPLE_PROJECTS_CONTENT } from '../data/projectContents';
-import { SAMPLE_WRITEUPS_CONTENT } from '../data/writeupContents';
 import type { Project, Writeup } from '../types';
 import type { ContentDoc, ContentIndexItem, WriteupContent, WriteupIndexItem } from '../../types';
 import { projectDetailPath, writeupDetailPath } from './paths';
@@ -86,32 +81,20 @@ export const resolveProjectDetail = async (slug: string): Promise<ResolvedProjec
 };
 
 // ---------------------------------------------------------------------------
-// Template-component compatibility gates
+// Template-component compatibility gate (projects only)
 // ---------------------------------------------------------------------------
 
-// Mirrors getWriteupContent's lookup keys (id, then `hmv-${id}`): true only
-// when the template component would render its CURATED content. Its generated
-// fallback fabricates data and crashes on pipeline-mapped objects, so detail
-// routes must never render it (see the file header).
+// True when the template content map holds CURATED content for the slug
+// (lookup keys: id, then `hmv-${id}`). The writeup detail route no longer
+// gates rendering on this — it reports whether the view's optional sidebar
+// links have a curated template source. Kept for the project route, whose
+// template component cannot render real data yet (see the file header).
 export const hasTemplateWriteupContent = (slug: string): boolean =>
-  SAMPLE_WRITEUPS_CONTENT[slug] !== undefined ||
-  SAMPLE_WRITEUPS_CONTENT[`hmv-${slug}`] !== undefined;
+  findCuratedTemplateExtras(slug) !== null;
 
 // Mirrors getProjectContent's lookup (id only). Same rationale.
 export const hasTemplateProjectContent = (slug: string): boolean =>
   SAMPLE_PROJECTS_CONTENT[slug] !== undefined;
-
-// Honest platform label derived from the real platform id. Unknown platforms
-// are shown as-is — never relabeled to a platform they are not.
-const PLATFORM_NAMES: Readonly<Record<string, string>> = Object.freeze({
-  hackmyvm: 'HackMyVM',
-  hackthebox: 'HackTheBox',
-  tryhackme: 'TryHackMe',
-  vulnhub: 'VulnHub',
-});
-
-export const platformDisplayName = (platformId: string): string =>
-  PLATFORM_NAMES[platformId.toLowerCase()] ?? platformId;
 
 // ---------------------------------------------------------------------------
 // Honest async states (same aesthetic as the Home loading/error panels)
@@ -266,7 +249,7 @@ export const ContenidoPendiente: React.FC<ContenidoPendienteProps> = ({
   </StatePanel>
 );
 
-// Converts any residual template-render crash into the honest pending state
+// Converts a residual detail-render crash into an honest visible state
 // ("must fail visibly and honestly ... not crash").
 class DetailErrorBoundary extends React.Component<
   { fallback: React.ReactNode; children: React.ReactNode },
@@ -341,39 +324,27 @@ export const WriteupDetailRoute: React.FC = () => {
   }
 
   // Real mapped data ONLY (toUiWriteup); the real markdown body rides along on
-  // markdownContent so the upcoming real-data viewer wiring has it available.
+  // markdownContent (detail.doc.content) and is what WriteupPage renders as its
+  // body through the pure view-model builder (src/lib/writeupView.ts).
   const writeup: Writeup = {
     ...toUiWriteup(detail.entry),
     markdownContent: detail.doc.content,
   };
-  const platformName = platformDisplayName(platformId);
 
-  const pendingFallback = (
-    <ContenidoPendiente
-      kind="WRITEUP"
-      requestedPath={requestedPath}
-      title={detail.entry.title}
-      platformName={platformName}
-      date={detail.entry.date}
-      tags={detail.entry.tags}
-      summary={detail.entry.description}
-      backTo="/writeups"
-      backLabel="WRITEUPS"
-    />
-  );
-
-  // Only the template component's CURATED branch may render; its generated
-  // fallback fabricates data and crashes on pipeline-mapped objects (see the
-  // file header), so those entries get the honest pending state instead.
-  if (!hasTemplateWriteupContent(slug)) return pendingFallback;
-
+  // Any writeup that resolves from the real pipeline renders the full detail
+  // page — no template-content gate. A render crash becomes the honest error
+  // state below instead of crashing the app.
   return (
-    <DetailErrorBoundary fallback={pendingFallback}>
-      <WriteupPage
-        writeup={writeup}
-        onBack={() => navigate('/writeups')}
-        platformName={platformName}
-      />
+    <DetailErrorBoundary
+      fallback={
+        <DetailProblem
+          message="EL VISOR DE DETALLE FALLÓ AL RENDERIZAR ESTE WRITEUP CON LOS DATOS DEL PIPELINE."
+          backTo="/writeups"
+          backLabel="WRITEUPS"
+        />
+      }
+    >
+      <WriteupPage writeup={writeup} onBack={() => navigate('/writeups')} />
     </DetailErrorBoundary>
   );
 };

@@ -1,11 +1,14 @@
+// Writeup detail page. Everything it renders comes from the PURE view-model
+// builder (src/lib/writeupView.ts) fed by the writeup resolved from the REAL
+// content pipeline: the body is the real markdown (writeup.markdownContent,
+// the pipeline doc.content) — the template's SAMPLE_WRITEUPS_CONTENT is never
+// the source of the body. Chips render only fields that really exist (no
+// invented badges); the link sections render only when curated template data
+// provides them.
 import React, { useState, useEffect, useMemo } from 'react';
-import { Writeup, MachineLink, ToolLink } from '../types';
-import {
-  MarkdownRenderer,
-  extractHeadingsFromMarkdown,
-  TocHeading,
-} from './MarkdownRenderer';
-import { getWriteupContent, RichWriteupData } from '../data/writeupContents';
+import { Writeup } from '../types';
+import { buildWriteupView, type WriteupViewChipTone } from '../lib/writeupView';
+import { MarkdownRenderer, TocHeading } from './MarkdownRenderer';
 import {
   ArrowLeft,
   Share2,
@@ -21,38 +24,35 @@ import {
 interface WriteupPageProps {
   writeup: Writeup;
   onBack: () => void;
-  platformName?: string;
 }
 
-export const WriteupPage: React.FC<WriteupPageProps> = ({
-  writeup,
-  onBack,
-  platformName = 'HackMyVM',
-}) => {
-  // Retrieve or compute full markdown and links
-  const initialData: RichWriteupData = useMemo(() => {
-    return getWriteupContent(writeup);
-  }, [writeup]);
+const CHIP_TONE_CLASS: Record<WriteupViewChipTone, string> = {
+  platform: 'flex items-center gap-1.5 border-[#39bae6]/30 bg-[#39bae6]/10 text-[#39bae6]',
+  easy: 'border-[#7edc73]/30 bg-[#7edc73]/10 text-[#7edc73]',
+  medium: 'border-[#f4c05b]/30 bg-[#f4c05b]/10 text-[#f4c05b]',
+  hard: 'border-[#ffb4ab]/30 bg-[#ffb4ab]/10 text-[#ffb4ab]',
+  neutral: 'border-[#242936] bg-[#0b0e15] text-[#879299]',
+};
+
+export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => {
+  // Pure view model of the resolved pipeline writeup: real markdown body,
+  // real tags, chips only for fields that exist, template-only links and the
+  // sections TOC extracted from the real body. Absent optional fields
+  // (os / difficulty / vulnerabilities / tags) can never crash this.
+  const view = useMemo(() => buildWriteupView(writeup), [writeup]);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
   const [copiedShare, setCopiedShare] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
 
-  // Links lists
-  const [machineLinks] = useState<MachineLink[]>(initialData.machineLinks);
-  const [toolLinks] = useState<ToolLink[]>(initialData.toolLinks);
+  // Links lists (only from curated template data; empty → section hidden)
+  const { machineLinks, toolLinks } = view;
 
-  // Headings extracted from markdown
-  const headings: TocHeading[] = useMemo(() => {
-    return extractHeadingsFromMarkdown(initialData.markdown);
-  }, [initialData.markdown]);
+  // Headings extracted from the real markdown body
+  const headings: TocHeading[] = view.headings;
 
-  // Tags assigned to this writeup
-  const writeupTags: string[] = useMemo(() => {
-    if (writeup.tags && writeup.tags.length > 0) return writeup.tags;
-    if (initialData.tags && initialData.tags.length > 0) return initialData.tags;
-    return [writeup.os, writeup.difficulty, ...writeup.vulnerabilities];
-  }, [writeup, initialData]);
+  // Tags assigned to this writeup (real data only)
+  const writeupTags: string[] = view.tags;
 
   // Track scroll position & update active heading and reading progress
   useEffect(() => {
@@ -138,10 +138,16 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({
 
             <div className="hidden sm:flex items-center gap-2 text-xs text-[#5a6673]">
               <span className="text-[#39bae6] font-semibold">// WRITEUPS</span>
+              {view.platformName && (
+                <>
+                  <span>/</span>
+                  <span className="text-[#bdc8cf] font-semibold">
+                    {view.platformName.toUpperCase()}
+                  </span>
+                </>
+              )}
               <span>/</span>
-              <span className="text-[#bdc8cf] font-semibold">{platformName.toUpperCase()}</span>
-              <span>/</span>
-              <span className="text-white font-bold">{writeup.title.toUpperCase()}</span>
+              <span className="text-white font-bold">{view.title.toUpperCase()}</span>
             </div>
           </div>
 
@@ -189,61 +195,52 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({
           <div className="pointer-events-none absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#39bae6_1px,transparent_1px),linear-gradient(to_bottom,#39bae6_1px,transparent_1px)] bg-[size:24px_24px]" />
 
           <div className="relative z-10 space-y-4">
-            {/* Top Badges */}
-            <div className="flex flex-wrap items-center gap-2.5 text-xs">
-              <span className="flex items-center gap-1.5 rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-3 py-1 text-[#39bae6] font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-                {platformName.toUpperCase()}
-              </span>
-
-              <span
-                className={`rounded border px-3 py-1 text-[11px] font-bold ${
-                  writeup.difficulty === 'FÁCIL'
-                    ? 'border-[#7edc73]/30 bg-[#7edc73]/10 text-[#7edc73]'
-                    : writeup.difficulty === 'MEDIO'
-                    ? 'border-[#f4c05b]/30 bg-[#f4c05b]/10 text-[#f4c05b]'
-                    : 'border-[#ffb4ab]/30 bg-[#ffb4ab]/10 text-[#ffb4ab]'
-                }`}
-              >
-                DIFICULTAD: {writeup.difficulty}
-              </span>
-
-              <span className="rounded border border-[#242936] bg-[#0b0e15] px-3 py-1 text-[11px] text-[#879299]">
-                OS: <strong className="text-white">{writeup.os}</strong>
-              </span>
-
-              <span className="rounded border border-[#7edc73]/30 bg-[#7edc73]/10 px-3 py-1 text-[11px] font-bold text-[#7edc73]">
-                PWNED: ROOT (100%)
-              </span>
-            </div>
+            {/* Top Badges — only fields the real data has (no invented values) */}
+            {view.chips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                {view.chips.map((chip) => (
+                  <span
+                    key={chip.kind}
+                    className={`rounded border px-3 py-1 text-[11px] font-bold ${CHIP_TONE_CLASS[chip.tone]}`}
+                  >
+                    {chip.kind === 'platform' && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
+                    )}
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Machine Title with Glowing Gradient */}
             <h1 className="font-sans text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-white via-[#6ad5ff] to-[#7edc73] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(106,213,255,0.25)]">
-              {writeup.title}
+              {view.title}
             </h1>
 
             {/* Summary description */}
-            {writeup.summary && (
+            {view.summary && (
               <p className="text-sm sm:text-base text-[#bdc8cf] max-w-4xl leading-relaxed">
-                {writeup.summary}
+                {view.summary}
               </p>
             )}
 
-            {/* Tags de la máquina en Hero */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-[11px] font-mono text-[#5a6673] uppercase tracking-wider mr-1 flex items-center gap-1.5 font-semibold">
-                <Tag className="h-3 w-3 text-[#39bae6]" />
-                TAGS:
-              </span>
-              {writeupTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded border border-[#242936] bg-[#141821] px-2.5 py-1 text-[11px] font-mono text-[#879299] hover:border-[#39bae6]/40 hover:text-[#e0e2ec] transition-colors"
-                >
-                  {tag.replace(/^#/, '')}
+            {/* Tags de la máquina en Hero (solo tags reales; oculto si no hay) */}
+            {writeupTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-mono text-[#5a6673] uppercase tracking-wider mr-1 flex items-center gap-1.5 font-semibold">
+                  <Tag className="h-3 w-3 text-[#39bae6]" />
+                  TAGS:
                 </span>
-              ))}
-            </div>
+                {writeupTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded border border-[#242936] bg-[#141821] px-2.5 py-1 text-[11px] font-mono text-[#879299] hover:border-[#39bae6]/40 hover:text-[#e0e2ec] transition-colors"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -252,9 +249,11 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({
           {/* Main Article Content Column (Left, spacious) */}
           <main className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 min-w-0">
             <div className="rounded-xl border border-[#1b1f29] bg-[#121620]/70 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-sm">
+              {/* Body: the REAL markdown (writeup.markdownContent from the
+                  pipeline), never template content. */}
               <MarkdownRenderer
-                content={initialData.markdown}
-                machineTitle={writeup.title}
+                content={view.markdownContent}
+                machineTitle={view.title}
               />
             </div>
           </main>
@@ -331,96 +330,102 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({
                 </div>
               </div>
 
-              {/* 2. SECCIÓN ENLACES DE LA MÁQUINA // TARGET MACHINE LINKS (Solo perfil oficial) */}
-              <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
-                <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Server className="h-4 w-4 text-[#7edc73]" />
-                    <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
-                      ENLACES DE LA MÁQUINA
-                    </h3>
+              {/* 2. SECCIÓN ENLACES DE LA MÁQUINA // TARGET MACHINE LINKS
+                  (solo datos de plantilla curados; oculta si no hay) */}
+              {machineLinks.length > 0 && (
+                <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Server className="h-4 w-4 text-[#7edc73]" />
+                      <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
+                        ENLACES DE LA MÁQUINA
+                      </h3>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  {machineLinks.slice(0, 1).map((link, idx) => (
-                    <a
-                      key={idx}
-                      href={link.url}
-                      target={link.url.startsWith('http') ? '_blank' : '_self'}
-                      rel="noopener noreferrer"
-                      className="group flex flex-col rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#7edc73]/40 hover:bg-[#141924]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-xs text-white group-hover:text-[#7edc73] transition-colors truncate">
-                          {link.title}
-                        </span>
-                        <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#7edc73] shrink-0" />
-                      </div>
-                      {link.badge && (
-                        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-[#879299]">
-                          <span className="h-1 w-1 rounded-full bg-[#7edc73]" />
-                          <span className="text-[#7edc73] font-semibold">{link.badge}</span>
+                  <div className="space-y-2">
+                    {machineLinks.map((link, idx) => (
+                      <a
+                        key={idx}
+                        href={link.url}
+                        target={link.url.startsWith('http') ? '_blank' : '_self'}
+                        rel="noopener noreferrer"
+                        className="group flex flex-col rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#7edc73]/40 hover:bg-[#141924]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-xs text-white group-hover:text-[#7edc73] transition-colors truncate">
+                            {link.title}
+                          </span>
+                          <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#7edc73] shrink-0" />
                         </div>
-                      )}
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. SECCIÓN HERRAMIENTAS & OTROS LINKS // TOOLS & RESOURCES */}
-              <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
-                <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Wrench className="h-4 w-4 text-[#f4c05b]" />
-                    <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
-                      HERRAMIENTAS & OTROS LINKS
-                    </h3>
+                        {link.badge && (
+                          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-[#879299]">
+                            <span className="h-1 w-1 rounded-full bg-[#7edc73]" />
+                            <span className="text-[#7edc73] font-semibold">{link.badge}</span>
+                          </div>
+                        )}
+                      </a>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                <div className="space-y-3">
-                  {toolLinks.map((tool, idx) => (
-                    <a
-                      key={idx}
-                      href={tool.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#f4c05b]/40 hover:bg-[#141924]"
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="font-semibold text-xs text-white group-hover:text-[#f4c05b] transition-colors truncate">
-                          {tool.name}
-                        </span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {tool.githubStars && (
-                            <span className="rounded bg-[#1a202c] px-1.5 py-0.5 text-[9px] text-[#f4c05b]">
-                              {tool.githubStars}
+              {/* 3. SECCIÓN HERRAMIENTAS & OTROS LINKS // TOOLS & RESOURCES
+                  (solo datos de plantilla curados; oculta si no hay) */}
+              {toolLinks.length > 0 && (
+                <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-[#f4c05b]" />
+                      <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-white">
+                        HERRAMIENTAS & OTROS LINKS
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {toolLinks.map((tool, idx) => (
+                      <a
+                        key={idx}
+                        href={tool.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block rounded-lg border border-[#1b1f29] bg-[#0c0f16] p-3 transition-all hover:border-[#f4c05b]/40 hover:bg-[#141924]"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="font-semibold text-xs text-white group-hover:text-[#f4c05b] transition-colors truncate">
+                            {tool.name}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {tool.githubStars && (
+                              <span className="rounded bg-[#1a202c] px-1.5 py-0.5 text-[9px] text-[#f4c05b]">
+                                {tool.githubStars}
+                              </span>
+                            )}
+                            <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#f4c05b]" />
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] leading-relaxed text-[#879299] line-clamp-2">
+                          {tool.description}
+                        </p>
+
+                        <div className="mt-2.5 flex items-center gap-1.5">
+                          {tool.developedByAuthor ? (
+                            <span className="rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2 py-0.5 text-[9px] font-bold text-[#6ad5ff]">
+                              [DESARROLLADA POR MÍ]
+                            </span>
+                          ) : (
+                            <span className="rounded border border-[#1b1f29] bg-[#141822] px-2 py-0.5 text-[9px] text-[#879299]">
+                              [RECURSO / REF]
                             </span>
                           )}
-                          <ExternalLink className="h-3 w-3 text-[#5a6673] group-hover:text-[#f4c05b]" />
                         </div>
-                      </div>
-
-                      <p className="text-[11px] leading-relaxed text-[#879299] line-clamp-2">
-                        {tool.description}
-                      </p>
-
-                      <div className="mt-2.5 flex items-center gap-1.5">
-                        {tool.developedByAuthor ? (
-                          <span className="rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2 py-0.5 text-[9px] font-bold text-[#6ad5ff]">
-                            [DESARROLLADA POR MÍ]
-                          </span>
-                        ) : (
-                          <span className="rounded border border-[#1b1f29] bg-[#141822] px-2 py-0.5 text-[9px] text-[#879299]">
-                            [RECURSO / REF]
-                          </span>
-                        )}
-                      </div>
-                    </a>
-                  ))}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </aside>
         </div>

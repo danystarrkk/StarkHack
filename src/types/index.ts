@@ -18,25 +18,31 @@ export interface ToolLink {
 export interface Writeup {
   id: string;
   title: string;
+  // Real pipeline fields (public/index.json frontmatter via toUiWriteup):
+  // present only when the source really supplies them.
   platformId?: string;
-  // Template-only fields below have NO source in the real content pipeline
-  // (public/index.json / lib/content.ts), so they are optional: pipeline-backed
-  // writeups leave them absent and the UI hides their chips/labels.
+  tags?: string[];
+  // Real pipeline cover image (frontmatter `image`), when one exists.
+  image?: string;
+  summary?: string;
+  releaseDate?: string;
+  // Real pipeline markdown body (doc.content), attached by the detail route.
+  // Optional: when absent the detail page renders an empty body — it NEVER
+  // falls back to template content. All template-only fields below have NO
+  // source in the real content pipeline, so they are optional too:
+  // pipeline-backed writeups leave them absent and the UI hides their
+  // chips/labels (the detail page renders only fields that exist).
+  markdownContent?: string;
+  iconType: 'wave' | 'bug' | 'network' | 'server' | 'database';
+  // Template-only fields (no pipeline source — never invented for real data).
   os?: 'LINUX' | 'WINDOWS';
   ports?: string;
   difficulty?: 'FÁCIL' | 'MEDIO' | 'DIFÍCIL' | 'INSANE';
   vulnerabilities?: string[];
-  tags?: string[];
-  // Real pipeline cover image (frontmatter `image`), when one exists.
-  image?: string;
-  iconType: 'wave' | 'bug' | 'network' | 'server' | 'database';
   ipAddress?: string;
   points?: number;
-  releaseDate?: string;
   author?: string;
   readTime?: string;
-  summary?: string;
-  markdownContent?: string;
   machineLinks?: MachineLink[];
   toolLinks?: ToolLink[];
   steps?: {
