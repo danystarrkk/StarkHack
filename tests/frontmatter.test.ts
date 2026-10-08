@@ -113,6 +113,27 @@ describe('parseFrontmatter', () => {
     expect(content).toBe('body stays\n');
   });
 
+  it('returns empty data when the block holds only a YAML document marker (R3-blank-frontmatter-comment-branch)', () => {
+    // `...` cierra un documento YAML: no aporta metadatos y js-yaml 5 tira
+    // "expected a document". Sin este caso el generador se rompe con un
+    // error que ni nombra al archivo.
+    const text = '---\n...\n---\nbody stays\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe('body stays\n');
+  });
+
+  it('returns empty data when the block holds only whitespace lines', () => {
+    const text = '---\n   \n---\nbody stays\n';
+
+    const { data, content } = parseFrontmatter(text);
+
+    expect(data).toEqual({});
+    expect(content).toBe('body stays\n');
+  });
+
   it('returns empty data when the frontmatter block parses to a scalar', () => {
     const text = '---\njust a plain scalar\n---\nbody stays\n';
 
