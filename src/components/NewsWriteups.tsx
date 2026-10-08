@@ -150,6 +150,8 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
             >
               {/* Graphic Banner Top Box */}
               <div className="relative mb-4 flex h-32 w-full flex-col items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017] bg-blueprint-grid">
+                {/* Readability scrim over the cover */}
+                {w.image && <div className="absolute inset-0 bg-gradient-to-t from-[#0b0e15]/70 via-transparent to-transparent" />}
                 {/* Top Right OS Tag (only when the data exists) */}
                 {w.os && (
                   <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded border border-[#1b1f29] bg-[#10141c]/90 px-2 py-0.5 text-[10px] font-mono text-[#879299]">
@@ -158,10 +160,20 @@ export const NewsWriteups: React.FC<NewsWriteupsProps> = ({
                   </div>
                 )}
 
-                {/* Central Icon */}
-                <div className="transition-transform duration-300 group-hover:scale-105">
-                  {renderIcon(w.iconType)}
-                </div>
+                {/* Cover image (level-derived generic cover) — icon fallback
+                    for entries that carry neither level nor pipeline cover */}
+                {w.image ? (
+                  <img
+                    src={w.image}
+                    alt={w.title}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="transition-transform duration-300 group-hover:scale-105">
+                    {renderIcon(w.iconType)}
+                  </div>
+                )}
 
                 {/* Bottom Center Port Badge (only when the data exists) */}
                 {w.ports && (

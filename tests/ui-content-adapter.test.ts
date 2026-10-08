@@ -100,9 +100,29 @@ describe('toUiWriteup', () => {
       releaseDate: '2026-09-15',
       platformId: 'hackmyvm',
       tags: ['File Upload', 'Information Disclosure', 'Privilege Escalation'],
-      image: '/writeups/hackmyvm/wave/media/cover.webp',
+      // Level-derived generic cover (documented map): the pipeline `level`
+      // decides the cover automatically — no manual markdown reference.
+      image: '/ui/medium.webp',
       iconType: 'wave',
     });
+  });
+
+  it('derives the generic cover from level (documented map, all levels)', () => {
+    expect(toUiWriteup({ ...BARE_ENTRY, level: 'Easy' }).image).toBe('/ui/easy.webp');
+    expect(toUiWriteup({ ...BARE_ENTRY, level: 'Medium' }).image).toBe('/ui/medium.webp');
+    expect(toUiWriteup({ ...BARE_ENTRY, level: 'Hard' }).image).toBe('/ui/hard.webp');
+  });
+
+  it('falls back to the real per-writeup cover when the entry has no level', () => {
+    const noLevel: WriteupIndexItem = {
+      ...BARE_ENTRY,
+      image: '/writeups/hackthebox/bare/media/cover.webp',
+    };
+    expect(toUiWriteup(noLevel).image).toBe('/writeups/hackthebox/bare/media/cover.webp');
+  });
+
+  it('omits image entirely when there is neither level nor pipeline cover', () => {
+    expect(toUiWriteup(BARE_ENTRY)).not.toHaveProperty('image');
   });
 
   it('leaves template-only fields absent — never invented', () => {

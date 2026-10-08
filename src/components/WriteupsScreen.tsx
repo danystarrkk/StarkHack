@@ -433,8 +433,20 @@ export const WriteupsScreen: React.FC<WriteupsScreenProps> = ({ onSelectWriteup 
                   <div
                     key={node.id}
                     onClick={() => onSelectWriteup(node)}
-                    className="group cursor-pointer rounded-lg border border-[#1b1f29] bg-[#10141c] p-4 transition-all hover:border-[#39bae6] hover:bg-[#141821] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.8)]"
+                    className="group cursor-pointer overflow-hidden rounded-lg border border-[#1b1f29] bg-[#10141c] p-4 transition-all hover:border-[#39bae6] hover:bg-[#141821] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.8)]"
                   >
+                    {/* Cover image (level-derived generic cover, only when the
+                        entry really carries one) */}
+                    {node.image && (
+                      <div className="relative mb-4 h-28 w-full overflow-hidden rounded border border-[#1b1f29]">
+                        <img
+                          src={node.image}
+                          alt={node.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
                     {/* Node Header */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">

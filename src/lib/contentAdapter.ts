@@ -34,6 +34,16 @@ const WRITEUP_ICON_BY_PLATFORM: Readonly<Record<string, Writeup['iconType']>> = 
 
 const FALLBACK_WRITEUP_ICON: Writeup['iconType'] = 'bug';
 
+// Generic cover per pipeline level (documented map, mirrors the icon maps
+// above): the difficulty decides the cover automatically — writeups never
+// need a manual markdown reference for their card image. The three covers
+// live at public/ui/{easy,medium,hard}.webp.
+const WRITEUP_COVER_BY_LEVEL: Readonly<Record<string, Writeup['image']>> = Object.freeze({
+  easy: '/ui/easy.webp',
+  medium: '/ui/medium.webp',
+  hard: '/ui/hard.webp',
+});
+
 // Public, single-source platform → iconType derivation (documented map above).
 // Used by toUiWriteup and by the /writeups platform cards (directoryModel) so
 // the two cannot drift apart.
@@ -53,8 +63,10 @@ const FALLBACK_PROJECT_ICON: Project['iconType'] = 'shield';
  *
  * Mapped (real pipeline data): slug→id, title→title, description→summary,
  * date→releaseDate, platform→platformId (lowercased) + derived iconType,
- * tags→tags, image→image. Optional pipeline fields are omitted entirely when
- * absent so no fabricated value can leak into the UI.
+ * tags→tags. The cover (`image`) is derived from the pipeline `level` via
+ * the documented level→cover map; entries without a level fall back to the
+ * real per-writeup `image:` cover; entries with neither carry no image at
+ * all (never invented).
  */
 export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
   id: item.slug,
@@ -64,7 +76,14 @@ export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
   ...(item.description !== undefined ? { summary: item.description } : {}),
   ...(item.date !== undefined ? { releaseDate: item.date } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
-  ...(item.image !== undefined ? { image: item.image } : {}),
+  ...(() => {
+    const levelCover =
+      item.level !== undefined
+        ? WRITEUP_COVER_BY_LEVEL[item.level.toLowerCase()]
+        : undefined;
+    const cover = levelCover ?? item.image;
+    return cover !== undefined ? { image: cover } : {};
+  })(),
 });
 
 /**
