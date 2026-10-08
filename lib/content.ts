@@ -1,5 +1,5 @@
 import { parseFrontmatter } from './frontmatter.js';
-import { CERTIFICATE_GROUPS, PROJECT_GROUPS } from './content-kinds.js';
+import { CERTIFICATE_GROUPS, PROJECT_GROUPS, indexEntryProblems } from './content-kinds.js';
 import {
   CertificateDoc,
   ContentDoc,
@@ -68,6 +68,22 @@ const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
     );
   }
 
+  // Un array JSON válido tampoco implica entradas válidas: sin validar la forma
+  // de cada entry, un index corrupto pasa el cast y degrada en silencio a "no
+  // content" (o revienta con un TypeError pelado en getPlatforms sobre
+  // item.platform). Fallamos acá nombrando la entrada ofensora y el problema
+  // (R3-array-entry-shape-unvalidated). El vocabulario vive en
+  // lib/content-kinds.js; acá solo se arma el error con el hint accionable.
+  data.forEach((entry, index) => {
+    const problems = indexEntryProblems(entry);
+    if (problems.length > 0) {
+      throw new ContentIndexError(
+        `Invalid content index entry ${index}: ${problems.join('; ')}. ${INDEX_HINT}`,
+        { cause: entry }
+      );
+    }
+  });
+
   return data as ContentIndexItem[];
 };
 
@@ -132,15 +148,21 @@ export const getProjectGroups = async (): Promise<GroupStats[]> =>
 export const getCertificateGroups = async (): Promise<GroupStats[]> =>
   groupStats('certificate', CERTIFICATE_GROUPS);
 
-// All certificate entries, sorted ascending by `order` (the display order).
-export const getCertificates = async (): Promise<ContentIndexItem[]> => {
-  const certificates = await fetchIndexByKind('certificate');
-  return certificates.sort((a, b) => {
+// Canonical certificate ordering (R3-order-fallback-unproved): real integer
+// orders ascending; an entry with no `order` sorts after every ordered entry;
+// ties keep input order. The no-order fallback is UNREACHABLE for validated
+// indexes — the entry-shape validator requires `order` on certificates — kept
+// as defense and pinned directly on this helper by its tests.
+export const sortCertificatesByOrder = (certificates: ContentIndexItem[]): ContentIndexItem[] =>
+  [...certificates].sort((a, b) => {
     if (a.order === undefined) return b.order === undefined ? 0 : 1;
     if (b.order === undefined) return -1;
     return a.order - b.order;
   });
-};
+
+// All certificate entries, sorted ascending by `order` (the display order).
+export const getCertificates = async (): Promise<ContentIndexItem[]> =>
+  sortCertificatesByOrder(await fetchIndexByKind('certificate'));
 
 // Get list of platforms from the index
 export const getPlatforms = async (): Promise<PlatformStats[]> => {

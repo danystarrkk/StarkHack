@@ -8,6 +8,7 @@ import {
   getCertificates,
   getProjectGroups,
   getProjects,
+  sortCertificatesByOrder,
 } from '../lib/content';
 import type { ContentIndexItem } from '../types';
 
@@ -44,6 +45,7 @@ const mixedIndex: ContentIndexItem[] = [
     order: 2,
     image: '/certificates/cert-b/media/cover.webp',
     description: 'B',
+    group: 'hack4u',
   },
   {
     kind: 'project',
@@ -52,6 +54,7 @@ const mixedIndex: ContentIndexItem[] = [
     slug: 'proj-1',
     path: '/projects/proj-1.md',
     image: '/projects/proj-1/media/cover.webp',
+    group: 'scripts',
   },
   {
     kind: 'certificate',
@@ -61,6 +64,7 @@ const mixedIndex: ContentIndexItem[] = [
     order: 1,
     image: '/certificates/cert-a/media/cover.webp',
     description: 'A',
+    group: 'cisco',
   },
   {
     kind: 'writeup',
@@ -73,9 +77,11 @@ const mixedIndex: ContentIndexItem[] = [
   {
     kind: 'project',
     title: 'Proj 2',
+    date: '2026-04-04',
     slug: 'proj-2',
     path: '/projects/proj-2.md',
     image: '/projects/proj-2/media/cover.webp',
+    group: 'herramientas',
   },
 ];
 
@@ -140,14 +146,42 @@ describe('getCertificates ordering contract (R3-order-fallback-unproved)', () =>
   // Deliberately interleaved, with ties and entries that carry no `order`.
   // Contract: valid integer orders ascending; no `order` sorts after every
   // ordered entry; ties (equal order, or several unordered) keep input order.
+  //
+  // SEAM CHANGE (R3-array-entry-shape-unvalidated): `order` (and `image` /
+  // `description`) are required frontmatter for certificates, so a validating
+  // index boundary rejects entries like n1/n2/n3 and they never reach
+  // getCertificates. The defensive no-order fallback contract is therefore
+  // pinned directly on sortCertificatesByOrder (what getCertificates composes:
+  // boundary + filter + this helper). Every assertion is unchanged.
   const orderingIndex: ContentIndexItem[] = [
-    { kind: 'certificate', title: 'Unordered 1', slug: 'n1', path: '/certificates/n1.md' },
-    { kind: 'certificate', title: 'Order 2', slug: 'b', path: '/certificates/b.md', order: 2 },
-    { kind: 'certificate', title: 'Order 1 first', slug: 'a1', path: '/certificates/a1.md', order: 1 },
-    { kind: 'certificate', title: 'Unordered 2', slug: 'n2', path: '/certificates/n2.md' },
-    { kind: 'certificate', title: 'Order 0', slug: 'c', path: '/certificates/c.md', order: 0 },
-    { kind: 'certificate', title: 'Order 1 second', slug: 'a2', path: '/certificates/a2.md', order: 1 },
-    { kind: 'certificate', title: 'Unordered 3', slug: 'n3', path: '/certificates/n3.md' },
+    {
+      kind: 'certificate', title: 'Unordered 1', slug: 'n1', path: '/certificates/n1.md',
+      image: '/certificates/n1/media/cover.webp', description: 'n1', group: 'hack4u',
+    },
+    {
+      kind: 'certificate', title: 'Order 2', slug: 'b', path: '/certificates/b.md', order: 2,
+      image: '/certificates/b/media/cover.webp', description: 'b', group: 'hack4u',
+    },
+    {
+      kind: 'certificate', title: 'Order 1 first', slug: 'a1', path: '/certificates/a1.md', order: 1,
+      image: '/certificates/a1/media/cover.webp', description: 'a1', group: 'hack4u',
+    },
+    {
+      kind: 'certificate', title: 'Unordered 2', slug: 'n2', path: '/certificates/n2.md',
+      image: '/certificates/n2/media/cover.webp', description: 'n2', group: 'hack4u',
+    },
+    {
+      kind: 'certificate', title: 'Order 0', slug: 'c', path: '/certificates/c.md', order: 0,
+      image: '/certificates/c/media/cover.webp', description: 'c', group: 'hack4u',
+    },
+    {
+      kind: 'certificate', title: 'Order 1 second', slug: 'a2', path: '/certificates/a2.md', order: 1,
+      image: '/certificates/a2/media/cover.webp', description: 'a2', group: 'hack4u',
+    },
+    {
+      kind: 'certificate', title: 'Unordered 3', slug: 'n3', path: '/certificates/n3.md',
+      image: '/certificates/n3/media/cover.webp', description: 'n3', group: 'hack4u',
+    },
   ];
 
   it('returns valid integer orders strictly ascending', async () => {
@@ -161,20 +195,19 @@ describe('getCertificates ordering contract (R3-order-fallback-unproved)', () =>
     expect(certificates.map((item) => item.order)).toEqual([0, 1, 2]);
   });
 
-  it('sorts an entry with no order after every ordered entry', async () => {
-    fetchMock.mockResolvedValue(jsonResponse([
+  it('sorts an entry with no order after every ordered entry', () => {
+    // Below the validating boundary: entries without `order` are rejected as
+    // index entries now (see the seam note above), so the fallback contract
+    // pins on the helper directly.
+    const certificates = sortCertificatesByOrder([
       orderingIndex[0], orderingIndex[1], orderingIndex[3], orderingIndex[2],
-    ]));
-
-    const certificates = await getCertificates();
+    ]);
 
     expect(certificates.map((item) => item.slug)).toEqual(['a1', 'b', 'n1', 'n2']);
   });
 
-  it('keeps stable input order for ties and for the unordered run', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(orderingIndex));
-
-    const certificates = await getCertificates();
+  it('keeps stable input order for ties and for the unordered run', () => {
+    const certificates = sortCertificatesByOrder(orderingIndex);
 
     // a1 before a2 (equal order, input order) and n1, n2, n3 in input order.
     expect(certificates.map((item) => item.slug)).toEqual(['c', 'a1', 'a2', 'b', 'n1', 'n2', 'n3']);
