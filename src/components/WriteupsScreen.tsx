@@ -295,11 +295,11 @@ export const WriteupsScreen: React.FC<WriteupsScreenProps> = ({ onSelectWriteup 
                 >
                   {/* Top Row: Icon + Node Count Pill */}
                   <div className="mb-5 flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017]">
+                    <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017]">
                       <img
                         src="/ui/logo-plataformas.webp"
                         alt="CTF"
-                        className="h-full w-full object-contain p-1"
+                        className="h-full w-full object-contain p-1.5"
                         loading="lazy"
                       />
                     </div>
