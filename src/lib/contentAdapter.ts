@@ -34,6 +34,12 @@ const WRITEUP_ICON_BY_PLATFORM: Readonly<Record<string, Writeup['iconType']>> = 
 
 const FALLBACK_WRITEUP_ICON: Writeup['iconType'] = 'bug';
 
+// Public, single-source platform → iconType derivation (documented map above).
+// Used by toUiWriteup and by the /writeups platform cards (directoryModel) so
+// the two cannot drift apart.
+export const platformIconType = (platform: string): Writeup['iconType'] =>
+  WRITEUP_ICON_BY_PLATFORM[platform.toLowerCase()] ?? FALLBACK_WRITEUP_ICON;
+
 const PROJECT_ICON_BY_GROUP: Readonly<Record<string, Project['iconType']>> = Object.freeze({
   herramientas: 'gear',
   scripts: 'code',
@@ -54,7 +60,7 @@ export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
   id: item.slug,
   title: item.title,
   platformId: item.platform.toLowerCase(),
-  iconType: WRITEUP_ICON_BY_PLATFORM[item.platform.toLowerCase()] ?? FALLBACK_WRITEUP_ICON,
+  iconType: platformIconType(item.platform),
   ...(item.description !== undefined ? { summary: item.description } : {}),
   ...(item.date !== undefined ? { releaseDate: item.date } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
