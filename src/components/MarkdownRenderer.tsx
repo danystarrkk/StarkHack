@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Copy,
   Check,
@@ -338,9 +339,16 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         6: 'text-[#bdc8cf] text-xs sm:text-sm font-medium uppercase tracking-wider pt-2 mt-3',
       };
 
+      // First block in the card: drop the stacked top padding/margin so the
+      // heading sits right below the card's own padding (no ~100px gap).
+      const headingClasses =
+        renderedElements.length === 0
+          ? headingColorClasses[level].replace(/\b(?:mt|pt)-\d+\b\s*/g, '')
+          : headingColorClasses[level];
+
       renderedElements.push(
         <div key={`heading-${headingId}-${renderedElements.length}`} id={headingId} className="group scroll-mt-24">
-          <h2 className={`font-sans tracking-tight ${headingColorClasses[level]}`}>
+          <h2 className={`font-sans tracking-tight ${headingClasses}`}>
             {renderInlineFormatted(text)}
           </h2>
         </div>
@@ -465,12 +473,6 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               loading="lazy"
             />
           </div>
-
-          {caption && (
-            <p className="mt-2 text-center font-mono text-[11px] text-[#879299]">
-              &gt; {caption}
-            </p>
-          )}
         </div>
       );
       i++;
@@ -644,35 +646,41 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     <div className="markdown-prose space-y-2 selection:bg-[#39bae6]/20 selection:text-white">
       {renderedElements}
 
-      {/* Image Modal Lightbox */}
-      {zoomedImage && (
-        <div
-          onClick={() => setZoomedImage(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-in fade-in"
-        >
+      {/* Image Modal Lightbox — portaled to document.body so the fixed
+          overlay covers the whole viewport (the article card's backdrop-blur
+          would otherwise trap it and misalign the zoom). */}
+      {zoomedImage &&
+        createPortal(
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative max-h-[90vh] max-w-5xl rounded-lg border border-[#39bae6]/40 bg-[#0d1017] p-4 shadow-2xl"
+            onClick={() => setZoomedImage(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
-              <div className="font-mono text-xs text-[#6ad5ff] font-bold">
-                {zoomedImage.caption || zoomedImage.alt || 'Detalle de evidencia forense'}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[90vh] max-w-5xl rounded-lg border border-[#39bae6]/40 bg-[#0d1017] p-4 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
+                <div className="font-mono text-xs text-[#6ad5ff] font-bold">
+                  {zoomedImage.caption && zoomedImage.caption !== zoomedImage.alt
+                    ? zoomedImage.caption
+                    : 'Detalle de evidencia forense'}
+                </div>
+                <button
+                  onClick={() => setZoomedImage(null)}
+                  className="rounded border border-[#242936] bg-[#161a24] px-2 py-1 font-mono text-[11px] text-[#879299] hover:text-white"
+                >
+                  CERRAR [ESC]
+                </button>
               </div>
-              <button
-                onClick={() => setZoomedImage(null)}
-                className="rounded border border-[#242936] bg-[#161a24] px-2 py-1 font-mono text-[11px] text-[#879299] hover:text-white"
-              >
-                CERRAR [ESC]
-              </button>
+              <img
+                src={zoomedImage.src}
+                alt={zoomedImage.alt}
+                className="max-h-[78vh] w-full rounded object-contain"
+              />
             </div>
-            <img
-              src={zoomedImage.src}
-              alt={zoomedImage.alt}
-              className="max-h-[75vh] w-full rounded object-contain"
-            />
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

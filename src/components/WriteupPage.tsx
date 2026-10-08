@@ -94,17 +94,32 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
 
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
-    if (element) {
-      const topOffset = 90;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - topOffset;
+    if (!element) return;
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      });
-      setActiveHeadingId(id);
-    }
+    const topOffset = 90;
+    const targetTop = () =>
+      element.getBoundingClientRect().top + window.pageYOffset - topOffset;
+
+    // Smooth scroll to the position computed right now.
+    window.scrollTo({ top: targetTop(), behavior: 'smooth' });
+    setActiveHeadingId(id);
+
+    // Re-anchor after the scroll settles: images use loading="lazy" and have
+    // no reserved height, so when they load above/below the target the layout
+    // shifts and the heading ends up short of the top offset. Keep correcting
+    // for a few seconds until the delta is negligible.
+    window.setTimeout(() => {
+      let attempts = 0;
+      const settle = window.setInterval(() => {
+        const delta = targetTop() - window.pageYOffset;
+        if (Math.abs(delta) <= 3 || attempts >= 20) {
+          window.clearInterval(settle);
+          return;
+        }
+        window.scrollTo({ top: targetTop(), behavior: 'auto' });
+        attempts += 1;
+      }, 150);
+    }, 700);
   };
 
   const handleCopyShare = () => {
@@ -248,7 +263,7 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 xl:gap-10">
           {/* Main Article Content Column (Left, spacious) */}
           <main className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 min-w-0">
-            <div className="rounded-xl border border-[#1b1f29] bg-[#121620]/70 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-sm">
+            <div className="rounded-xl border border-[#1b1f29] bg-[#121620]/70 p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
               {/* Body: the REAL markdown (writeup.markdownContent from the
                   pipeline), never template content. */}
               <MarkdownRenderer
