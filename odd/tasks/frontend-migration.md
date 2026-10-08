@@ -86,3 +86,35 @@ Borrado de `pages/`, `components/`, `index.css` viejo, `index.tsx`,
 ## Cierre
 
 - (pendiente)
+
+## Estado de ejecución
+
+| Fase | Estado | Evidencia |
+|---|---|---|
+| 2.0 Andamiaje | ✅ Hecho | `src/` movido (26 archivos), `index.html` volcado al nuevo (favicon conservado), `tsconfig` unido, `lucide-react` + `@types/react*` añadidos, `newfrontend/` borrado, merge de `chore/upgrade-latest`, glob `./src/**` en `tailwind.config.js`. Gate: **193/193 · `tsc` 0 · `build` 0 · styling 6/6 · `index.json` byte idéntico** |
+| 2.1 Home | ⬜ pendiente | |
+| 2.1 Directory | ⬜ pendiente | |
+| 2.1 Writeups listado + detalle | ⬜ pendiente | |
+| 2.1 Projects + Certificates | ⬜ pendiente | |
+| 2.1 About | ⬜ pendiente | |
+| 2.3 Borrado del viejo | ⬜ pendiente | |
+
+### Nota de ejecución (error corregido)
+
+La rama se creó inicialmente desde `feat/content-kinds` en vez de
+`chore/upgrade-latest`, así que la primera pasada quedó sobre Vite 6 /
+Tailwind 3 / TS 5.8. Se remedió con un merge de `chore/upgrade-latest` y
+resolución manual de `package.json` / `package-lock.json` / `tsconfig.json`
+(el auto-merge dejó `strict` duplicado y rompía toda la suite). Estado final:
+stack unificado en latest estable.
+
+### Reglas acordadas para la Fase 2.1
+
+- Una page por commit, siempre con el gate en verde.
+- La UI vieja (`pages/`, `components/`, `App.tsx`, `index.tsx`,
+  `index.css` raíz) **ya no se renderiza** desde la fase 2.0: queda como
+  código muerto hasta el borrado en 2.3.
+- Los campos dinámicos que la UI nueva pida (`difficulty`, `stars`,
+  `steps`…) se agregan **a esa page y a su frontmatter** cuando toca.
+  `ports` queda descartado por decisión humana.
+- `react-router` se conserva; solo se ajustan los elementos que renderiza.
