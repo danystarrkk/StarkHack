@@ -71,7 +71,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       {/* Main Top Two-Column Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
         {/* Left Column: Operator Profile Card (5 cols on lg) */}
-        <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col justify-between space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
+        <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
           {/* Header */}
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl border border-[#39bae6]/40 bg-[#0d1017] text-[#39bae6] shadow-[0_0_20px_rgba(57,186,230,0.25)] shrink-0">
@@ -127,7 +127,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
 
             <div className="flex items-center justify-between gap-3">
               <span className="text-[#5a6673]">[UBICACIÓN]</span>
-              <span className="text-[#bdc8cf]">España / Remoto</span>
+              <span className="text-[#bdc8cf]">Ecuador</span>
             </div>
           </div>
 
@@ -446,7 +446,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
 
           {/* Card 2: GitHub Repositories */}
           <a
-            href="https://github.com/danystarkk"
+            href="https://github.com/danystarrkk"
             target="_blank"
             rel="noreferrer"
             className="group rounded-xl border border-[#1b1f29] bg-[#10141c] p-4.5 space-y-3 transition-all duration-300 hover:border-[#39bae6] hover:bg-[#141821] hover:shadow-[0_8px_20px_rgba(0,0,0,0.6)] flex flex-col justify-between"
@@ -459,7 +459,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
                 </span>
               </div>
               <div className="font-sans text-xs font-bold text-white mb-0.5">GITHUB REPOSITORIES</div>
-              <div className="text-[11px] font-mono text-[#879299] truncate">github.com/starkhack</div>
+              <div className="text-[11px] font-mono text-[#879299] truncate">github.com/danystarrkk</div>
             </div>
 
             <div className="flex items-center justify-between text-[11px] font-mono text-[#39bae6] pt-2.5 border-t border-[#1b1f29]/70">
@@ -470,7 +470,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
 
           {/* Card 3: LinkedIn */}
           <a
-            href="https://linkedin.com"
+            href="https://www.linkedin.com/in/daniel-estrella-62ab62217"
             target="_blank"
             rel="noreferrer"
             className="group rounded-xl border border-[#1b1f29] bg-[#10141c] p-4.5 space-y-3 transition-all duration-300 hover:border-[#39bae6] hover:bg-[#141821] hover:shadow-[0_8px_20px_rgba(0,0,0,0.6)] flex flex-col justify-between"
@@ -483,7 +483,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
                 </span>
               </div>
               <div className="font-sans text-xs font-bold text-white mb-0.5">LINKEDIN</div>
-              <div className="text-[11px] font-mono text-[#879299] truncate">in/stark-sec</div>
+              <div className="text-[11px] font-mono text-[#879299] truncate">in/daniel-estrella-62ab62217</div>
             </div>
 
             <div className="flex items-center justify-between text-[11px] font-mono text-[#39bae6] pt-2.5 border-t border-[#1b1f29]/70">
