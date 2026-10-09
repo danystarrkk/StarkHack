@@ -147,6 +147,8 @@ export interface Certification {
   description?: string;
   tags?: string[];
   date?: string;
+  // Real pipeline cover image (frontmatter `image`), when one exists.
+  image?: string;
   // Template-only fields (no pipeline source — never invented for real data):
   // optional so pipeline-backed certificates render without fake metadata and
   // the UI hides their chips/labels.

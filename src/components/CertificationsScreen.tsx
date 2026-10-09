@@ -97,13 +97,33 @@ export const CertificationsScreen: React.FC = () => {
 
   // Render a large, imposing and realistic diploma thumbnail preview
   const renderDiplomaThumbnail = (cert: Certification) => {
+    // Shared thumbnail frame: fixed size, rounded border, hover glow.
+    const frameClassName =
+      'relative mb-3 w-full h-72 sm:h-80 md:h-96 overflow-hidden rounded-lg border-2 border-[#1b1f29] bg-[#07090e] transition-all duration-300 group-hover:border-[#39bae6]/60 group-hover:shadow-[0_0_35px_rgba(57,186,230,0.22)]';
+
+    // Real cover image (frontmatter `image`) occupies the frame when the
+    // pipeline supplies one — the real certificate artwork, never invented.
+    if (cert.image !== undefined) {
+      return (
+        <div className={frameClassName}>
+          <img
+            src={cert.image}
+            alt={cert.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+      );
+    }
+
+    // Fallback: synthetic CSS diploma, exactly as before (no real image).
     const dateText = displayDate(cert);
     const isUni = cert.category === 'UNIVERSIDAD';
     const isHack4u = cert.category === 'HACK4U';
     const accentColor = isUni ? '#39bae6' : isHack4u ? '#7edc73' : '#e6b450';
 
     return (
-      <div className="relative mb-3 w-full h-72 sm:h-80 md:h-96 overflow-hidden rounded-lg border-2 border-[#1b1f29] bg-[#07090e] p-3 sm:p-4 transition-all duration-300 group-hover:border-[#39bae6]/60 group-hover:shadow-[0_0_35px_rgba(57,186,230,0.22)] flex flex-col justify-between select-none">
+      <div className={`${frameClassName} p-3 sm:p-4 flex flex-col justify-between select-none`}>
         {/* Subtle decorative security guilloche watermark pattern */}
         <div className="pointer-events-none absolute inset-0 bg-blueprint-grid opacity-35" />
         <div className="pointer-events-none absolute inset-1 rounded border border-[#39bae6]/20 border-dashed" />

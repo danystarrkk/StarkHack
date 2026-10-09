@@ -117,7 +117,8 @@ export const toUiProject = (item: ContentIndexItem, position: number): Project =
  * really has — nothing else is synthesized.
  *
  * Mapped (real pipeline data): slug→id, title→title, description→description,
- * tags→tags, date→date, position→number. The group-derived `category` label is
+ * tags→tags, image→image, date→date, position→number. The group-derived
+ * `category` label is
  * added by certificationsModel (same layering as projectsModel's groupLabel).
  * Optional pipeline fields are omitted entirely when absent; every
  * template-only field (version, badges, issuer, statValue, ...) stays ABSENT —
@@ -129,5 +130,6 @@ export const toUiCertification = (item: ContentIndexItem, position: number): Cer
   number: `#${String(position).padStart(2, '0')}`,
   ...(item.description !== undefined ? { description: item.description } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
+  ...(item.image !== undefined ? { image: item.image } : {}),
   ...(item.date !== undefined ? { date: item.date } : {}),
 });

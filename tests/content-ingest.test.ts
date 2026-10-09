@@ -329,11 +329,63 @@ describe('planContentIngestion — certificate', () => {
     expect(plan.sitePath).toBe('/certificates/ejpt');
     expect(plan.targetDir).toBe('public/certificates/ejpt');
     expect(plan.markdownPath).toBe('public/certificates/ejpt.md');
-    expect(plan.imagePlan).toEqual([
-      { source: 'cert.png', target: 'media/01.webp' },
-      { source: 'cert-scan.png', target: 'media/cover.webp' },
-    ]);
+    // The numbered duplicate disappeared (orphan-image fix): certificates only
+    // plan a numbered media file for an image the REWRITTEN BODY references,
+    // and this body has none — so the always-planned cover entry is the plan.
+    expect(plan.imagePlan).toEqual([{ source: 'cert-scan.png', target: 'media/cover.webp' }]);
     expect(plan.frontmatter.image).toBe('/certificates/ejpt/media/cover.webp');
+  });
+
+  it('plans only the cover when the certificate body does not reference the image', () => {
+    // The real certificado shape: the CLI passes images = [cover basename].
+    // With an unreferenced body the image must NOT be planned twice (the old
+    // plan wrote media/01.webp + media/cover.webp and 01.webp was an orphan).
+    const plan = planContentIngestion(
+      'certificate',
+      doc(CERT_YAML, 'Solo texto, sin referencias.'),
+      'ejpt.md',
+      ['scan.png'],
+      { cover: 'scan.png' }
+    );
+    expect(plan.problems).toEqual([]);
+    expect(plan.imagePlan).toEqual([{ source: 'scan.png', target: 'media/cover.webp' }]);
+  });
+
+  it('plans the numbered entry too when the certificate body references the image', () => {
+    // A body that embeds the scan still gets its numbered file (and the cover,
+    // planned twice on purpose), and the rewrite points at the numbered one.
+    const plan = planContentIngestion(
+      'certificate',
+      doc(CERT_YAML, '![alt](scan.png)'),
+      'ejpt.md',
+      ['scan.png'],
+      { cover: 'scan.png' }
+    );
+    expect(plan.problems).toEqual([]);
+    expect(plan.imagePlan).toEqual([
+      { source: 'scan.png', target: 'media/01.webp' },
+      { source: 'scan.png', target: 'media/cover.webp' },
+    ]);
+    expect(plan.rewrittenBody).toBe(`![img1](${plan.sitePath}/media/01.webp)`);
+  });
+
+  it('never renumbers a referenced certificate image: the target keeps its full-list position', () => {
+    // a-scan.png is unreferenced and dropped, but b-scan.png keeps media/02.webp
+    // (position in the FULL sorted image list) so the rewritten body reference
+    // still points at a file that exists.
+    const plan = planContentIngestion(
+      'certificate',
+      doc(CERT_YAML, '![alt](b-scan.png)'),
+      'ejpt.md',
+      ['a-scan.png', 'b-scan.png'],
+      { cover: 'a-scan.png' }
+    );
+    expect(plan.problems).toEqual([]);
+    expect(plan.imagePlan).toEqual([
+      { source: 'b-scan.png', target: 'media/02.webp' },
+      { source: 'a-scan.png', target: 'media/cover.webp' },
+    ]);
+    expect(plan.rewrittenBody).toBe(`![img2](${plan.sitePath}/media/02.webp)`);
   });
 
   it('leaves certificate order validity/duplicates to the generator', () => {

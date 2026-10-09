@@ -8,7 +8,7 @@
 // hardcoded placeholder values.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { toUiProject, toUiWriteup } from '../src/lib/contentAdapter';
+import { toUiCertification, toUiProject, toUiWriteup } from '../src/lib/contentAdapter';
 import type { ContentIndexItem, WriteupIndexItem } from '../types';
 
 // Real entry shape from public/index.json (writeup "Wave", trimmed tags).
@@ -56,6 +56,29 @@ const BARE_PROJECT_ENTRY: ContentIndexItem = {
   path: '/projects/bare-project.md',
 };
 
+// Real entry shape from public/index.json (certificate "Introducción al
+// Hacking"): kind, slug, title, order, description, group, tags, image, path.
+const CERTIFICATE_ENTRY: ContentIndexItem = {
+  kind: 'certificate',
+  slug: 'certificado',
+  title: 'Introducción al Hacking',
+  order: 1,
+  description: 'Curso de Introducción al Hacking',
+  group: 'hack4u',
+  tags: ['OWASP Top 10', 'Linux', 'Escalada de privilegios', 'Pivoting'],
+  image: '/certificates/certificado/media/cover.webp',
+  path: '/certificates/certificado.md',
+};
+
+// Minimum a validated certificate entry can be: no description/tags/image/date.
+const BARE_CERTIFICATE_ENTRY: ContentIndexItem = {
+  kind: 'certificate',
+  slug: 'bare-certificate',
+  title: 'Certificado Básico',
+  order: 2,
+  path: '/certificates/bare-certificate.md',
+};
+
 // Template-only fields the pipeline has no source for. None may appear on a
 // mapped UI object, not even as undefined-valued keys.
 const WRITEUP_TEMPLATE_ONLY_FIELDS = [
@@ -89,6 +112,26 @@ const PROJECT_TEMPLATE_ONLY_FIELDS = [
   'codeSnippet',
   'projectLinks',
   'toolLinks',
+];
+
+// Template-only fields plus the model-layer `category` label: none may appear
+// on a mapped UI object, not even as undefined-valued keys.
+const CERTIFICATION_TEMPLATE_ONLY_FIELDS = [
+  'category', // derived at the certificationsModel layer, never by the adapter
+  'version',
+  'statusBadge',
+  'subBadge',
+  'iconType',
+  'statValue',
+  'year',
+  'issueDate',
+  'issuer',
+  'badgeId',
+  'pdfUrl',
+  'verificationUrl',
+  'status',
+  'isPending',
+  'skills',
 ];
 
 describe('toUiWriteup', () => {
@@ -226,6 +269,67 @@ describe('toUiProject', () => {
     expect(first).toEqual(second);
     expect(first).not.toBe(second);
     expect(PROJECT_ENTRY).toEqual(before); // input untouched
+  });
+});
+
+describe('toUiCertification', () => {
+  it('maps image from the index entry when present', () => {
+    expect(toUiCertification(CERTIFICATE_ENTRY, 1).image).toBe(
+      '/certificates/certificado/media/cover.webp'
+    );
+  });
+
+  it('omits image entirely (no key at all) when the entry has none', () => {
+    expect(toUiCertification(BARE_CERTIFICATE_ENTRY, 1)).not.toHaveProperty('image');
+  });
+
+  it('maps exactly the documented fields (id, title, number, description, tags, date)', () => {
+    // Same realistic entry, dated and without a cover: the output must be
+    // exactly these six keys — position-derived zero-padded number included.
+    const { image: _cover, ...withoutCover } = CERTIFICATE_ENTRY;
+    expect(toUiCertification({ ...withoutCover, date: '2026-03-14' }, 3)).toEqual({
+      id: 'certificado',
+      title: 'Introducción al Hacking',
+      number: '#03',
+      description: 'Curso de Introducción al Hacking',
+      tags: ['OWASP Top 10', 'Linux', 'Escalada de privilegios', 'Pivoting'],
+      date: '2026-03-14',
+    });
+  });
+
+  it('derives number from the mapper position argument, zero-padded', () => {
+    expect(toUiCertification(CERTIFICATE_ENTRY, 7).number).toBe('#07');
+    expect(toUiCertification(CERTIFICATE_ENTRY, 42).number).toBe('#42');
+  });
+
+  it('leaves template-only fields absent — never invented', () => {
+    const ui = toUiCertification(CERTIFICATE_ENTRY, 1);
+    for (const field of CERTIFICATION_TEMPLATE_ONLY_FIELDS) {
+      expect(ui).not.toHaveProperty(field);
+    }
+  });
+
+  it('omits optional pipeline fields instead of fabricating placeholders', () => {
+    const ui = toUiCertification(BARE_CERTIFICATE_ENTRY, 2);
+    expect(ui).toEqual({
+      id: 'bare-certificate',
+      title: 'Certificado Básico',
+      number: '#02',
+    });
+    expect(ui).not.toHaveProperty('description');
+    expect(ui).not.toHaveProperty('tags');
+    expect(ui).not.toHaveProperty('image');
+    expect(ui).not.toHaveProperty('date');
+  });
+
+  it('is pure and synchronous', () => {
+    const before = structuredClone(CERTIFICATE_ENTRY);
+    const first = toUiCertification(CERTIFICATE_ENTRY, 1);
+    const second = toUiCertification(CERTIFICATE_ENTRY, 1);
+    expect(first).not.toBeInstanceOf(Promise);
+    expect(first).toEqual(second);
+    expect(first).not.toBe(second);
+    expect(CERTIFICATE_ENTRY).toEqual(before); // input untouched
   });
 });
 

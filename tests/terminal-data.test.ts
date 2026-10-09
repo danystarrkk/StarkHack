@@ -394,11 +394,21 @@ describe('real public/index.json entries', () => {
     (item) => item.kind === 'certificate'
   ) as unknown as ContentIndexItem[];
 
-  it('is honestly empty for projects/certificates today → explicit empty-state rows', () => {
+  it('agrees with the real index: one row per entry, empty state only when a kind is empty', () => {
+    // `projects` keeps its documented empty state (no project entries yet).
+    // Certificates now hold real entries, so the terminal must render one row
+    // per certificate — never the empty-state row. The empty-state contract
+    // itself is pinned above against EMPTY input, so publishing content never
+    // breaks this file again.
     expect(projects).toHaveLength(0); // documented current state of the index
-    expect(certificates).toHaveLength(0);
     expect(buildTerminalProjectLines(projects)).toEqual([PROJECTS_EMPTY_ROW]);
-    expect(buildTerminalCertificateLines(certificates)).toEqual([CERTIFICATES_EMPTY_ROW]);
+
+    const certLines = buildTerminalCertificateLines(certificates);
+    expect(certLines).toHaveLength(certificates.length);
+    expect(certLines).not.toContainEqual(CERTIFICATES_EMPTY_ROW);
+    expect(certLines.map((line) => (line.kind === 'certificate' ? line.id : null))).toEqual(
+      certificates.map((entry) => entry.slug)
+    );
   });
 
   it('the 16 real writeups produce rows of real fields only', () => {

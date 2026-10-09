@@ -313,9 +313,12 @@ describe('real public/index.json entries', () => {
   );
   const certificates = raw.filter((item) => item.kind === 'certificate') as unknown as ContentIndexItem[];
 
-  it('is honestly empty today: zero certificate entries → empty list, stable zero-count categories', () => {
-    const model = buildCertificationsModel(certificates, EMPTY_CERTIFICATIONS_FILTERS);
-    expect(certificates).toHaveLength(0); // documented current state of the index
+  it('renders a truly empty index honestly: empty list, stable zero-count categories', () => {
+    // The empty-state contract is pinned against an EMPTY input, never against
+    // "how many certificates happen to exist today": that number grows with
+    // every publication (the real index is asserted by the test below, which
+    // holds for whatever it contains).
+    const model = buildCertificationsModel([], EMPTY_CERTIFICATIONS_FILTERS);
     expect(model.certificates).toEqual([]);
     expect(model.filteredCount).toBe(0);
     expect(model.totalCount).toBe(0);
