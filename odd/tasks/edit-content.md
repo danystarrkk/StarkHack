@@ -95,10 +95,43 @@ node scripts/edit-content.js <writeup|project|certificate> <slug> [--dry-run]
 
 | # | Tarea | Estado | Evidencia |
 |---|---|---|---|
-| T1 | Motor puro `lib/content-edit.js` + `tests/content-edit.test.ts` (RED primero) | pendiente | |
-| T2 | CLI `scripts/edit-content.js` + `tests/edit-content.test.ts` (RED primero) | pendiente | |
-| T3 | Verificación integral (tsc + build + vitest completo + idempotencia real sobre el contenido existente) | pendiente | |
-| T4 | Cierre: doc, memoria, commits por unidad, revisión RDD por rangos chicos | pendiente | |
+| T1 | Motor puro `lib/content-edit.js` + `tests/content-edit.test.ts` (RED primero) | ✅ | RED (módulo inexistente) → **GREEN 38/38**; smoke de solo-lectura sobre los 17 documentos publicados: `changes:{}` = no-op byte-idéntico en 17/17 |
+| T2 | CLI `scripts/edit-content.js` + `tests/edit-content.test.ts` (RED primero) | ✅ | RED → **GREEN 20/20**; sin TTY imprime inventario (8 aspectos) y sale con 1 sin colgarse (`timeout 15` verificado) |
+| T3 | Verificación integral (tsc + build + vitest completo + idempotencia real sobre el contenido existente) | ✅ | `tsc` limpio · `npm test` = **22 archivos / 495 tests verdes** · idempotencia real: certificado y `wave.md` → `problems=0`, cuerpo byte-idéntico, `fileOps` vacío · `git status` sin mutaciones |
+| T4 | Cierre: doc, memoria, commits por unidad, revisión RDD por rangos chicos | ✅ | 2 commits de unidad + **waiver de presupuesto** (abajo) |
+
+### Excepción de presupuesto de revisión (decisión humana, verbatim)
+
+> **Waiver documentado** — no se intenta la revisión nativa de `edit-content`.
+
+Justificación medida:
+- `edit-content` son **2679 líneas** en 4 archivos (planner 802 + sus tests 782,
+  CLI 753 + sus tests 342).
+- El techo comprobado en esta sesión: **552 y 845 líneas → aprobadas**;
+  **961 líneas → `unachievable_lens_slot`, relay cortado a 980651 ms** de un
+  bound de 980646 ms (prompt de 93959 bytes), declarado **determinista** por el
+  proveedor.
+- La unidad natural mínima (planner con sus tests = 1584 líneas ≈ 155 KB) ya
+  triplica lo que pasó y duplica lo que falló → intentarlo sería casi seguro
+  otro timeout, contra la instrucción explícita del humano de no intentar
+  tamaños que van a fallar.
+- Alternativas ofrecidas (4 commits chicos código|tests, subir
+  `GENTLE_PI_REVIEW_RELAY_PI_TIMEOUT_MS`, o waiver) → **el humano eligió waiver**.
+
+Lo que sí queda verificado (sustituye al review en esta ocasión):
+- **Test-first real** en ambas unidades: RED observado y GREEN en 38 + 20 tests.
+- **Suite completa en verde**: 22 archivos / 495 tests, `tsc` limpio, build OK.
+- **Idempotencia sobre contenido real**: los 17 documentos publicados pasan
+  `planContentEdit(changes:{})` sin problemas ni cambios de byte.
+- **Purity**: `lib/content-edit.js` no importa `node:fs|path|child_process` ni
+  usa `process` (grep verificado).
+- **Safety del CLI**: sin TTY nunca cuelga ni escribe; `--dry-run` no toca el
+  disco; confirmación `y/N` antes de aplicar; pre-flight de `magick` y de
+  colisión de destino antes de mover; todo movimiento confinado a `public/`.
+
+Estos hallazgos se tratan como **deuda de revisión conocida**, no como aprobación:
+cualquier cambio futuro sobre `lib/content-edit.js` o `scripts/edit-content.js`
+dispara una revisión nueva sobre su propio candidato.
 
 ## Commits
 
