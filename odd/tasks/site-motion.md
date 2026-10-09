@@ -74,9 +74,13 @@ distraer.
 
 ## Commits
 
-Sin commitear a propósito: la entrega queda bajo política ordinaria del repo y
-decisión del humano. Mensaje sugerido:
+Entregado en la rama `feat/frontend-migration` (commit autorizado por el humano):
 
 ```
-feat(motion): reveals al scroll, respiro del fondo y hover lift sutil
+ad57f5a feat(motion): scroll reveals, floating data dust and subtle hover lift
 ```
+
+Incluye a `site-motion` y `background-ambience` en un solo work unit porque
+ambas tocan `src/index.css`, `src/App.tsx` y `tests/styling.test.ts`.
+Revisión nativa del rango `a3dbce4..aeb537c`: **APROBADA**
+(`review-7c481f4747054b9a`, autoridad quemada).

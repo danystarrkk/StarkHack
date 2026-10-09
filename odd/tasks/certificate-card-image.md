@@ -90,9 +90,9 @@ real (`21/21` en verde).
 
 ## Commits
 
-Sin commitear a propósito: la entrega (commit/push/PR) queda bajo política
-ordinaria del repo y decisión del humano. Mensaje sugerido:
+```
+a3dbce4 feat(certificates): render the real cover in the card and stop duplicating certificate media
+```
 
-```
-feat(certificates): mostrar la cover real en la tarjeta y no duplicar media en la ingesta
-```
+Revisión nativa del candidato de workspace correspondiente: **APROBADA**
+(`review-d3e4736a78113d83`, autoridad quemada).

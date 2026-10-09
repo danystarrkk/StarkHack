@@ -56,26 +56,37 @@ encabezado de `src/index.css`, degradación honesta.
 | T2 | CSS: capas `.motion-dust-a/b`, amplitud de glow, guard | ✅ | tiles exactos 96px/55s y 148px/85s; glow transform-only 40px/26s/34s |
 | T3 | `App.tsx`: dos capas de polvo dentro del contenedor de fondo existente | ✅ | solo 2 divs añadidos; grid estático en `opacity-60`, sin clase de movimiento |
 | T4 | Verificación integral (tsc + build + vitest completo) | ✅ | `tsc` limpio · `npm test` = **20 archivos / 431 tests verdes** · CSS compilado con polvo y **sin** `grid-breathe` · loops estructuralmente correctos (inset > tile) |
-| T5 | Cierre: doc, memoria, revisión nativa, commit (pendiente autorización) | ⛔ | revisión nativa **detenida**: `unachievable_lens_slot` / `relay_transport_bound_exceeded` (timeout 980651 ms vs 980646 ms, prompt 93959 bytes, candidato 28 archivos / 961 líneas). Decisión humana pendiente |
+| T5 | Cierre: doc, memoria, revisión nativa, commit (pendiente autorización) | ✅ | 3 commits + revisión nativa **APROBADA** (`review-7c481f4747054b9a`, autoridad quemada) |
 
-### Bloqueo de la revisión nativa (detalle)
+### Bloqueo original y cómo se resolvió
 
-- Linaje `review-2e99354a86906378`, estado nativo `stop`, motivo
-  `unachievable_lens_slot`. El fallo se declaró **determinista**: re-lanzar el
-  mismo slot con el mismo binding repite el muro.
-- Causa: el candidato del workspace acumula **3 features sin commitear** (28
-  archivos, 961 líneas, 94 KB materializados), muy por encima de los candidatos
-  anteriores que sí pasaron (432 y 845 líneas).
-- **Los primeros dos candidatos ya tienen revisión nativa APROBADA y quemada**
-  (`review-d3e4736a78113d83` certificado, `review-903eb9662bd9738f` motion). El
-  delta sin revisar es **solo el de este fondo (~116 líneas)**.
-- Opciones ofrecidas al humano:
-  1. Commitear los work units (entrega → decisión humana) y revisar por commit:
-     el candidato del fondo queda chico y entra en el bound. **Recomendada.**
-  2. Subir `GENTLE_PI_REVIEW_RELAY_PI_TIMEOUT_MS` (techo 7200000 ms) y reintentar
-     el mismo slot (requiere relanzar Pi con esa variable).
-  3. `withdraw` + reintento tal cual: mismo prompt de 94 KB → alta probabilidad
-     de repetir el timeout.
+- El primer intento (linaje `review-2e99354a86906378`) quedó en `stop` con
+  `unachievable_lens_slot` / `relay_transport_bound_exceeded`: candidato del
+  workspace acumulando **3 features sin commitear** (28 archivos, 961 líneas,
+  prompt de 93959 bytes) contra un bound de 980646 ms. El proveedor lo declaró
+  determinista.
+- **Decisión humana**: commitear los work units y revisar por commit.
+- Al inspeccionar con árbol limpio, la ruta por defecto ofreció como base
+  `d9d9915` ("Agregando máquina wave") → candidato de **903 archivos / 21421
+  líneas** (toda la rama). **No se tomó**: se relanzó START con `baseRef`
+  explícito = `a3dbce4…` y `committedOnly: true` → candidato correcto de
+  **17 archivos / 552 líneas**.
+- Resultado: **APROBADA** → `acknowledge-approved`, `authority: burned`
+  (`gentle-ai.review-acknowledged/v1`). 5 hallazgos informativos (no bloqueantes):
+  `R3-001` tests/styling.test.ts:135 · `R3-002` src/lib/reveal.ts:22 (Set creciente)
+  · `R3-003` src/lib/reveal.ts:41 · `R3-004` src/lib/reveal.ts:72 ·
+  `R3-005` tests/styling.test.ts:109.
+
+### Commits
+
+```
+a3dbce4 feat(certificates): render the real cover in the card and stop duplicating certificate media
+ad57f5a feat(motion): scroll reveals, floating data dust and subtle hover lift
+aeb537c test(taxonomy): pin the human-approved certificate tag expansion
+```
+
+Los tres quedaron verdes en el mismo estado del árbol: `npm test` →
+20 archivos / 431 tests, `git status` limpio.
 
 ## Commits
 
