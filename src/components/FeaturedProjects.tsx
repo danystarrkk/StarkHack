@@ -69,7 +69,8 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
         {projects.map((p) => (
           <div
             key={p.id}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-[#1b1f29] bg-[#10141c] p-4 transition-all duration-300 hover:border-[#242936] hover:bg-[#141821] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
+            data-reveal
+            className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-[#1b1f29] bg-[#10141c] p-4 transition-all duration-300 hover:-translate-y-1 hover:border-[#242936] hover:bg-[#141821] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
           >
             {/* Top metadata strip (only when the data exists) */}
             {(p.tagCategory || p.isNew) && (

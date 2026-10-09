@@ -75,3 +75,178 @@ describeCompiled('styling compiled contract (dist/assets/*.css)', () => {
     expect(compiled).not.toContain('@tailwind ');
   });
 });
+
+// Motion CORE contract (site-motion). Pinned SOURCE text for the subtle-motion
+// primitives, the reveal utility and its single wiring point in App.tsx.
+// Degradation rule under test: the hidden reveal state exists ONLY behind
+// `.reveal-ready [data-reveal]`, and everything is neutralized under
+// prefers-reduced-motion: reduce.
+// NOTE: layer 1 pins behavior that does not hold yet on this branch, so the
+// RED phase is expected and recorded before the implementation lands.
+
+describe('motion contract (site-motion)', () => {
+  const css = fs.readFileSync(path.join(repoRoot, 'src', 'index.css'), 'utf8');
+  const app = fs.readFileSync(path.join(repoRoot, 'src', 'App.tsx'), 'utf8');
+  const revealPath = path.join(repoRoot, 'src', 'lib', 'reveal.ts');
+
+  it('index.css declares the motion keyframes (dust drift, not grid pulse)', () => {
+    expect(css).toContain('@keyframes reveal-in');
+    expect(css).toContain('@keyframes glow-breathe');
+    expect(css).toContain('@keyframes dust-drift-a');
+    expect(css).toContain('@keyframes dust-drift-b');
+  });
+
+  it('index.css declares the two floating dust layers', () => {
+    expect(css).toContain('.motion-dust-a');
+    expect(css).toContain('.motion-dust-b');
+  });
+
+  it('index.css must not carry the old grid-breathe opacity pulse (read as a broken screen)', () => {
+    expect(css).not.toContain('grid-breathe');
+  });
+
+  it('glow-breathe is transform-only so the glow cannot flicker', () => {
+    const glowLine =
+      css.split('\n').find((line) => line.includes('@keyframes glow-breathe')) ?? '';
+    expect(glowLine).toContain('@keyframes glow-breathe');
+    expect(glowLine).not.toContain('opacity');
+  });
+
+  it('App.tsx renders the two dust layers and no longer pulses the grid', () => {
+    expect(app).toContain('motion-dust-a');
+    expect(app).toContain('motion-dust-b');
+    expect(app).not.toContain('motion-grid');
+  });
+
+  it('index.css gates the hidden reveal state behind .reveal-ready [data-reveal] with --reveal-delay', () => {
+    expect(css).toContain('.reveal-ready [data-reveal]');
+    expect(css).toContain('--reveal-delay');
+  });
+
+  it('index.css neutralizes motion under prefers-reduced-motion: reduce', () => {
+    expect(css).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+    const guardBlock = css.slice(
+      css.search(/@media\s*\(prefers-reduced-motion:\s*reduce\)/),
+    );
+    expect(guardBlock).toContain('.motion-dust-a');
+    expect(guardBlock).toContain('.motion-dust-b');
+  });
+
+  it('src/lib/reveal.ts exists and exports initReveal driven by IntersectionObserver', () => {
+    expect(fs.existsSync(revealPath)).toBe(true);
+    const reveal = fs.readFileSync(revealPath, 'utf8');
+    expect(reveal).toMatch(/export[^;\n]*\binitReveal\b/);
+    expect(reveal).toContain('IntersectionObserver');
+  });
+
+  it('App.tsx wires initReveal exactly once', () => {
+    expect(app).toContain('initReveal');
+    expect(app.match(/\binitReveal\s*\(/g)).toHaveLength(1);
+  });
+});
+
+// Motion SURFACE contract (site-motion, part 1). Pins the consumer side of the
+// motion core: the modals use the real `.motion-modal-in` entrance instead of
+// the dead `animate-in` group (those classes never existed in the compiled
+// CSS), and the Home surfaces carry per-item `data-reveal` so the observer can
+// stagger each card sibling.
+// NOTE: layer pins behavior that does not hold yet on this branch, so the
+// RED phase is expected and recorded before the surface lands.
+
+describe('motion surface contract (site-motion)', () => {
+  const mainframeModal = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'MainframeTerminalModal.tsx'),
+    'utf8',
+  );
+  const markdownRenderer = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'MarkdownRenderer.tsx'),
+    'utf8',
+  );
+  const newsWriteups = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'NewsWriteups.tsx'),
+    'utf8',
+  );
+  const featuredProjects = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'FeaturedProjects.tsx'),
+    'utf8',
+  );
+  const terminalHero = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'TerminalHero.tsx'),
+    'utf8',
+  );
+  const writeupsScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'WriteupsScreen.tsx'),
+    'utf8',
+  );
+  const projectsScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'ProjectsScreen.tsx'),
+    'utf8',
+  );
+  const certificationsScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'CertificationsScreen.tsx'),
+    'utf8',
+  );
+  const aboutScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'AboutScreen.tsx'),
+    'utf8',
+  );
+
+  it('modal sources use motion-modal-in and no dead animate-in classes', () => {
+    for (const [name, source] of [
+      ['MainframeTerminalModal.tsx', mainframeModal],
+      ['MarkdownRenderer.tsx', markdownRenderer],
+    ] as const) {
+      expect(source, `${name} must use motion-modal-in`).toContain('motion-modal-in');
+      expect(source, `${name} must not use the dead animate-in classes`).not.toContain('animate-in');
+    }
+  });
+
+  it('NewsWriteups, FeaturedProjects and TerminalHero each carry data-reveal', () => {
+    for (const [name, source] of [
+      ['NewsWriteups.tsx', newsWriteups],
+      ['FeaturedProjects.tsx', featuredProjects],
+      ['TerminalHero.tsx', terminalHero],
+    ] as const) {
+      expect(source, `${name} must carry data-reveal`).toContain('data-reveal');
+    }
+  });
+
+  it('WriteupsScreen, ProjectsScreen and CertificationsScreen each carry data-reveal', () => {
+    for (const [name, source] of [
+      ['WriteupsScreen.tsx', writeupsScreen],
+      ['ProjectsScreen.tsx', projectsScreen],
+      ['CertificationsScreen.tsx', certificationsScreen],
+    ] as const) {
+      expect(source, `${name} must carry data-reveal`).toContain('data-reveal');
+    }
+  });
+
+  it('the list-card surfaces carry the subtle hover lift', () => {
+    for (const [name, source] of [
+      ['WriteupsScreen.tsx', writeupsScreen],
+      ['ProjectsScreen.tsx', projectsScreen],
+      ['CertificationsScreen.tsx', certificationsScreen],
+    ] as const) {
+      expect(source, `${name} must lift its cards on hover`).toMatch(/hover:-translate-y-(0\.5|1)/);
+    }
+  });
+
+  it('AboutScreen reveals its top-level section blocks', () => {
+    expect(aboutScreen, 'AboutScreen.tsx must carry data-reveal').toContain('data-reveal');
+  });
+});
+
+// Compiled layer for the motion contract (runs only when dist/assets/*.css
+// exists — same policy as the Tailwind-4 compiled layer above).
+describeCompiled('motion compiled contract (dist/assets/*.css)', () => {
+  it('compiled CSS ships the reveal keyframes and the reduced-motion guard', () => {
+    const compiled = fs.readFileSync(builtCssPath as string, 'utf8');
+    expect(compiled).toContain('@keyframes reveal-in');
+    expect(compiled).toContain('@keyframes glow-breathe');
+    expect(compiled).toContain('dust-drift-a');
+    expect(compiled).toContain('dust-drift-b');
+    expect(compiled).not.toContain('grid-breathe');
+    // Minification may drop whitespace inside the media query, so match loose.
+    expect(compiled).toMatch(/prefers-reduced-motion/);
+  });
+});

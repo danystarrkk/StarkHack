@@ -454,7 +454,8 @@ export const CertificationsScreen: React.FC = () => {
           return (
             <div
               key={cert.id}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#1b1f29] bg-[#10141c] p-2.5 sm:p-3.5 transition-all duration-300 hover:border-[#242936] hover:bg-[#141821] hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.85)]"
+              data-reveal
+              className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#1b1f29] bg-[#10141c] p-2.5 sm:p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#242936] hover:bg-[#141821] hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.85)]"
             >
               <div>
                 {/* Header inside card: Category pill (without versions) & Index number */}

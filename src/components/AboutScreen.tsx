@@ -28,7 +28,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
   return (
     <div className="w-full space-y-8 font-mono">
       {/* Top Breadcrumb & Clearance Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+      <div data-reveal className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
         <div className="flex items-center gap-2 text-[#879299]">
           <span className="text-[#39bae6] font-bold">~#</span>
           <span className="tracking-wider">HOME / OPERATOR / ABOUT_ME</span>
@@ -46,7 +46,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       </div>
 
       {/* Title & Badges Row */}
-      <div className="space-y-3">
+      <div data-reveal className="space-y-3">
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <h1 className="font-sans text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-white via-[#6ad5ff] to-[#7edc73] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(106,213,255,0.35)]">
             ABOUT ME
@@ -69,7 +69,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       </div>
 
       {/* Main Top Two-Column Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+      <div data-reveal className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
         {/* Left Column: Operator Profile Card (5 cols on lg) */}
         <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
           {/* Header */}
@@ -200,7 +200,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       </div>
 
       {/* Section: HABILIDADES & DOMINIOS TÉCNICOS */}
-      <div className="space-y-4 pt-4">
+      <div data-reveal className="space-y-4 pt-4">
         <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 font-mono">
           <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
             <span className="text-[#39bae6]">##</span>
@@ -343,7 +343,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       </div>
 
       {/* Section: CAREER & ACADEMIC TIMELINE */}
-      <div className="space-y-4 pt-4">
+      <div data-reveal className="space-y-4 pt-4">
         <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 font-mono">
           <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
             <span className="text-[#39bae6]">##</span>
@@ -410,7 +410,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       </div>
 
       {/* Section: CANALES Y REDES DE CONTACTO */}
-      <div className="space-y-4 pt-2">
+      <div data-reveal className="space-y-4 pt-2">
         <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 font-mono">
           <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
             <span className="text-[#39bae6]">##</span>

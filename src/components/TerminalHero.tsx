@@ -20,7 +20,10 @@ export const TerminalHero: React.FC<TerminalHeroProps> = ({ onOpenTerminal }) =>
   return (
     <div className="w-full">
       {/* Outer Terminal Container */}
-      <div className="relative overflow-hidden rounded-lg border border-[#1b1f29] bg-[#10141c] shadow-2xl transition-all duration-300 hover:border-[#242936]">
+      <div
+        data-reveal
+        className="relative overflow-hidden rounded-lg border border-[#1b1f29] bg-[#10141c] shadow-2xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[#242936]"
+      >
         {/* Subtle top cyan line highlight */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#39bae6]/30 to-transparent" />
 

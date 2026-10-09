@@ -58,3 +58,33 @@ body {
   animation: blink 1s step-start infinite;
 }
 
+/* Movimiento sutil (site-motion): reveals al hacer scroll, polvo de datos
+   flotante de fondo (dos capas de puntos que derivan exactamente un tile por
+   ciclo, en direcciones opuestas) y glows que respiran solo con transform.
+   El latido de opacidad del grid (su keyframe borrado) se eliminó a propósito:
+   aclarar/oscurecer TODO el fondo se leía como una pantalla dañada, no como
+   ambiente. Solo movimiento: nada de layout, color ni estructura cambia.
+   Regla de degradación: el estado oculto del reveal SOLO aplica bajo la clase
+   .reveal-ready en <html>, que agrega src/lib/reveal.ts únicamente si existe
+   IntersectionObserver; sin JS o sin soporte el contenido queda visible.
+   Accesibilidad: prefers-reduced-motion: reduce anula toda animación y deja
+   los reveals en su estado final visible. */
+@keyframes reveal-in { from { opacity: 0; transform: translate3d(0,18px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }
+@keyframes glow-breathe { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(0,-40px,0) scale(1.08); } }
+@keyframes dust-drift-a { from { transform: translate3d(0,0,0); } to { transform: translate3d(-96px,-96px,0); } }
+@keyframes dust-drift-b { from { transform: translate3d(0,0,0); } to { transform: translate3d(148px,148px,0); } }
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+.motion-glow-a { animation: glow-breathe 26s ease-in-out infinite; }
+.motion-glow-b { animation: glow-breathe 34s ease-in-out infinite; animation-delay: -11s; }
+.motion-dust-a { position: absolute; inset: -160px; background-image: radial-gradient(rgba(57,186,230,0.14) 1px, transparent 1.5px); background-size: 96px 96px; animation: dust-drift-a 55s linear infinite; }
+.motion-dust-b { position: absolute; inset: -200px; background-image: radial-gradient(rgba(106,213,255,0.09) 1px, transparent 1.5px); background-size: 148px 148px; animation: dust-drift-b 85s linear infinite; }
+.motion-modal-in { animation: fade-in .2s ease-out both; }
+.reveal-ready [data-reveal] { opacity: 0; transform: translate3d(0,18px,0); }
+.reveal-ready [data-reveal].is-visible { animation: reveal-in .55s cubic-bezier(.16,.84,.44,1) both; animation-delay: var(--reveal-delay, 0ms); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready [data-reveal], .reveal-ready [data-reveal].is-visible, .motion-glow-a, .motion-glow-b, .motion-dust-a, .motion-dust-b, .motion-modal-in {
+    animation: none !important; transition: none !important;
+  }
+  .reveal-ready [data-reveal], .reveal-ready [data-reveal].is-visible { opacity: 1 !important; transform: none !important; }
+}
+

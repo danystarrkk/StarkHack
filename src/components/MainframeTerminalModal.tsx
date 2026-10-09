@@ -351,7 +351,7 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-5 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-5 backdrop-blur-md motion-modal-in">
       <div className="relative flex h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-[#39bae6]/40 bg-[#07090e] shadow-[0_0_35px_rgba(57,186,230,0.25)]">
         {/* Title Bar */}
         <div className="flex items-center justify-between border-b border-[#1b1f29] bg-[#10141c] px-4 py-2.5">

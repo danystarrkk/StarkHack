@@ -648,7 +648,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         createPortal(
           <div
             onClick={() => setZoomedImage(null)}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-in fade-in"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md motion-modal-in"
           >
             <div
               onClick={(e) => e.stopPropagation()}
