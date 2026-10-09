@@ -130,6 +130,76 @@ describe('motion contract (site-motion)', () => {
     );
     expect(guardBlock).toContain('.motion-dust-a');
     expect(guardBlock).toContain('.motion-dust-b');
+    expect(guardBlock).toContain('.motion-streak-a');
+  });
+
+  // background-streaks (cierre del fondo): cuatro estelas de acento y un
+  // ritmo de ambiente más rápido. Pines de fuente, de velocidad y negativos.
+  it('index.css declares the four streak keyframes and their utilities', () => {
+    for (const layer of ['a', 'b', 'c', 'd']) {
+      expect(css, `@keyframes streak-drift-${layer} must exist`).toContain(
+        `@keyframes streak-drift-${layer}`,
+      );
+      expect(css, `.motion-streak-${layer} must exist`).toContain(
+        `.motion-streak-${layer}`,
+      );
+    }
+  });
+
+  it('the streaks paint the accent palette verbatim (cyan, light cyan, green, amber)', () => {
+    for (const rgba of [
+      'rgba(57,186,230',
+      'rgba(106,213,255',
+      'rgba(126,220,115',
+      'rgba(230,180,80',
+    ]) {
+      expect(css, `accent ${rgba}...) must be painted`).toContain(rgba);
+    }
+  });
+
+  it('each ambience loop declares its faster duration and drops the retired one', () => {
+    // Pinned PER utility line (not file-wide): a retired value may legitimately
+    // reappear elsewhere (e.g. a new streak at 26s) without weakening the check.
+    const loops: Array<[selector: string, fast: string, retired: string]> = [
+      ['.motion-dust-a', '30s', '55s'],
+      ['.motion-dust-b', '48s', '85s'],
+      ['.motion-glow-a', '18s', '26s'],
+      ['.motion-glow-b', '24s', '34s'],
+    ];
+    const line = (selector: string): string =>
+      css.split('\n').find((row) => row.startsWith(selector)) ?? '';
+    for (const [selector, fast, retired] of loops) {
+      const declaration = line(selector);
+      expect(declaration, `${selector} must exist`).not.toBe('');
+      expect(declaration, `${selector} must run at ${fast}`).toContain(fast);
+      expect(declaration, `${selector} must drop the retired ${retired}`).not.toContain(retired);
+    }
+  });
+
+  it('every streak-drift keyframe block is transform-only (opacity would flicker)', () => {
+    for (const layer of ['a', 'b', 'c', 'd']) {
+      const marker = `@keyframes streak-drift-${layer}`;
+      const start = css.indexOf(marker);
+      let block = '';
+      if (start !== -1) {
+        const open = css.indexOf('{', start);
+        let depth = 0;
+        for (let i = open; i < css.length; i += 1) {
+          if (css[i] === '{') depth += 1;
+          if (css[i] === '}') depth -= 1;
+          if (depth === 0) {
+            block = css.slice(start, i + 1);
+            break;
+          }
+        }
+      }
+      expect(block, `${marker} declaration block must exist`).toContain(marker);
+      expect(block, `${marker} must not animate opacity`).not.toContain('opacity');
+    }
+  });
+
+  it('App.tsx renders exactly the four streak layers', () => {
+    expect(app.match(/motion-streak/g)).toHaveLength(4);
   });
 
   it('src/lib/reveal.ts exists and exports initReveal driven by IntersectionObserver', () => {
@@ -248,5 +318,11 @@ describeCompiled('motion compiled contract (dist/assets/*.css)', () => {
     expect(compiled).not.toContain('grid-breathe');
     // Minification may drop whitespace inside the media query, so match loose.
     expect(compiled).toMatch(/prefers-reduced-motion/);
+  });
+
+  it('compiled CSS ships the streak keyframes and utilities (background-streaks)', () => {
+    const compiled = fs.readFileSync(builtCssPath as string, 'utf8');
+    expect(compiled).toContain('streak-drift-a');
+    expect(compiled).toContain('.motion-streak-a');
   });
 });

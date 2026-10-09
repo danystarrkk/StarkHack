@@ -45,6 +45,13 @@ export default function App() {
           <div className="pointer-events-none motion-dust-b" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[500px] bg-gradient-to-b from-[#39bae6]/[0.045] via-transparent to-transparent blur-3xl motion-glow-a" />
           <div className="absolute bottom-0 right-0 w-[600px] h-[450px] bg-gradient-to-tl from-[#39bae6]/[0.03] via-transparent to-transparent blur-3xl motion-glow-b" />
+          {/* Estelas de acento (background-streaks): cuatro bandas de luz
+              borrosas que barren el fondo en diagonal, una por color de la
+              paleta, con delays desfasados para que no crucen juntas. */}
+          <div className="motion-streak-a" />
+          <div className="motion-streak-b" />
+          <div className="motion-streak-c" />
+          <div className="motion-streak-d" />
         </div>
 
         <div className="relative z-10 flex flex-col min-h-screen">
