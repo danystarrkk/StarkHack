@@ -326,3 +326,37 @@ describeCompiled('motion compiled contract (dist/assets/*.css)', () => {
     expect(compiled).toContain('.motion-streak-a');
   });
 });
+
+// Project card cover contract (project-cover-github): when a project entry
+// really carries an `image:` cover, both /projects card banners (featured and
+// archive) render it as the banner's filled image using the writeup-card cover
+// pattern; the dotted-grid + center icon banner stays the fallback for entries
+// without one.
+// NOTE: this pins behavior that does not hold yet on this branch, so the RED
+// phase is expected and recorded before the implementation lands.
+
+describe('project card cover contract (project-cover-github)', () => {
+  const projectsScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'ProjectsScreen.tsx'),
+    'utf8',
+  );
+
+  it('both project card banners render project.image in an <img', () => {
+    const coverImgs = projectsScreen.match(/<img[^>]*src=\{project\.image\}[^>]*>/g) ?? [];
+    expect(
+      coverImgs,
+      'the featured and the archive card must each render the real cover in an <img',
+    ).toHaveLength(2);
+  });
+
+  it('the project cover <img> carries the writeup-card cover classes', () => {
+    const coverImgs = projectsScreen.match(/<img[^>]*src=\{project\.image\}[^>]*>/g) ?? [];
+    expect(coverImgs.length, 'a cover <img> must exist before its classes can be pinned')
+      .toBeGreaterThan(0);
+    for (const img of coverImgs) {
+      expect(img, 'the cover <img> must use the writeup-card cover classes').toContain(
+        'object-cover transition-transform duration-500 group-hover:scale-105',
+      );
+    }
+  });
+});

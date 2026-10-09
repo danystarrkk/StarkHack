@@ -338,11 +338,23 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                     )}
                   </div>
 
-                  {/* Dotted Blueprint Grid Banner */}
+                  {/* Dotted Blueprint Grid Banner (real cover when the entry
+                      carries one; dotted grid + icon is the fallback) */}
                   <div className="relative mb-4 flex h-32 w-full flex-col items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017] bg-grid-dots">
-                    <div className="transition-transform duration-300 group-hover:scale-105">
-                      {renderBannerCenterIcon(project.iconType)}
-                    </div>
+                    {project.image ? (
+                      /* Cover image (real pipeline cover, only when the entry
+                         really carries one) — writeup-card cover pattern */
+                      <img
+                        src={project.image}
+                        alt=""
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="transition-transform duration-300 group-hover:scale-105">
+                        {renderBannerCenterIcon(project.iconType)}
+                      </div>
+                    )}
 
                     {project.subBadge && (
                       <span className="mt-2.5 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">
@@ -536,11 +548,23 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                       )}
                     </div>
 
-                    {/* Dotted Blueprint Grid Banner */}
+                    {/* Dotted Blueprint Grid Banner (real cover when the entry
+                        carries one; dotted grid + icon is the fallback) */}
                     <div className="relative mb-4 flex h-32 w-full flex-col items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017] bg-grid-dots">
-                      <div className="transition-transform duration-300 group-hover:scale-105">
-                        {renderBannerCenterIcon(project.iconType)}
-                      </div>
+                      {project.image ? (
+                        /* Cover image (real pipeline cover, only when the entry
+                           really carries one) — writeup-card cover pattern */
+                        <img
+                          src={project.image}
+                          alt=""
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="transition-transform duration-300 group-hover:scale-105">
+                          {renderBannerCenterIcon(project.iconType)}
+                        </div>
+                      )}
 
                       {project.subBadge && (
                         <span className="mt-2.5 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">

@@ -94,8 +94,9 @@ export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
  * That is ordering data the caller really has — nothing else is synthesized.
  *
  * Mapped (real pipeline data): slug→id, title→title, description→description,
- * tags→tags, image→image, date→date, group→derived iconType, position→number.
- * Optional pipeline fields are omitted entirely when absent.
+ * tags→tags, image→image, githubUrl→githubUrl, date→date, group→derived
+ * iconType, position→number. Optional pipeline fields are omitted entirely
+ * when absent.
  */
 export const toUiProject = (item: ContentIndexItem, position: number): Project => ({
   id: item.slug,
@@ -105,6 +106,7 @@ export const toUiProject = (item: ContentIndexItem, position: number): Project =
   ...(item.description !== undefined ? { description: item.description } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
   ...(item.image !== undefined ? { image: item.image } : {}),
+  ...(item.githubUrl !== undefined ? { githubUrl: item.githubUrl } : {}),
   ...(item.date !== undefined ? { date: item.date } : {}),
 });
 

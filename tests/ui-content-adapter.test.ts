@@ -107,7 +107,8 @@ const PROJECT_TEMPLATE_ONLY_FIELDS = [
   'stars',
   'forks',
   'releaseVersion',
-  'githubUrl',
+  // githubUrl is NOT template-only: the pipeline really supplies it
+  // (Frontmatter.githubUrl). It is pinned by its own conditional-omit tests.
   'readme',
   'codeSnippet',
   'projectLinks',
@@ -250,6 +251,21 @@ describe('toUiProject', () => {
     expect(ui).not.toHaveProperty('tags');
     expect(ui).not.toHaveProperty('image');
     expect(ui).not.toHaveProperty('date');
+    expect(ui).not.toHaveProperty('githubUrl');
+  });
+
+  it('maps githubUrl from the index entry when present', () => {
+    expect(
+      toUiProject(
+        { ...PROJECT_ENTRY, githubUrl: 'https://github.com/danystarrkk/virtualbox-to-vmware' },
+        1
+      ).githubUrl
+    ).toBe('https://github.com/danystarrkk/virtualbox-to-vmware');
+  });
+
+  it('omits githubUrl entirely (no key at all) when the entry has none', () => {
+    expect(toUiProject(PROJECT_ENTRY, 1)).not.toHaveProperty('githubUrl');
+    expect(toUiProject(BARE_PROJECT_ENTRY, 1)).not.toHaveProperty('githubUrl');
   });
 
   it('derives iconType deterministically from project group (documented map)', () => {

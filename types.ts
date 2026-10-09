@@ -10,6 +10,7 @@ export interface Frontmatter {
   group?: string; // Projects/certificates: one classifier of the kind's closed group list
   cve?: string; // CVE identifier, moved out of tags into its own key
   image?: string;
+  githubUrl?: string; // Projects: optional repository URL, feeds the detail GITHUB REPO link
   level?: 'Easy' | 'Medium' | 'Hard';
   platform?: string; // Often inferred from folder, but can be explicit
 }
