@@ -25,7 +25,13 @@
 //     <finalSitePath>/media/cover.webp.
 //   - No orphans, no dangling refs (mirrors tests/media.test.ts): every
 //     resulting media file must be referenced by the rewritten body or by
-//     `image:`; every body image reference must resolve to a planned file.
+//     `image:`/`imageHires:`; every body image reference must resolve to a
+//     planned file. The certificate `imageHires` key is preserved and kept
+//     coherent across rewrites (refreshed on rename). A CERTIFICATE cover
+//     change (certificate-hires B4) plans BOTH regenerated artifacts — the
+//     resized cover and the high-res hires from the SAME new source, with the
+//     lib/content-ingest.js convert hints — and sets/refreshes `imageHires`
+//     (set when absent = the old-certificate upgrade path).
 //   - changes: {} is a no-op: same frontmatter, same body, same paths and an
 //     EMPTY fileOps. The module is pure: no fs/path/process, synchronous,
 //     deterministic and inputs untouched.
@@ -655,7 +661,7 @@ describe('planContentEdit — renaming', () => {
 // ---------------------------------------------------------------------------
 
 describe('planContentEdit — cover replacement', () => {
-  it('plans the cover as media/cover.webp and refreshes image under the final sitePath', () => {
+  it('plans cover AND hires with the ingest convert hints and sets imageHires under the final sitePath (B4)', () => {
     const plan = planContentEdit({
       kind: 'certificate',
       slug: 'ejpt',
@@ -664,7 +670,15 @@ describe('planContentEdit — cover replacement', () => {
       changes: { cover: { source: 'scan.png' }, rename: { slug: 'ejpt-v2' } },
     });
     expect(plan.problems).toEqual([]);
-    expect(plan.imagePlan).toEqual([{ source: 'scan.png', target: 'media/cover.webp' }]);
+    // A certificate cover change regenerates BOTH artifacts from the SAME new
+    // source (certificate-hires B4), carrying the lib/content-ingest.js
+    // convert hints as pure data for the CLI's magick args.
+    expect(plan.imagePlan).toEqual([
+      { source: 'scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
+    ]);
+    // This old certificate had NO imageHires: the cover change upgrades it.
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt-v2/media/hires.webp');
     expect(plan.frontmatter.image).toBe('/certificates/ejpt-v2/media/cover.webp');
     expect(plan.targetDir).toBe('public/certificates/ejpt-v2');
     // The overwritten cover is neither moved nor deleted.
@@ -687,6 +701,20 @@ describe('planContentEdit — cover replacement', () => {
     expect(plan.problems).toEqual([]);
     expect(plan.imagePlan).toEqual([{ source: 'shot.png', target: 'media/cover.webp' }]);
     expect(plan.frontmatter.image).toBe('/writeups/hackmyvm/wave/media/cover.webp');
+  });
+
+  it('a project cover change stays cover-only: no hires, no convert hint, no imageHires', () => {
+    const plan = planContentEdit({
+      kind: 'project',
+      slug: 'autorecon-ng',
+      markdown: doc(APP_YAML, APP_BODY),
+      media: ['01.webp', 'cover.webp'],
+      changes: { cover: { source: 'shot.png' } },
+    });
+    expect(plan.problems).toEqual([]);
+    expect(plan.imagePlan).toEqual([{ source: 'shot.png', target: 'media/cover.webp' }]);
+    expect(plan.frontmatter).not.toHaveProperty('imageHires');
+    expect(plan.frontmatter.image).toBe('/projects/autorecon-ng/media/cover.webp');
   });
 });
 
@@ -739,6 +767,94 @@ describe('planContentEdit — orphans and dangling refs', () => {
       'Unmatched image reference in wave.md: "https://example.com/a.png" has no file in the images list.',
     ]);
     expect(plan.rewrittenBody).toBe('![badge](https://example.com/a.png)');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// imageHires coherence (certificate-hires B2) + cover→hires regeneration
+// (certificate-hires B4, REVISING the B2 deferral): the frontmatter key keeps
+// its hires.webp referenced and survives frontmatter rewrites; a certificate
+// cover change now REGENERATES both artifacts (planned with the ingest
+// convert hints) and sets/refreshes the key.
+// ---------------------------------------------------------------------------
+
+describe('planContentEdit — imageHires coherence (certificate-hires B2)', () => {
+  const CERT_HIRES_YAML = [
+    ...CERT_YAML,
+    'imageHires: "/certificates/ejpt/media/hires.webp"',
+  ];
+
+  it('a media file referenced by frontmatter imageHires is not an orphan', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_HIRES_YAML, ''),
+      media: ['cover.webp', 'hires.webp'],
+      changes: {},
+    });
+    expect(plan.problems).toEqual([]);
+    expect(plan.fileOps).toEqual({ write: [], delete: [], move: [] });
+  });
+
+  it('preserves the imageHires key through a frontmatter fields rewrite', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_HIRES_YAML, ''),
+      media: ['cover.webp', 'hires.webp'],
+      changes: { fields: { title: 'eJPT v2' } },
+    });
+    expect(plan.problems).toEqual([]);
+    expect(plan.frontmatter.title).toBe('eJPT v2');
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
+  });
+
+  it('keeps imageHires coherent across a rename (refreshed to the final sitePath)', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_HIRES_YAML, ''),
+      media: ['cover.webp', 'hires.webp'],
+      changes: { rename: { slug: 'ejpt-v2' } },
+    });
+    expect(plan.problems).toEqual([]);
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt-v2/media/hires.webp');
+    expect(plan.frontmatter.image).toBe('/certificates/ejpt-v2/media/cover.webp');
+  });
+
+  it('regenerates BOTH cover and hires on a cover change and refreshes the key (B4 revises the B2 deferral)', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_HIRES_YAML, ''),
+      media: ['cover.webp', 'hires.webp'],
+      changes: { cover: { source: 'scan.png' } },
+    });
+    expect(plan.problems).toEqual([]);
+    // Both artifacts are regenerated from the NEW cover source with the same
+    // convert hints as lib/content-ingest.js.
+    expect(plan.imagePlan).toEqual([
+      { source: 'scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
+    ]);
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
+  });
+
+  it('upgrades an old certificate WITHOUT imageHires on a cover change (sets the key)', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_YAML, ''),
+      media: ['cover.webp'],
+      changes: { cover: { source: 'scan.png' } },
+    });
+    expect(plan.problems).toEqual([]);
+    expect(plan.imagePlan).toEqual([
+      { source: 'scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
+    ]);
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
+    expect('imageHires' in plan.frontmatter).toBe(true);
   });
 });
 

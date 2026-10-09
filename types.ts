@@ -40,6 +40,7 @@ export interface Frontmatter {
   group?: string; // Projects/certificates: one classifier of the kind's closed group list
   cve?: string; // CVE identifier, moved out of tags into its own key
   image?: string;
+  imageHires?: string; // Certificates: high-resolution original (media/hires.webp) shown by the lightbox; auto-set when the ingest plan produces the hires entry (certificate-hires)
   githubUrl?: string; // Projects: optional repository URL, feeds the detail GITHUB REPO link
   level?: 'Easy' | 'Medium' | 'Hard';
   platform?: string; // Often inferred from folder, but can be explicit

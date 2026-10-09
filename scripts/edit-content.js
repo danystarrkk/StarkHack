@@ -244,7 +244,11 @@ export function formatPlan(plan, identity) {
     lines.push('  (no images)');
   }
   for (const entry of plan.imagePlan) {
-    const coverMark = entry.target === 'media/cover.webp' ? '   (cover)' : '';
+    const coverMark = entry.target === 'media/cover.webp'
+      ? '   (cover)'
+      : entry.target === 'media/hires.webp'
+        ? '   (hires)'
+        : '';
     lines.push(`  ${entry.source} -> ${plan.targetDir}/${entry.target}${coverMark}`);
   }
   lines.push('');
@@ -292,6 +296,50 @@ function assertInsidePublic(repoRelative) {
     throw new Error(`refusing to touch a path outside public/: ${repoRelative}`);
   }
   return resolved;
+}
+
+/**
+ * Map one image-plan `convert` hint to the extra magick argv (pure,
+ * deterministic documented order, certificate-hires B4): `-resize <width>x`
+ * first (when `width` present), then `-quality <q>` (when `quality` present),
+ * always BEFORE the target path. No hint ⇒ NO extra args — the
+ * byte-identical invocation projects/writeups have always used. Espejo de
+ * scripts/add-content.js magickArgs.
+ *
+ * @param {{ width?: number, quality?: number } | undefined} convert the entry's convert hint
+ * @returns {string[]} the extra magick args, in the documented order
+ */
+export function magickArgs(convert) {
+  const args = [];
+  if (convert !== undefined && convert !== null) {
+    if (typeof convert.width === 'number') args.push('-resize', `${convert.width}x`);
+    if (typeof convert.quality === 'number') args.push('-quality', String(convert.quality));
+  }
+  return args;
+}
+
+/**
+ * Run the planned image conversions through `magick` (COPY, never move),
+ * honoring each entry's `convert` hint via magickArgs. Stops at the first
+ * failure (fail-loud) and returns its verbatim message; returns null when
+ * every entry converted. Espejo de scripts/add-content.js convertImagePlan.
+ *
+ * @param {object} plan the plan returned by planContentEdit
+ * @param {Function} [run] spawnSync-compatible runner (test seam; defaults to spawnSync)
+ * @returns {string | null} the first failure message, or null on success
+ */
+export function convertImagePlan(plan, run = spawnSync) {
+  for (const entry of plan.imagePlan) {
+    const sourceAbs = resolveSourceFile(entry.source, process.cwd());
+    const targetAbs = assertInsidePublic(`${plan.targetDir}/${entry.target}`);
+    const result = run('magick', [sourceAbs, ...magickArgs(entry.convert), targetAbs], { encoding: 'utf8' });
+    if (result.error !== undefined || result.status !== 0) {
+      const reason = result.error !== undefined ? result.error.message : result.stderr.trim();
+      return `failed to convert ${entry.source} -> ${plan.targetDir}/${entry.target}: ${reason}`;
+    }
+    console.log(`converted ${entry.source} -> ${plan.targetDir}/${entry.target}`);
+  }
+  return null;
 }
 
 // Escaneo de referencias de imagen del cuerpo, misma familia que
@@ -705,16 +753,10 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (plan.imagePlan.length > 0) {
     fs.mkdirSync(path.join(REPO_ROOT, plan.targetDir, 'media'), { recursive: true });
-    for (const entry of plan.imagePlan) {
-      const sourceAbs = resolveSourceFile(entry.source, process.cwd());
-      const targetAbs = assertInsidePublic(`${plan.targetDir}/${entry.target}`);
-      const result = spawnSync('magick', [sourceAbs, targetAbs], { encoding: 'utf8' });
-      if (result.error !== undefined || result.status !== 0) {
-        const reason = result.error !== undefined ? result.error.message : result.stderr.trim();
-        console.error(`failed to convert ${entry.source} -> ${plan.targetDir}/${entry.target}: ${reason}`);
-        return 1;
-      }
-      console.log(`converted ${entry.source} -> ${plan.targetDir}/${entry.target}`);
+    const convertFailure = convertImagePlan(plan);
+    if (convertFailure !== null) {
+      console.error(convertFailure);
+      return 1;
     }
   }
 

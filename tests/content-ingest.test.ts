@@ -392,9 +392,18 @@ describe('planContentIngestion — certificate', () => {
     expect(plan.markdownPath).toBe('public/certificates/ejpt.md');
     // The numbered duplicate disappeared (orphan-image fix): certificates only
     // plan a numbered media file for an image the REWRITTEN BODY references,
-    // and this body has none — so the always-planned cover entry is the plan.
-    expect(plan.imagePlan).toEqual([{ source: 'cert-scan.png', target: 'media/cover.webp' }]);
+    // and this body has none — so the always-planned cover entry (resized) plus
+    // the hires original (certificate-hires B1) is the plan.
+    expect(plan.imagePlan).toEqual([
+      {
+        source: 'cert-scan.png',
+        target: 'media/cover.webp',
+        convert: { width: 1600, quality: 82 },
+      },
+      { source: 'cert-scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
+    ]);
     expect(plan.frontmatter.image).toBe('/certificates/ejpt/media/cover.webp');
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
   });
 
   it('plans only the cover when the certificate body does not reference the image', () => {
@@ -409,7 +418,11 @@ describe('planContentIngestion — certificate', () => {
       { cover: 'scan.png' }
     );
     expect(plan.problems).toEqual([]);
-    expect(plan.imagePlan).toEqual([{ source: 'scan.png', target: 'media/cover.webp' }]);
+    // cover (resized) + hires (original) even with no body reference at all.
+    expect(plan.imagePlan).toEqual([
+      { source: 'scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
+    ]);
   });
 
   it('plans the numbered entry too when the certificate body references the image', () => {
@@ -425,9 +438,11 @@ describe('planContentIngestion — certificate', () => {
     expect(plan.problems).toEqual([]);
     expect(plan.imagePlan).toEqual([
       { source: 'scan.png', target: 'media/01.webp' },
-      { source: 'scan.png', target: 'media/cover.webp' },
+      { source: 'scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
     ]);
     expect(plan.rewrittenBody).toBe(`![img1](${plan.sitePath}/media/01.webp)`);
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
   });
 
   it('never renumbers a referenced certificate image: the target keeps its full-list position', () => {
@@ -442,9 +457,12 @@ describe('planContentIngestion — certificate', () => {
       { cover: 'a-scan.png' }
     );
     expect(plan.problems).toEqual([]);
+    // The hires entry takes the COVER source (same original), never the
+    // numbered evidence source.
     expect(plan.imagePlan).toEqual([
       { source: 'b-scan.png', target: 'media/02.webp' },
-      { source: 'a-scan.png', target: 'media/cover.webp' },
+      { source: 'a-scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'a-scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
     ]);
     expect(plan.rewrittenBody).toBe(`![img2](${plan.sitePath}/media/02.webp)`);
   });
@@ -477,6 +495,93 @@ describe('planContentIngestion — certificate', () => {
       []
     );
     expect(plan.problems).toEqual(['Missing required frontmatter field(s) in wave.md: title, date']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// certificate-hires B1: dual plan (cover resized + hires original), per-entry
+// convert hints (pure data for the CLI's magick args) and the `imageHires`
+// frontmatter key (auto-set only when the hires entry is planned)
+// ---------------------------------------------------------------------------
+
+describe('planContentIngestion — certificate hires (certificate-hires B1)', () => {
+  const HIRES_CERT_YAML = [
+    'title: eJPT',
+    'order: 2',
+    'image: "/certificates/ejpt/media/cover.webp"',
+    'description: Certificación eJPT.',
+    'group: hack4u',
+    'tags:',
+    '  - Networking',
+  ];
+
+  const HIRES_PROJECT_YAML = [
+    'title: AutoRecon-NG',
+    'date: "2026-09-15"',
+    'image: "/projects/autorecon-ng/media/cover.webp"',
+    'group: scripts',
+    'tags:',
+    '  - Recon',
+  ];
+
+  it('plans the hires original even when the body references no numbered image', () => {
+    const plan = planContentIngestion(
+      'certificate',
+      doc(HIRES_CERT_YAML, 'Solo texto, sin referencias.'),
+      'ejpt.md',
+      ['scan.png'],
+      { cover: 'scan.png' }
+    );
+    expect(plan.problems).toEqual([]);
+    // hires shares the COVER source and keeps the original dimensions (no
+    // width): the future lightbox shows the full-resolution scan.
+    expect(plan.imagePlan).toEqual([
+      { source: 'scan.png', target: 'media/cover.webp', convert: { width: 1600, quality: 82 } },
+      { source: 'scan.png', target: 'media/hires.webp', convert: { quality: 95 } },
+    ]);
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
+  });
+
+  it('never plans hires for a project, never invents imageHires and never hints a convert', () => {
+    const plan = planContentIngestion(
+      'project',
+      doc(HIRES_PROJECT_YAML),
+      'autorecon-ng.md',
+      ['cover.jpg', '01.png'],
+      { cover: 'cover.jpg' }
+    );
+    expect(plan.problems).toEqual([]);
+    expect(plan.imagePlan.some((entry) => entry.target === 'media/hires.webp')).toBe(false);
+    expect(plan.frontmatter).not.toHaveProperty('imageHires');
+    // No convert hint on project entries (magick keeps running with no args).
+    for (const entry of plan.imagePlan) {
+      expect(entry).not.toHaveProperty('convert');
+    }
+  });
+
+  it('carries no convert hint on writeup entries and never invents imageHires', () => {
+    const plan = planContentIngestion('writeup', doc(WAVE_YAML), 'wave.md', ['02.jpg', '01.png']);
+    expect(plan.problems).toEqual([]);
+    for (const entry of plan.imagePlan) {
+      expect(entry).not.toHaveProperty('convert');
+    }
+    expect(plan.frontmatter).not.toHaveProperty('imageHires');
+  });
+
+  it('leaves an existing imageHires key untouched when no hires entry is planned', () => {
+    const plan = planContentIngestion(
+      'certificate',
+      doc([...HIRES_CERT_YAML, 'imageHires: "/certificates/ejpt/media/hires.webp"']),
+      'ejpt.md',
+      ['cert.png']
+    );
+    // No cover option → neither cover nor hires is planned; the key stays
+    // untouched, exactly like `image`.
+    expect(plan.problems).toEqual([
+      'Missing certificate cover in ejpt.md: expected the cover option naming an image file.',
+    ]);
+    expect(plan.imagePlan).toEqual([]);
+    expect(plan.frontmatter.imageHires).toBe('/certificates/ejpt/media/hires.webp');
   });
 });
 

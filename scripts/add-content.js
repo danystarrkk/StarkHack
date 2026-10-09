@@ -240,7 +240,8 @@ export function buildWriteupLinks(answers) {
 
 /**
  * Render the full dry-run plan: source path, derived paths, files to create,
- * the image mapping table (source → planned target, cover flagged), the
+ * the image mapping table (source → planned target, cover flagged `(cover)`
+ * and the certificate hires artifact flagged `(hires)`), the
  * resulting frontmatter and every problem VERBATIM.
  *
  * Deterministic on purpose (byte-idempotent dry-run): no timestamps, no
@@ -271,8 +272,13 @@ export function formatPlan(plan, sourcePath) {
     lines.push('  (no images)');
   }
   for (const entry of plan.imagePlan) {
-    const coverMark = entry.target === 'media/cover.webp' ? '   (cover)' : '';
-    lines.push(`  ${entry.source} -> ${plan.targetDir}/${entry.target}${coverMark}`);
+    const artifactMark =
+      entry.target === 'media/cover.webp'
+        ? '   (cover)'
+        : entry.target === 'media/hires.webp'
+          ? '   (hires)'
+          : '';
+    lines.push(`  ${entry.source} -> ${plan.targetDir}/${entry.target}${artifactMark}`);
   }
   lines.push('');
   lines.push('frontmatter to write:');
@@ -302,6 +308,51 @@ function resolveSourceFile(name, baseDir) {
     return path.resolve(name);
   }
   return path.join(baseDir, name);
+}
+
+/**
+ * Map one image-plan `convert` hint to the magick argv (pure, deterministic
+ * documented order, certificate-hires B4): `-resize <width>x` first (when
+ * `width` present), then `-quality <q>` (when `quality` present), always
+ * BEFORE the target path. No hint ⇒ NO extra args — the byte-identical
+ * invocation projects/writeups have always used.
+ *
+ * @param {{ width?: number, quality?: number } | undefined} convert the entry's convert hint
+ * @returns {string[]} the extra magick args, in the documented order
+ */
+export function magickArgs(convert) {
+  const args = [];
+  if (convert !== undefined && convert !== null) {
+    if (typeof convert.width === 'number') args.push('-resize', `${convert.width}x`);
+    if (typeof convert.quality === 'number') args.push('-quality', String(convert.quality));
+  }
+  return args;
+}
+
+/**
+ * Run the planned image conversions through `magick` (COPY, never move),
+ * honoring each entry's `convert` hint via magickArgs. Stops at the first
+ * failure (fail-loud) and returns its verbatim message; returns null when
+ * every entry converted.
+ *
+ * @param {object} plan the plan returned by planContentIngestion
+ * @param {string} imagesDir source folder for plain source names
+ * @param {Function} [run] spawnSync-compatible runner (test seam; defaults to
+ *   the real `magick` spawn)
+ * @returns {string | null} the failure message, or null on success
+ */
+export function convertImagePlan(plan, imagesDir, run = spawnSync) {
+  for (const entry of plan.imagePlan) {
+    const sourceAbs = resolveSourceFile(entry.source, imagesDir);
+    const targetAbsFile = path.join(REPO_ROOT, plan.targetDir, entry.target);
+    const result = run('magick', [sourceAbs, ...magickArgs(entry.convert), targetAbsFile], { encoding: 'utf8' });
+    if (result.error !== undefined || result.status !== 0) {
+      const reason = result.error !== undefined ? result.error.message : result.stderr.trim();
+      return `failed to convert ${sourceAbs} -> ${targetAbsFile}: ${reason}`;
+    }
+    console.log(`converted ${entry.source} -> ${plan.targetDir}/${entry.target}`);
+  }
+  return null;
 }
 
 /** List the image files of a source folder (plain names, sorted for stability). */
@@ -647,16 +698,10 @@ export async function main(argv = process.argv.slice(2)) {
 
   const targetAbs = path.join(REPO_ROOT, plan.targetDir);
   fs.mkdirSync(path.join(targetAbs, 'media'), { recursive: true });
-  for (const entry of plan.imagePlan) {
-    const sourceAbs = resolveSourceFile(entry.source, imagesDir);
-    const targetAbsFile = path.join(targetAbs, entry.target);
-    const result = spawnSync('magick', [sourceAbs, targetAbsFile], { encoding: 'utf8' });
-    if (result.error !== undefined || result.status !== 0) {
-      const reason = result.error !== undefined ? result.error.message : result.stderr.trim();
-      console.error(`failed to convert ${sourceAbs} -> ${targetAbsFile}: ${reason}`);
-      return 1;
-    }
-    console.log(`converted ${entry.source} -> ${plan.targetDir}/${entry.target}`);
+  const convertFailure = convertImagePlan(plan, imagesDir);
+  if (convertFailure !== null) {
+    console.error(convertFailure);
+    return 1;
   }
 
   // El .md va AL LADO de targetDir (markdownPath), no dentro: es la
@@ -675,10 +720,17 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (indexRun.stdout.trim() !== '') console.log(indexRun.stdout.trim());
 
-  const imageCount = plan.imagePlan.filter((entry) => entry.target !== 'media/cover.webp').length;
+  // Resumen honesto: la evidencia numerada cuenta como "images"; los
+  // artefactos cover/hires se nombran con sus propias marcas (nunca se
+  // cuentan como evidencia).
   const coverEntry = plan.imagePlan.find((entry) => entry.target === 'media/cover.webp');
+  const hiresEntry = plan.imagePlan.find((entry) => entry.target === 'media/hires.webp');
+  const imageCount = plan.imagePlan.filter(
+    (entry) => entry.target !== 'media/cover.webp' && entry.target !== 'media/hires.webp',
+  ).length;
   const coverLabel = args.kind === 'writeup' ? 'cover=level' : `cover=${coverEntry.source}`;
-  console.log(`[+] ${args.kind} '${plan.slug}' → ${plan.sitePath} (${imageCount} images, ${coverLabel})`);
+  const hiresLabel = hiresEntry === undefined ? '' : `, hires=${hiresEntry.source}`;
+  console.log(`[+] ${args.kind} '${plan.slug}' → ${plan.sitePath} (${imageCount} images, ${coverLabel}${hiresLabel})`);
   return 0;
 }
 

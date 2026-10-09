@@ -42,8 +42,8 @@ interface ContentRefs {
   slug: string;
   /** Rutas de imágenes del cuerpo, en orden de primera aparición */
   bodyRefs: string[];
-  /** Ruta de la imagen del frontmatter (clave `image:`) */
-  frontmatterRef?: string;
+  /** Rutas de imagen del frontmatter (claves `image:` e `imageHires:`) */
+  frontmatterRefs: string[];
   /** Prefijo que debe cumplir toda referencia de este documento */
   expectedPrefix: string;
 }
@@ -61,6 +61,26 @@ function listFilesRecursive(dir: string): string[] {
 
 function isTextFile(file: string): boolean {
   return !BINARY_EXTS.has(path.extname(file).toLowerCase());
+}
+
+/**
+ * Referencias de imagen de UN documento (markdown crudo): las del cuerpo
+ * (markdown) y las del frontmatter. Función pura para poder fijar el contrato
+ * del recolector con fixtures (el árbol real todavía no tiene imageHires).
+ */
+function collectDocumentRefs(raw: string): { bodyRefs: string[]; frontmatterRefs: string[] } {
+  const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+  const bodyRefs: string[] = [];
+  for (const match of content.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+    bodyRefs.push(match[1].trim());
+  }
+  const frontmatterRefs: string[] = [];
+  for (const value of [data.image, data.imageHires]) {
+    if (typeof value === 'string' && value.trim() !== '') {
+      frontmatterRefs.push(value.trim());
+    }
+  }
+  return { bodyRefs, frontmatterRefs };
 }
 
 function collectContentRefs(): ContentRefs[] {
@@ -90,16 +110,8 @@ function collectContentRefs(): ContentRefs[] {
 
     for (const { abs, platform } of mdFiles) {
       const raw = fs.readFileSync(abs, 'utf8');
-      const { data, content } = parseFrontmatter<Record<string, unknown>>(raw);
+      const { bodyRefs, frontmatterRefs } = collectDocumentRefs(raw);
       const slug = path.basename(abs).replace(/\.md$/, '');
-
-      const bodyRefs: string[] = [];
-      for (const match of content.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
-        bodyRefs.push(match[1].trim());
-      }
-
-      const frontmatterRef =
-        typeof data.image === 'string' && data.image.trim() !== '' ? data.image.trim() : undefined;
 
       const slugDir = platform ? `${platform}/${slug}` : slug;
       docs.push({
@@ -107,7 +119,7 @@ function collectContentRefs(): ContentRefs[] {
         kind: root.kind,
         slug,
         bodyRefs,
-        frontmatterRef,
+        frontmatterRefs,
         expectedPrefix: `${root.urlRoot}/${slugDir}/${MEDIA_DIRNAME}/`,
       });
     }
@@ -116,13 +128,13 @@ function collectContentRefs(): ContentRefs[] {
 }
 
 const docs = collectContentRefs();
-const allRefs = docs.flatMap((d) => [...d.bodyRefs, ...(d.frontmatterRef ? [d.frontmatterRef] : [])]);
+const allRefs = docs.flatMap((d) => [...d.bodyRefs, ...d.frontmatterRefs]);
 
 describe('media convention', () => {
-  it('every image reference (markdown body and frontmatter image:) lives under its per-kind <...>/media/ folder', () => {
+  it('every image reference (markdown body and frontmatter image:/imageHires:) lives under its per-kind <...>/media/ folder', () => {
     const violations: string[] = [];
     for (const doc of docs) {
-      for (const ref of [...doc.bodyRefs, ...(doc.frontmatterRef ? [doc.frontmatterRef] : [])]) {
+      for (const ref of [...doc.bodyRefs, ...doc.frontmatterRefs]) {
         if (!ref.startsWith(doc.expectedPrefix)) {
           violations.push(`${doc.file}: ${ref} (expected prefix ${doc.expectedPrefix})`);
         }
@@ -190,5 +202,43 @@ describe('media convention', () => {
   it('UI assets live at public/ui/stark.webp and public/ui/logo.webp', () => {
     expect(fs.existsSync(path.join(PUBLIC_DIR, 'ui', 'stark.webp'))).toBe(true);
     expect(fs.existsSync(path.join(PUBLIC_DIR, 'ui', 'logo.webp'))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// certificate-hires B2: the refs collector learns `imageHires:` so a
+// certificate's hires.webp is referenced (never an orphan). Pure fixture
+// pins — the real-tree sweeps above prove the 7 existing certificates (only
+// cover.webp, no imageHires yet) are unaffected.
+// ---------------------------------------------------------------------------
+
+const CERT_HIRES_FIXTURE = [
+  '---',
+  'title: eJPT',
+  'order: 2',
+  'image: /certificates/ejpt/media/cover.webp',
+  'imageHires: /certificates/ejpt/media/hires.webp',
+  '---',
+  'Sin referencias en el cuerpo.',
+].join('\n');
+
+describe('media convention — refs collector counts imageHires (certificate-hires B2)', () => {
+  it('counts frontmatter imageHires: so the hires original is NOT an orphan', () => {
+    const { bodyRefs, frontmatterRefs } = collectDocumentRefs(CERT_HIRES_FIXTURE);
+    expect(bodyRefs).toEqual([]);
+    expect(frontmatterRefs).toContain('/certificates/ejpt/media/cover.webp');
+    expect(frontmatterRefs).toContain('/certificates/ejpt/media/hires.webp');
+  });
+
+  it('still leaves genuinely unreferenced media files orphan-flagged (no over-counting)', () => {
+    const { frontmatterRefs } = collectDocumentRefs(CERT_HIRES_FIXTURE);
+    // 01.webp appears in no body and no frontmatter key: the orphan sweep
+    // must keep flagging it.
+    expect(frontmatterRefs).not.toContain('/certificates/ejpt/media/01.webp');
+    // And a certificate WITHOUT imageHires references no hires.webp either.
+    const withoutHires = collectDocumentRefs(
+      '---\ntitle: eJPT\nimage: /certificates/ejpt/media/cover.webp\n---\n'
+    );
+    expect(withoutHires.frontmatterRefs).not.toContain('/certificates/ejpt/media/hires.webp');
   });
 });

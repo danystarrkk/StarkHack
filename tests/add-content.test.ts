@@ -21,6 +21,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildFrontmatterText, buildWriteupLinks, formatPlan, parseArgs } from '../scripts/add-content.js';
+// Namespace import so NEW seam exports fail as named test failures (visible
+// RED) instead of a module link error while they do not exist yet.
+import * as addContentCli from '../scripts/add-content.js';
 import { planContentIngestion } from '../lib/content-ingest.js';
 import { assertValidWriteupLinks } from '../lib/content-kinds.js';
 import { parseFrontmatter } from '../lib/frontmatter.js';
@@ -218,6 +221,122 @@ describe('formatPlan', () => {
 
     expect(first).toContain('problems: none');
     expect(first).toBe(second);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// certificate-hires B4: magick honors the per-entry `convert` hint (documented
+// order: `-resize <width>x`, then `-quality <q>`, before the target; no hint ⇒
+// NO extra args) and the plan output names BOTH certificate artifacts
+// ---------------------------------------------------------------------------
+
+describe('magick honors the convert hint (certificate-hires B4)', () => {
+  const CERT_YAML = [
+    'title: eJPT',
+    'order: 2',
+    'image: "/certificates/ejpt/media/cover.webp"',
+    'description: Certificación eJPT.',
+    'group: hack4u',
+    'tags:',
+    '  - Networking',
+  ];
+  const PROJECT_YAML = [
+    'title: AutoRecon-NG',
+    'date: "2026-09-15"',
+    'image: "/projects/autorecon-ng/media/cover.webp"',
+    'group: scripts',
+    'tags:',
+    '  - Recon',
+  ];
+  const certPlan = () =>
+    planContentIngestion('certificate', ['---', ...CERT_YAML, '---', ''].join('\n'), 'ejpt.md', ['scan.png'], {
+      cover: 'scan.png',
+    });
+  const projectPlan = () =>
+    planContentIngestion('project', ['---', ...PROJECT_YAML, '---', ''].join('\n'), 'app.md', ['01.png', 'cover.jpg'], {
+      cover: 'cover.jpg',
+    });
+
+  // Spawn recorder: captures every (command, argv) the runner would spawn.
+  const recorder = (calls: string[][], result = { status: 0, stderr: '' }) =>
+    ((command: string, args: string[] = []) => {
+      calls.push([command, ...args]);
+      return result;
+    }) as never;
+
+  it('maps width/quality hints in the documented order and no hint to no args', () => {
+    expect(addContentCli.magickArgs({ quality: 70, width: 800 })).toEqual(['-resize', '800x', '-quality', '70']);
+    expect(addContentCli.magickArgs({ width: 800 })).toEqual(['-resize', '800x']);
+    expect(addContentCli.magickArgs({ quality: 95 })).toEqual(['-quality', '95']);
+    expect(addContentCli.magickArgs(undefined)).toEqual([]);
+  });
+
+  it('spawns magick for the certificate cover with -resize 1600x -quality 82 and for hires with -quality 95', () => {
+    const calls: string[][] = [];
+
+    const failure = addContentCli.convertImagePlan(certPlan(), '/tmp/scan-dir', recorder(calls));
+
+    expect(failure).toBeNull();
+    expect(calls).toEqual([
+      [
+        'magick',
+        path.join('/tmp/scan-dir', 'scan.png'),
+        '-resize',
+        '1600x',
+        '-quality',
+        '82',
+        path.join(REPO_ROOT, 'public/certificates/ejpt/media/cover.webp'),
+      ],
+      [
+        'magick',
+        path.join('/tmp/scan-dir', 'scan.png'),
+        '-quality',
+        '95',
+        path.join(REPO_ROOT, 'public/certificates/ejpt/media/hires.webp'),
+      ],
+    ]);
+  });
+
+  it('spawns magick for a project entry with NO extra args (byte-identical invocation)', () => {
+    const calls: string[][] = [];
+
+    const failure = addContentCli.convertImagePlan(projectPlan(), '/tmp/scan-dir', recorder(calls));
+
+    expect(failure).toBeNull();
+    expect(calls).toEqual([
+      ['magick', path.join('/tmp/scan-dir', '01.png'), path.join(REPO_ROOT, 'public/projects/app/media/01.webp')],
+      ['magick', path.join('/tmp/scan-dir', 'cover.jpg'), path.join(REPO_ROOT, 'public/projects/app/media/02.webp')],
+      ['magick', path.join('/tmp/scan-dir', 'cover.jpg'), path.join(REPO_ROOT, 'public/projects/app/media/cover.webp')],
+    ]);
+  });
+
+  it('stops at the first failed conversion and reports it verbatim (fail-loud)', () => {
+    const calls: string[][] = [];
+
+    const failure = addContentCli.convertImagePlan(
+      certPlan(),
+      '/tmp/scan-dir',
+      recorder(calls, { status: 1, stderr: 'boom' }),
+    );
+
+    expect(calls.length).toBe(1);
+    expect(failure).toBe(
+      `failed to convert ${path.join('/tmp/scan-dir', 'scan.png')} -> ${path.join(REPO_ROOT, 'public/certificates/ejpt/media/cover.webp')}: boom`,
+    );
+  });
+
+  it('prints the hires row marked (hires) next to the (cover) row, naming both artifacts', () => {
+    const out = formatPlan(certPlan(), '/tmp/ejpt.md');
+
+    expect(out).toContain('scan.png -> public/certificates/ejpt/media/cover.webp   (cover)');
+    expect(out).toContain('scan.png -> public/certificates/ejpt/media/hires.webp   (hires)');
+  });
+
+  it('marks NO hires row for a project plan (only the cover is an artifact)', () => {
+    const out = formatPlan(projectPlan(), '/tmp/app.md');
+
+    expect(out).toContain('cover.jpg -> public/projects/app/media/cover.webp   (cover)');
+    expect(out).not.toContain('(hires)');
   });
 });
 

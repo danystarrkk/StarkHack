@@ -152,6 +152,9 @@ export interface Certification {
   date?: string;
   // Real pipeline cover image (frontmatter `image`), when one exists.
   image?: string;
+  // Real pipeline high-resolution certificate image (frontmatter `imageHires`),
+  // when one exists — the lightbox shows it in preference to `image`.
+  imageHires?: string;
   // Template-only fields (no pipeline source — never invented for real data):
   // optional so pipeline-backed certificates render without fake metadata and
   // the UI hides their chips/labels.

@@ -353,6 +353,26 @@ describe('toUiCertification', () => {
     expect(toUiCertification(BARE_CERTIFICATE_ENTRY, 1)).not.toHaveProperty('image');
   });
 
+  it('maps imageHires from the index entry when present (lightbox hires source)', () => {
+    // certificate-hires: the high-resolution original is pipeline data
+    // (frontmatter `imageHires`) and must flow to the UI Certification so the
+    // lightbox can prefer it over the cover.
+    const withHires: ContentIndexItem = {
+      ...CERTIFICATE_ENTRY,
+      imageHires: '/certificates/certificado/media/hires.webp',
+    };
+    expect(toUiCertification(withHires, 1).imageHires).toBe(
+      '/certificates/certificado/media/hires.webp'
+    );
+  });
+
+  it('omits imageHires entirely (no key at all) when the entry has none', () => {
+    // Conditional-omit, like every optional pipeline field: an entry with a
+    // cover but no hires, and a bare entry, both must yield NO key at all.
+    expect(toUiCertification(CERTIFICATE_ENTRY, 1)).not.toHaveProperty('imageHires');
+    expect(toUiCertification(BARE_CERTIFICATE_ENTRY, 1)).not.toHaveProperty('imageHires');
+  });
+
   it('maps exactly the documented fields (id, title, number, description, tags, date)', () => {
     // Same realistic entry, dated and without a cover: the output must be
     // exactly these six keys — position-derived zero-padded number included.

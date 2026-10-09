@@ -23,6 +23,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { formatInventory, formatPlan, parseArgs } from '../scripts/edit-content.js';
+// Namespace import so NEW seam exports fail as named test failures (visible
+// RED) instead of a module link error while they do not exist yet.
+import * as editContentCli from '../scripts/edit-content.js';
 import { describeEditable, planContentEdit } from '../lib/content-edit.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -273,6 +276,109 @@ describe('formatPlan', () => {
     expect(first).toContain('(no images)');
     expect(first).toBe(second);
     expect(first).not.toMatch(/\d{2}:\d{2}:\d{2}/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// certificate-hires B4: the edit apply loop maps the plan's `convert` hint to
+// magick args exactly like add-content (`-resize <width>x`, then `-quality <q>`,
+// before the target; no hint ⇒ NO extra args) and the plan output names BOTH
+// regenerated certificate artifacts ((cover) + (hires) markers)
+// ---------------------------------------------------------------------------
+
+describe('convertImagePlan — magick honors the convert hint (certificate-hires B4)', () => {
+  const CERT_YAML = [
+    'title: eJPT',
+    'order: 2',
+    'image: "/certificates/ejpt/media/cover.webp"',
+    'description: Certificación eJPT.',
+    'group: hack4u',
+    'tags:',
+    '  - Networking',
+  ];
+  const APP_YAML = [
+    'title: AutoRecon-NG',
+    'date: "2026-09-15"',
+    'image: "/projects/autorecon-ng/media/cover.webp"',
+    'group: scripts',
+    'tags:',
+    '  - Recon',
+  ];
+
+  // Spawn recorder: captures every (command, argv) the runner would spawn.
+  const recorder = (calls: string[][]) =>
+    ((command: string, args: string[] = []) => {
+      calls.push([command, ...args]);
+      return { status: 0, stderr: '' };
+    }) as never;
+
+  it('spawns magick for the regenerated cover with -resize 1600x -quality 82 and for hires with -quality 95', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_YAML, ''),
+      media: ['cover.webp'],
+      changes: { cover: { source: 'scan.png' } },
+    });
+    const calls: string[][] = [];
+
+    const failure = editContentCli.convertImagePlan(plan, recorder(calls));
+
+    expect(failure).toBeNull();
+    expect(calls).toEqual([
+      [
+        'magick',
+        path.join(process.cwd(), 'scan.png'),
+        '-resize',
+        '1600x',
+        '-quality',
+        '82',
+        path.resolve(REPO_ROOT, 'public/certificates/ejpt/media/cover.webp'),
+      ],
+      [
+        'magick',
+        path.join(process.cwd(), 'scan.png'),
+        '-quality',
+        '95',
+        path.resolve(REPO_ROOT, 'public/certificates/ejpt/media/hires.webp'),
+      ],
+    ]);
+  });
+
+  it('spawns magick for a project cover with NO extra args (byte-identical invocation)', () => {
+    const plan = planContentEdit({
+      kind: 'project',
+      slug: 'autorecon-ng',
+      markdown: doc(APP_YAML, ''),
+      media: ['cover.webp'],
+      changes: { cover: { source: 'shot.png' } },
+    });
+    const calls: string[][] = [];
+
+    const failure = editContentCli.convertImagePlan(plan, recorder(calls));
+
+    expect(failure).toBeNull();
+    expect(calls).toEqual([
+      [
+        'magick',
+        path.join(process.cwd(), 'shot.png'),
+        path.resolve(REPO_ROOT, 'public/projects/autorecon-ng/media/cover.webp'),
+      ],
+    ]);
+  });
+
+  it('prints the hires row marked (hires) next to the (cover) row in the edit plan', () => {
+    const plan = planContentEdit({
+      kind: 'certificate',
+      slug: 'ejpt',
+      markdown: doc(CERT_YAML, ''),
+      media: ['cover.webp'],
+      changes: { cover: { source: 'scan.png' } },
+    });
+    const out = formatPlan(plan, { kind: 'certificate', slug: 'ejpt' });
+
+    expect(out).toContain('scan.png -> public/certificates/ejpt/media/cover.webp   (cover)');
+    expect(out).toContain('scan.png -> public/certificates/ejpt/media/hires.webp   (hires)');
   });
 });
 

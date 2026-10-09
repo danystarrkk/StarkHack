@@ -424,3 +424,56 @@ describe('project card tag chip contract (one dot per chip)', () => {
     );
   });
 });
+
+// Certificate lightbox contract (certificate-hires): clicking a certificate
+// card cover opens a lightbox mirroring the MarkdownRenderer zoom pattern
+// (portal to document.body, motion-modal-in overlay, object-contain image)
+// showing the high-resolution original (`imageHires`) with the cover as
+// fallback. The card keeps its cover and hover scale; only the click target
+// is new.
+// NOTE: this pins behavior that does not hold yet on this branch, so the RED
+// phase is expected and recorded before the implementation lands.
+
+describe('certificate lightbox contract (certificate-hires)', () => {
+  const certificationsScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'CertificationsScreen.tsx'),
+    'utf8',
+  );
+
+  it('renders a portal lightbox (createPortal + object-contain + motion-modal-in)', () => {
+    expect(
+      certificationsScreen,
+      'the lightbox must be portaled (createPortal) like the MarkdownRenderer zoom',
+    ).toContain('createPortal(');
+    expect(
+      certificationsScreen,
+      'the lightbox overlay must reuse the existing motion-modal-in animation',
+    ).toContain('motion-modal-in');
+    expect(
+      certificationsScreen,
+      'the lightbox image must fit the viewport (object-contain)',
+    ).toContain('object-contain');
+  });
+
+  it('the card cover <img> is the zoom click target (cursor-zoom-in)', () => {
+    // Match the whole self-closing <img ... /> tag (the onClick arrow `=>`
+    // contains `>`, so a naive [^>]* tag scan would cut the tag short).
+    const coverImg = (certificationsScreen.match(/<img[\s\S]*?\/>/g) ?? []).find((tag) =>
+      tag.includes('src={cert.image}'),
+    );
+    expect(coverImg, 'the card cover must render the real cover in an <img').toBeDefined();
+    expect(coverImg, 'the card cover must be clickable (onClick opens the lightbox)').toContain(
+      'onClick',
+    );
+    expect(coverImg, 'the card cover must advertise zoom (cursor-zoom-in)').toContain(
+      'cursor-zoom-in',
+    );
+  });
+
+  it('the lightbox prefers imageHires and falls back to image (`cert.imageHires ?? cert.image`)', () => {
+    expect(
+      certificationsScreen,
+      'the lightbox source must be the hires original with the cover as fallback',
+    ).toContain('cert.imageHires ?? cert.image');
+  });
+});

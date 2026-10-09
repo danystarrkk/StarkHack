@@ -11,6 +11,7 @@
 // Template-only fields (badges, issuer, durations, status, ...) have no source
 // in the pipeline, so their chips/labels are hidden — never placeholders.
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Certification } from '../types';
 import type { ContentIndexItem } from '../../types';
 import { getCertificates } from '../../lib/content';
@@ -35,6 +36,22 @@ const displayDate = (cert: Certification): string | undefined =>
 
 export const CertificationsScreen: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<CertificationFilterId>('TODOS');
+
+  // Certificate lightbox (certificate-hires), mirroring MarkdownRenderer's
+  // zoomedImage state: opened by clicking a card cover, closed by the close
+  // button, the backdrop, or ESC.
+  const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
+
+  // ESC closes the lightbox (the MarkdownRenderer overlay advertises
+  // "CERRAR [ESC]"; here the key is really wired).
+  useEffect(() => {
+    if (zoomedImage === null) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoomedImage(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoomedImage]);
 
   // Real pipeline loading (same honest states as Home / WriteupsScreen).
   const [entries, setEntries] = useState<ContentIndexItem[]>([]);
@@ -110,7 +127,8 @@ export const CertificationsScreen: React.FC = () => {
             src={cert.image}
             alt={cert.title}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onClick={() => setZoomedImage({ src: cert.imageHires ?? cert.image, alt: cert.title })}
+            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
       );
@@ -575,6 +593,40 @@ export const CertificationsScreen: React.FC = () => {
         })}
       </div>
       )}
+
+      {/* Certificate Lightbox — portaled to document.body so the fixed
+          overlay covers the whole viewport (mirrors MarkdownRenderer's zoom
+          pattern). Shows the high-resolution original (`imageHires`) with the
+          cover (`image`) as fallback; no new CSS — motion-modal-in reused. */}
+      {zoomedImage &&
+        createPortal(
+          <div
+            onClick={() => setZoomedImage(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md motion-modal-in"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[90vh] max-w-5xl rounded-lg border border-[#39bae6]/40 bg-[#0d1017] p-4 shadow-2xl"
+            >
+              <div className="flex justify-end border-b border-[#1b1f29] pb-3 mb-3">
+                <button
+                  onClick={() => setZoomedImage(null)}
+                  aria-label="Cerrar imagen ampliada"
+                  className="rounded border border-[#242936] bg-[#161a24] px-2 py-1 font-mono text-[11px] text-[#879299] hover:text-white"
+                >
+                  CERRAR [ESC]
+                </button>
+              </div>
+              <img
+                src={zoomedImage.src}
+                alt={zoomedImage.alt}
+                loading="lazy"
+                className="max-h-[78vh] w-full rounded object-contain"
+              />
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
