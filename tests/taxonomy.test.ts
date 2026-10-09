@@ -205,6 +205,18 @@ const APPROVED_CERTIFICATE_TAGS = [
   'Linux',
   'Escalada de privilegios',
   'Pivoting',
+  // Second human-approved expansion (decision: real certificate subjects being
+  // prepared). Kept verbatim and in the exact order of lib/taxonomy.js — this
+  // list IS the approval record.
+  'Ethical Hacking',
+  'Pentesting',
+  'System Administration',
+  'Bash',
+  'Python',
+  'Programming',
+  'Security Automation',
+  'Automation',
+  'Burp Suite',
 ];
 
 const APPROVED_PROJECT_GROUPS = ['scripts', 'automatizaciones', 'herramientas'];
