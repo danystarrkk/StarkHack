@@ -346,7 +346,8 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
               </div>
 
               {/* 2. SECCIÓN ENLACES DE LA MÁQUINA // TARGET MACHINE LINKS
-                  (solo datos de plantilla curados; oculta si no hay) */}
+                  (frontmatter de la writeup, con fallback a la plantilla
+                  curada; oculta si no hay) */}
               {machineLinks.length > 0 && (
                 <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
                   <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">
@@ -386,7 +387,8 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
               )}
 
               {/* 3. SECCIÓN HERRAMIENTAS & OTROS LINKS // TOOLS & RESOURCES
-                  (solo datos de plantilla curados; oculta si no hay) */}
+                  (frontmatter de la writeup, con fallback a la plantilla
+                  curada; oculta si no hay) */}
               {toolLinks.length > 0 && (
                 <div className="rounded-xl border border-[#242936] bg-[#121620] p-5 shadow-lg">
                   <div className="flex items-center justify-between border-b border-[#1b1f29] pb-3 mb-3">

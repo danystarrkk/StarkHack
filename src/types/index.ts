@@ -43,6 +43,9 @@ export interface Writeup {
   points?: number;
   author?: string;
   readTime?: string;
+  // Real pipeline fields (frontmatter machineLinks/toolLinks, validated by
+  // assertValidWriteupLinks; buildWriteupView prefers them over the curated
+  // template fallback).
   machineLinks?: MachineLink[];
   toolLinks?: ToolLink[];
   steps?: {

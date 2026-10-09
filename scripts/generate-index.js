@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { parseFrontmatter } from "../lib/frontmatter.js";
 import { assertRequiredTags, assertValidTags } from "../lib/taxonomy.js";
-import { KINDS, assertValidGroup, missingFields } from "../lib/content-kinds.js";
+import { KINDS, assertValidGroup, assertValidWriteupLinks, missingFields } from "../lib/content-kinds.js";
 import { WRITEUP_LEVELS } from "../lib/content-ingest.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -178,6 +178,10 @@ export function generateIndex(source) {
             );
           }
         }
+        // Link sections (machineLinks / toolLinks): contrato aprobado del
+        // frontmatter (writeup-links A1). Ausentes o null = válidos (secciones
+        // vacías, sin defaults); un bloque presente tiene que ser correcto.
+        assertValidWriteupLinks(data, filePath);
       } else {
         assertValidGroup(data.group, kind, filePath);
         assertRequiredTags(data.tags, kind, filePath);

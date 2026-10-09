@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { assertValidWriteupLinks } from '../lib/content-kinds.js';
 import { generateIndex } from '../scripts/generate-index.js';
 
 // Fixtures always live outside the repository, in a fresh OS temp directory.
@@ -524,6 +525,262 @@ describe('generateIndex multi-kind sources', () => {
     const slugs = generateIndex(source).map((item) => item.slug);
 
     expect(slugs).toEqual(['cert-a', 'cert-b']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Writeup link sections (writeup-links A1): `machineLinks` / `toolLinks` from
+// the writeup frontmatter. Absent (or null) keys are VALID — the sections stay
+// empty and nothing is invented. A present block must satisfy the approved
+// contract, fail-loud naming the filePath, the entry index, the field and the
+// offending value; a valid block reaches the index entry untouched.
+// ---------------------------------------------------------------------------
+
+describe('assertValidWriteupLinks — writeup machineLinks / toolLinks contract', () => {
+  const filePath = 'public/writeups/hackmyvm/wave.md';
+
+  // Runs the fail-loud assert and returns its message so each test can pin the
+  // filePath / entry index / field / offending value wording.
+  function linksMessage(data: Record<string, unknown>): string {
+    let message = '';
+    let threw = false;
+    try {
+      assertValidWriteupLinks(data, filePath);
+    } catch (error) {
+      threw = true;
+      message = (error as Error).message;
+    }
+    if (!threw) {
+      throw new Error('expected assertValidWriteupLinks to reject the data');
+    }
+    return message;
+  }
+
+  it('accepts absent and null link keys plus empty arrays (a writeup without links stays valid)', () => {
+    expect(() => assertValidWriteupLinks({}, filePath)).not.toThrow();
+    expect(() =>
+      assertValidWriteupLinks({ machineLinks: null, toolLinks: null }, filePath)
+    ).not.toThrow();
+    expect(() =>
+      assertValidWriteupLinks({ machineLinks: [], toolLinks: [] }, filePath)
+    ).not.toThrow();
+  });
+
+  it('accepts a valid machineLinks + toolLinks block with every optional field', () => {
+    expect(() =>
+      assertValidWriteupLinks(
+        {
+          machineLinks: [
+            {
+              title: 'HackMyVM',
+              url: 'https://hackmyvm.eu/machines/show/Wave',
+              badge: 'HMV',
+              type: 'platform',
+            },
+            { title: 'Target IP', url: '10.10.10.10', type: 'ip' },
+          ],
+          toolLinks: [
+            {
+              name: 'linPEAS',
+              url: 'https://github.com/peass-ng/PEASS-ng',
+              description: 'Linux enumeration',
+              developedByAuthor: false,
+              githubStars: '9.5k',
+              badge: 'SH',
+            },
+            { name: 'nmap', url: 'https://nmap.org' },
+          ],
+        },
+        filePath
+      )
+    ).not.toThrow();
+  });
+
+  it('accepts toolLinks githubStars as a number as well as a string', () => {
+    expect(() =>
+      assertValidWriteupLinks(
+        {
+          toolLinks: [
+            { name: 'nmap', url: 'https://nmap.org', githubStars: 9500 },
+            { name: 'ffuf', url: 'https://github.com/ffuf/ffuf', githubStars: '13.2k' },
+          ],
+        },
+        filePath
+      )
+    ).not.toThrow();
+  });
+
+  it('rejects a machineLinks key that is not an array, naming the filePath and the value', () => {
+    const message = linksMessage({ machineLinks: 42 });
+    expect(message).toContain(filePath);
+    expect(message).toContain('machineLinks');
+    expect(message).toContain('expected an array');
+    expect(message).toContain('42');
+  });
+
+  it('rejects a toolLinks key that is not an array', () => {
+    const message = linksMessage({ toolLinks: 'nope' });
+    expect(message).toContain(filePath);
+    expect(message).toContain('toolLinks');
+    expect(message).toContain('"nope"');
+  });
+
+  it('rejects an entry that is not a plain object (array / null)', () => {
+    const message = linksMessage({ machineLinks: [{ title: 'ok', url: 'https://ok' }, null] });
+    expect(message).toContain('#1');
+    expect(message).toContain('plain object');
+    expect(message).toContain('null');
+  });
+
+  it('rejects a machineLinks entry missing the required title (entry index, field, value)', () => {
+    const message = linksMessage({
+      machineLinks: [{ title: 'ok', url: 'https://ok' }, { url: 'https://hackmyvm.eu/x' }],
+    });
+    expect(message).toContain(filePath);
+    expect(message).toContain('#1');
+    expect(message).toContain('title');
+    expect(message).toContain('undefined');
+  });
+
+  it('rejects a toolLinks entry missing the required name', () => {
+    const message = linksMessage({ toolLinks: [{ url: 'https://nmap.org' }] });
+    expect(message).toContain('#0');
+    expect(message).toContain('name');
+  });
+
+  it('rejects an empty-string url even though the field is present', () => {
+    const message = linksMessage({ toolLinks: [{ name: 'nmap', url: '' }] });
+    expect(message).toContain('url');
+    expect(message).toContain('""');
+  });
+
+  it('rejects an invalid machineLinks type and lists exactly the 4 allowed values', () => {
+    const message = linksMessage({
+      machineLinks: [{ title: 'x', url: 'https://x', type: 'web' }],
+    });
+    expect(message).toContain(filePath);
+    expect(message).toContain('type');
+    expect(message).toContain('"web"');
+    expect(message).toContain('"platform"');
+    expect(message).toContain('"download"');
+    expect(message).toContain('"ip"');
+    expect(message).toContain('"cve"');
+  });
+
+  it('rejects a non-boolean developedByAuthor, naming the offending value', () => {
+    const message = linksMessage({
+      toolLinks: [{ name: 'x', url: 'https://x', developedByAuthor: 'yes' }],
+    });
+    expect(message).toContain('developedByAuthor');
+    expect(message).toContain('"yes"');
+  });
+
+  it('rejects wrong types for the remaining optional fields', () => {
+    expect(linksMessage({ machineLinks: [{ title: 'x', url: 'https://x', badge: '' }] })).toContain(
+      'badge'
+    );
+    expect(linksMessage({ toolLinks: [{ name: 'x', url: 'https://x', description: 7 }] })).toContain(
+      'description'
+    );
+    expect(
+      linksMessage({ toolLinks: [{ name: 'x', url: 'https://x', githubStars: true }] })
+    ).toContain('githubStars');
+    expect(linksMessage({ toolLinks: [{ name: 'x', url: 'https://x', badge: {} }] })).toContain(
+      'badge'
+    );
+  });
+
+  it('rejects a required field that is present but not a non-empty string', () => {
+    const numeric = linksMessage({ machineLinks: [{ title: 42, url: 'https://x' }] });
+    expect(numeric).toContain('title');
+    expect(numeric).toContain('42');
+    const whitespace = linksMessage({ toolLinks: [{ name: 'x', url: '   ' }] });
+    expect(whitespace).toContain('url');
+    expect(whitespace).toContain('"   "');
+  });
+
+  it('collects every offending entry and field into one fail-loud error', () => {
+    const message = linksMessage({
+      machineLinks: [{ title: 'ok', url: '' }],
+      toolLinks: 'nope',
+    });
+    expect(message).toContain('machineLinks');
+    expect(message).toContain('toolLinks');
+    expect(message).toContain('url');
+    expect(message).toContain('"nope"');
+  });
+});
+
+describe('generateIndex writeup link sections (writeup-links A1)', () => {
+  it('preserves machineLinks and toolLinks verbatim in the index entry (passthrough pin)', () => {
+    const source = makeTempSource();
+    writeWriteup(source.writeup, 'hackmyvm', 'wave.md', [
+      'title: "Wave"',
+      'date: 2026-01-01',
+      'machineLinks:',
+      '  - title: "HackMyVM"',
+      '    url: "https://hackmyvm.eu/machines/show/Wave"',
+      '    badge: "HMV"',
+      '    type: platform',
+      '  - title: "Target IP"',
+      '    url: "10.10.10.10"',
+      '    type: ip',
+      'toolLinks:',
+      '  - name: "linPEAS"',
+      '    url: "https://github.com/peass-ng/PEASS-ng"',
+      '    description: "Linux enumeration"',
+      '    developedByAuthor: false',
+      '    githubStars: 9500',
+      '    badge: "SH"',
+      '  - name: "nmap"',
+      '    url: "https://nmap.org"',
+    ]);
+
+    const index = generateIndex(source);
+
+    expect(index).toHaveLength(1);
+    expect(index[0].machineLinks).toEqual([
+      {
+        title: 'HackMyVM',
+        url: 'https://hackmyvm.eu/machines/show/Wave',
+        badge: 'HMV',
+        type: 'platform',
+      },
+      { title: 'Target IP', url: '10.10.10.10', type: 'ip' },
+    ]);
+    expect(index[0].toolLinks).toEqual([
+      {
+        name: 'linPEAS',
+        url: 'https://github.com/peass-ng/PEASS-ng',
+        description: 'Linux enumeration',
+        developedByAuthor: false,
+        githubStars: 9500,
+        badge: 'SH',
+      },
+      { name: 'nmap', url: 'https://nmap.org' },
+    ]);
+  });
+
+  it('fails generate-index with the file path when a writeup links block is invalid', () => {
+    const source = makeTempSource();
+    const filePath = writeWriteup(source.writeup, 'hackmyvm', 'bad-links.md', [
+      'title: "Bad Links"',
+      'date: 2026-01-01',
+      'toolLinks:',
+      '  - name: "nmap"',
+      '    url: ""',
+    ]);
+
+    let message = '';
+    try {
+      generateIndex(source);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain(filePath);
+    expect(message).toContain('url');
+    expect(message).toContain('""');
   });
 });
 

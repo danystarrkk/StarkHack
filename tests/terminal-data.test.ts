@@ -183,8 +183,9 @@ const TEMPLATE_ONLY_WRITEUP_FIELDS = [
   'ipAddress',
   'author',
   'readTime',
-  'machineLinks',
-  'toolLinks',
+  // machineLinks / toolLinks are NOT template-only since writeup-links: the
+  // pipeline supplies them and toUiWriteup maps them (rows still carry only
+  // the fields above) — pinned by the adapter tests.
   'steps',
   'userFlag',
   'rootFlag',
@@ -203,7 +204,9 @@ const TEMPLATE_ONLY_PROJECT_FIELDS = [
   'readme',
   'codeSnippet',
   'projectLinks',
-  'toolLinks',
+  // toolLinks is NOT template-only since writeup-links put it on Frontmatter;
+  // toUiProject maps no link keys (rows carry only the fields above) — pinned
+  // by the adapter tests.
 ];
 
 const TEMPLATE_ONLY_CERTIFICATE_FIELDS = [

@@ -1,5 +1,35 @@
 export type ContentKind = 'writeup' | 'project' | 'certificate';
 
+// Writeup link sections (writeup-links): structural mirrors of the validated
+// frontmatter contract — assertValidWriteupLinks (lib/content-kinds.js) is the
+// single source of truth and the pipeline never imports UI types (src/).
+
+/**
+ * One `machineLinks` entry: required non-empty `title` and `url`, optional
+ * `badge` and `type` in the closed platform | download | ip | cve vocabulary —
+ * exactly what assertValidWriteupLinks enforces.
+ */
+export interface MachineLinkFm {
+  title: string;
+  url: string;
+  badge?: string;
+  type?: 'platform' | 'download' | 'ip' | 'cve';
+}
+
+/**
+ * One `toolLinks` entry: required non-empty `name` and `url`, optional string
+ * `description`, boolean `developedByAuthor`, string-or-number `githubStars`
+ * and string `badge` — exactly what assertValidWriteupLinks enforces.
+ */
+export interface ToolLinkFm {
+  name: string;
+  url: string;
+  description?: string;
+  developedByAuthor?: boolean;
+  githubStars?: string | number;
+  badge?: string;
+}
+
 export interface Frontmatter {
   title: string;
   date: string;
@@ -13,6 +43,11 @@ export interface Frontmatter {
   githubUrl?: string; // Projects: optional repository URL, feeds the detail GITHUB REPO link
   level?: 'Easy' | 'Medium' | 'Hard';
   platform?: string; // Often inferred from folder, but can be explicit
+  // Writeup sidebar link sections, human-authored and round-trip verbatim
+  // through the index. Validated fail-loud by assertValidWriteupLinks; absent
+  // keys mean "no links" and nothing is ever auto-populated.
+  machineLinks?: MachineLinkFm[]; // [{title*, url*, badge?, type?}]
+  toolLinks?: ToolLinkFm[]; // [{name*, url*, description?, developedByAuthor?, githubStars?, badge?}]
 }
 
 // One entry of public/index.json, for any content kind. `kind` is required on

@@ -115,6 +115,67 @@ describe('planContentIngestion — writeup happy path', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Link sections round-trip (writeup-links A1): machineLinks / toolLinks from
+// the writeup frontmatter survive the plan untouched — the CLI dumps the
+// planned frontmatter with js-yaml, so nested structures must never be dropped
+// or rewritten ({...data} passthrough pin).
+// ---------------------------------------------------------------------------
+
+describe('planContentIngestion — writeup link sections round-trip (writeup-links A1)', () => {
+  const LINKS_YAML = [
+    ...WAVE_YAML,
+    'machineLinks:',
+    '  - title: "HackMyVM"',
+    '    url: "https://hackmyvm.eu/machines/show/Wave"',
+    '    badge: "HMV"',
+    '    type: platform',
+    '  - title: "Target IP"',
+    '    url: "10.10.10.10"',
+    '    type: ip',
+    'toolLinks:',
+    '  - name: "linPEAS"',
+    '    url: "https://github.com/peass-ng/PEASS-ng"',
+    '    description: "Linux enumeration"',
+    '    developedByAuthor: false',
+    '    githubStars: 9500',
+    '    badge: "SH"',
+    '  - name: "nmap"',
+    '    url: "https://nmap.org"',
+  ];
+
+  it('keeps BOTH machineLinks and toolLinks untouched in the planned frontmatter (deep-equal)', () => {
+    const plan = planContentIngestion('writeup', doc(LINKS_YAML), 'wave.md', []);
+    expect(plan.problems).toEqual([]);
+    expect(plan.frontmatter.machineLinks).toEqual([
+      {
+        title: 'HackMyVM',
+        url: 'https://hackmyvm.eu/machines/show/Wave',
+        badge: 'HMV',
+        type: 'platform',
+      },
+      { title: 'Target IP', url: '10.10.10.10', type: 'ip' },
+    ]);
+    expect(plan.frontmatter.toolLinks).toEqual([
+      {
+        name: 'linPEAS',
+        url: 'https://github.com/peass-ng/PEASS-ng',
+        description: 'Linux enumeration',
+        developedByAuthor: false,
+        githubStars: 9500,
+        badge: 'SH',
+      },
+      { name: 'nmap', url: 'https://nmap.org' },
+    ]);
+  });
+
+  it('never invents link sections for a writeup without them (keys stay absent)', () => {
+    const plan = planContentIngestion('writeup', doc(WAVE_YAML), 'wave.md', []);
+    expect(plan.frontmatter).not.toHaveProperty('machineLinks');
+    expect(plan.frontmatter).not.toHaveProperty('toolLinks');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // level: required for writeups, exactly 'Easy' | 'Medium' | 'Hard'
 // ---------------------------------------------------------------------------
 

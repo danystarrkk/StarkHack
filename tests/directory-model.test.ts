@@ -96,8 +96,9 @@ const TEMPLATE_ONLY_FIELDS = [
   'steps',
   'userFlag',
   'rootFlag',
-  'machineLinks',
-  'toolLinks',
+  // machineLinks / toolLinks are NOT template-only since writeup-links: the
+  // pipeline supplies them and toUiWriteup maps them — pinned by the adapter
+  // tests.
   'markdownContent',
   'author',
   'readTime',

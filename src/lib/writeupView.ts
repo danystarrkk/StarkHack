@@ -11,18 +11,21 @@
 //
 // Honesty rules (pinned by tests/writeup-view.test.ts):
 //   - The body is ALWAYS the real pipeline markdown. Template content
-//     (SAMPLE_WRITEUPS_CONTENT) is only ever a source for machineLinks /
-//     toolLinks — never for the body or the tags.
+//     (SAMPLE_WRITEUPS_CONTENT) is only ever a FALLBACK source for machineLinks
+//     / toolLinks (frontmatter links win when the key is present) — never for
+//     the body or the tags.
 //   - Chips render only fields that really exist on the data. No invented
 //     badges (the old hardcoded "PWNED: ROOT (100%)" is gone for good), no
 //     empty "DIFICULTAD: " / "OS: " chips.
 //   - Absent optional fields (tags, os, difficulty, vulnerabilities, ...) can
 //     NEVER crash the builder (the old tags useMemo spread
 //     `...writeup.vulnerabilities`).
-//   - Links come ONLY from curated template data and stay empty (the page
-//     hides the sections) when it is absent. The template's generated fallback
-//     (getWriteupContent) fabricates IPs, links and star counts and is NEVER
-//     used here.
+//   - Links follow the approved precedence (writeup-links): the writeup's own
+//     frontmatter links win whenever the key is present — an explicit empty
+//     array means "none". Absent keys fall back to the curated template links;
+//     with neither, the lists stay empty (the page hides the sections). The
+//     template's generated fallback (getWriteupContent) fabricates IPs, links
+//     and star counts and is NEVER used here.
 import { extractHeadingsFromMarkdown, type TocHeading } from '../components/MarkdownRenderer';
 import { SAMPLE_WRITEUPS_CONTENT, type RichWriteupData } from '../data/writeupContents';
 import type { MachineLink, ToolLink, Writeup } from '../types';
@@ -49,7 +52,7 @@ export interface WriteupView {
   tags: string[];
   /** Platform chip + optional DIFICULTAD / OS chips. Only fields that exist. */
   chips: WriteupViewChip[];
-  /** Template-curated links only; empty → the section stays hidden. */
+  /** Frontmatter links when the key is present (empty = "none"), else curated template links; empty → the section stays hidden. */
   machineLinks: MachineLink[];
   toolLinks: ToolLink[];
   /** Sections TOC extracted from the real markdown body (anchors match the renderer). */
@@ -58,7 +61,8 @@ export interface WriteupView {
 
 export interface BuildWriteupViewOptions {
   /**
-   * Curated template extras (links are the only thing taken from them).
+   * Curated template extras (links are the only thing taken from them — and
+   * only as the FALLBACK for links whose frontmatter key is absent).
    * `undefined` → looked up by writeup id in SAMPLE_WRITEUPS_CONTENT (curated
    * entries only, never the generated fabrication). `null` → no template data.
    */
@@ -144,8 +148,12 @@ export const buildWriteupView = (
     markdownContent,
     tags: normalizeTags(writeup.tags),
     chips,
-    machineLinks: template?.machineLinks ?? [],
-    toolLinks: template?.toolLinks ?? [],
+    // Link precedence (writeup-links A2): a PRESENT frontmatter key wins even
+    // when it is an explicit empty array ("human said none"); absent keys fall
+    // back to the curated template links; neither → [] (sections stay hidden).
+    // toUiWriteup's conditional-omit keeps "key present" and "defined" aligned.
+    machineLinks: writeup.machineLinks ?? template?.machineLinks ?? [],
+    toolLinks: writeup.toolLinks ?? template?.toolLinks ?? [],
     headings: extractHeadingsFromMarkdown(markdownContent),
   };
 };

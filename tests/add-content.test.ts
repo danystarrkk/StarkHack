@@ -20,8 +20,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildFrontmatterText, formatPlan, parseArgs } from '../scripts/add-content.js';
+import { buildFrontmatterText, buildWriteupLinks, formatPlan, parseArgs } from '../scripts/add-content.js';
 import { planContentIngestion } from '../lib/content-ingest.js';
+import { assertValidWriteupLinks } from '../lib/content-kinds.js';
 import { parseFrontmatter } from '../lib/frontmatter.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -264,6 +265,87 @@ describe('buildFrontmatterText', () => {
 });
 
 // ---------------------------------------------------------------------------
+// buildWriteupLinks: pure answers -> optional machineLinks / toolLinks keys
+// (feature writeup-links). Expectations derive from the helper INPUTS: the
+// assembly echoes answered values and invents nothing — validation belongs to
+// assertValidWriteupLinks, never to the assembly.
+// ---------------------------------------------------------------------------
+
+describe('buildWriteupLinks', () => {
+  it('data carries exactly the answered machine and tool entries (optional empties omitted, developedByAuthor boolean)', () => {
+    const machine = [
+      { title: 'Wave', url: 'https://hackmyvm.eu/machines/machine.php?vm=Wave', badge: '', type: 'platform' },
+      { title: '10.10.10.10', url: '10.10.10.10', badge: ' HMV ', type: '' },
+    ];
+    const tools = [
+      { name: 'nmap', url: 'https://nmap.org', description: '', developedByAuthor: 'n', githubStars: '', badge: '' },
+      {
+        name: 'autorecon-ng',
+        url: 'https://github.com/Tib3rius/AutoRecon',
+        description: '  scanner  ',
+        developedByAuthor: 'y',
+        githubStars: '3.4k',
+        badge: 'Python',
+      },
+    ];
+
+    const links = buildWriteupLinks({ machine, tools });
+
+    // Every kept answer becomes a key with its TRIMMED value; empty optionals
+    // never become keys; the y/N answer becomes an always-present boolean.
+    expect(links).toEqual({
+      machineLinks: [
+        { title: machine[0].title, url: machine[0].url, type: machine[0].type },
+        { title: machine[1].title, url: machine[1].url, badge: 'HMV' },
+      ],
+      toolLinks: [
+        { name: tools[0].name, url: tools[0].url, developedByAuthor: false },
+        {
+          name: tools[1].name,
+          url: tools[1].url,
+          description: 'scanner',
+          developedByAuthor: true,
+          githubStars: tools[1].githubStars,
+          badge: tools[1].badge,
+        },
+      ],
+    });
+
+    // Merged into frontmatter data it carries exactly those objects.
+    const data = { title: 'Wave', ...buildWriteupLinks({ machine, tools }) };
+    expect(data).toEqual({ title: 'Wave', machineLinks: links.machineLinks, toolLinks: links.toolLinks });
+    expect(Object.keys(data)).toEqual(['title', 'machineLinks', 'toolLinks']);
+  });
+
+  it('empty or skipped answers add NO machineLinks / toolLinks keys at all', () => {
+    expect(buildWriteupLinks({})).toEqual({});
+    expect(buildWriteupLinks({ machine: [], tools: [] })).toEqual({});
+    // An empty title/name answer is the end-of-list answer, never an entry.
+    expect(
+      buildWriteupLinks({
+        machine: [{ title: '', url: '', badge: '', type: '' }],
+        tools: [{ name: '', url: '', description: '', developedByAuthor: '', githubStars: '', badge: '' }],
+      }),
+    ).toEqual({});
+
+    const data = { title: 'Wave', ...buildWriteupLinks({}) };
+    expect('machineLinks' in data).toBe(false);
+    expect('toolLinks' in data).toBe(false);
+  });
+
+  it('a skipped/empty optional answer never becomes a key (no empty strings, no nulls)', () => {
+    expect(buildWriteupLinks({ machine: [{ title: 'X', url: 'u', badge: ' ', type: 'skip' }] })).toEqual({
+      machineLinks: [{ title: 'X', url: 'u' }],
+    });
+    expect(
+      buildWriteupLinks({
+        tools: [{ name: 'n', url: 'u', description: ' ', developedByAuthor: '', githubStars: ' ' }],
+      }),
+    ).toEqual({ toolLinks: [{ name: 'n', url: 'u', developedByAuthor: false }] });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // End-to-end dry-run over temp fixtures: exit 0, plan printed, NOTHING created
 // ---------------------------------------------------------------------------
 
@@ -366,5 +448,72 @@ describe('add-content CLI (spawned, non-TTY)', () => {
     const unknown = runCli(['nope', 'x.md']);
     expect(unknown.status).toBe(1);
     expect(unknown.stderr).toContain('unknown content kind');
+  });
+
+  it('an assembled structure missing url surfaces the validator problem and writes nothing (plan problems path)', () => {
+    const dir = makeTempDir('starkhack-add-content-');
+    const imagesDir = makeTempDir('starkhack-add-content-imgs-');
+    // The same answers drive the assembly AND the fixture: an entry whose url
+    // answer came back empty stays assembled WITHOUT a url key (the assembly
+    // never invents values) — assertValidWriteupLinks is the fail-loud gate.
+    const answers = { machine: [{ title: 'Wave', url: '', badge: '', type: '' }] };
+    const links = buildWriteupLinks(answers);
+    expect(links.machineLinks).toEqual([{ title: answers.machine[0].title }]);
+    const data = {
+      title: 'Wave',
+      date: '2026-09-15',
+      description: 'Writeup de la máquina Wave.',
+      categories: ['zztest'],
+      level: 'Medium',
+      tags: ['File Upload'],
+      ...links,
+    };
+    const mdPath = path.join(dir, `${FIXTURE}.md`);
+    fs.writeFileSync(mdPath, buildFrontmatterText(data) + 'Evidencia:\n\n[[01.png]]\n');
+    const mdBefore = fs.readFileSync(mdPath, 'utf8');
+    writeFakePng(imagesDir, '01.png');
+
+    // The expected problem wording comes from the validator itself over the
+    // same assembled structure — never from hardcoded current wording.
+    let expectedProblem = '';
+    try {
+      assertValidWriteupLinks(data, `${FIXTURE}.md`);
+    } catch (error) {
+      expectedProblem = error instanceof Error ? error.message : String(error);
+    }
+    expect(expectedProblem).not.toBe('');
+    expect(expectedProblem).toContain('url');
+
+    // --dry-run exercises the identical plan-problems gate that precedes
+    // every write (pinned above: problems -> exit 1 and nothing written).
+    const result = runCli(['writeup', mdPath, '--images', imagesDir, '--dry-run']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(expectedProblem);
+    expect(result.stdout).toContain(expectedProblem);
+    expect(result.stdout).toContain('problems (');
+    // Fail-loud: nothing written anywhere.
+    expect(fs.existsSync(targetDir)).toBe(false);
+    expect(fs.readFileSync(mdPath, 'utf8')).toBe(mdBefore);
+  });
+
+  it('non-TTY writeup runs show NO links prompts and carry no links keys', () => {
+    const dir = makeTempDir('starkhack-add-content-');
+    const imagesDir = makeTempDir('starkhack-add-content-imgs-');
+    const mdPath = writeMarkdown(dir, `${FIXTURE}.md`, writeupYaml, 'Evidencia:\n\n[[01.png]]\n');
+    writeFakePng(imagesDir, '01.png');
+    const incomplete = writeMarkdown(dir, 'add-content-e2e-incomplete.md', ['level: Easy', 'categories:', '  - zztest']);
+
+    const dryRun = runCli(['writeup', mdPath, '--images', imagesDir, '--dry-run']);
+    const nonTty = runCli(['writeup', incomplete, '--images', imagesDir]);
+
+    expect(dryRun.status).toBe(0);
+    expect(nonTty.status).toBe(1);
+    for (const result of [dryRun, nonTty]) {
+      const out = result.stdout + result.stderr;
+      expect(out).not.toContain('machineLinks');
+      expect(out).not.toContain('toolLinks');
+    }
+    expect(fs.existsSync(targetDir)).toBe(false);
   });
 });

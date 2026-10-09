@@ -32,7 +32,9 @@
  *
  * El núcleo testeable vive junto a un main() protegido por el guard de
  * import.meta.url (mismo patrón que scripts/generate-index.js exporta
- * generateIndex/runCli): parseArgs, formatPlan y buildFrontmatterText.
+ * generateIndex/runCli): parseArgs, formatPlan, buildFrontmatterText y
+ * buildWriteupLinks (el paso opcional de enlaces del writeup, feature
+ * writeup-links: TTY solamente, sin claves en non-TTY / --dry-run).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,7 +44,7 @@ import { fileURLToPath } from 'node:url';
 import { dump } from 'js-yaml';
 import { parseFrontmatter } from '../lib/frontmatter.js';
 import { WRITEUP_LEVELS, planContentIngestion } from '../lib/content-ingest.js';
-import { KINDS, missingFields } from '../lib/content-kinds.js';
+import { KINDS, assertValidWriteupLinks, missingFields } from '../lib/content-kinds.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,6 +169,76 @@ export function buildFrontmatterText(data) {
 }
 
 /**
+ * Assemble the optional `machineLinks` / `toolLinks` frontmatter keys from the
+ * raw answers of the interactive writeup links step (feature writeup-links).
+ *
+ * Pure: same answers -> same object, inputs untouched, no I/O. The contract
+ * mirrors the prompts:
+ *   - an empty `title` / `name` answer is the END-OF-LIST answer, never an
+ *     entry (a finished list with zero entries produces NO key at all);
+ *   - optional answers that came back empty are OMITTED — no empty-string keys,
+ *     no nulls — and a `type` answer of 'skip' counts as empty (the skip
+ *     choice writes nothing);
+ *   - `developedByAuthor` is the y/N answer normalized to a boolean that is
+ *     ALWAYS present (default N -> false).
+ * Required answers (`title`/`name`, `url`) that came back empty simply do not
+ * become keys: the assembly never invents values and never rejects answers —
+ * `assertValidWriteupLinks` (lib/content-kinds.js) is the fail-loud gate over
+ * the result.
+ *
+ * @param {{ machine?: Array<Record<string, unknown>>, tools?: Array<Record<string, unknown>> }} answers
+ *   raw prompt answers per section
+ * @returns {{machineLinks?: Array<Record<string, unknown>>, toolLinks?: Array<Record<string, unknown>>}}
+ *   the keys to merge into the frontmatter data (never empty/null fields)
+ */
+export function buildWriteupLinks(answers) {
+  const text = (value) => (typeof value === 'string' ? value.trim() : '');
+
+  /** @type {{machineLinks?: Array<Record<string, unknown>>, toolLinks?: Array<Record<string, unknown>>}} */
+  const links = {};
+
+  /** @type {Array<Record<string, unknown>>} */
+  const machineLinks = [];
+  for (const entry of answers?.machine ?? []) {
+    const title = text(entry?.title);
+    if (title === '') continue; // empty title = end of list, never an entry
+    /** @type {Record<string, unknown>} */
+    const item = { title };
+    const url = text(entry?.url);
+    if (url !== '') item.url = url;
+    const badge = text(entry?.badge);
+    if (badge !== '') item.badge = badge;
+    const type = text(entry?.type);
+    if (type !== '' && type !== 'skip') item.type = type;
+    machineLinks.push(item);
+  }
+  if (machineLinks.length > 0) links.machineLinks = machineLinks;
+
+  /** @type {Array<Record<string, unknown>>} */
+  const toolLinks = [];
+  for (const entry of answers?.tools ?? []) {
+    const name = text(entry?.name);
+    if (name === '') continue; // empty name = end of list, never an entry
+    /** @type {Record<string, unknown>} */
+    const item = { name };
+    const url = text(entry?.url);
+    if (url !== '') item.url = url;
+    const description = text(entry?.description);
+    if (description !== '') item.description = description;
+    item.developedByAuthor =
+      entry?.developedByAuthor === true || text(entry?.developedByAuthor).toLowerCase() === 'y';
+    const githubStars = text(entry?.githubStars);
+    if (githubStars !== '') item.githubStars = githubStars;
+    const badge = text(entry?.badge);
+    if (badge !== '') item.badge = badge;
+    toolLinks.push(item);
+  }
+  if (toolLinks.length > 0) links.toolLinks = toolLinks;
+
+  return links;
+}
+
+/**
  * Render the full dry-run plan: source path, derived paths, files to create,
  * the image mapping table (source → planned target, cover flagged), the
  * resulting frontmatter and every problem VERBATIM.
@@ -271,6 +343,77 @@ async function askInteger(rl, field) {
     console.log(`  ${field} must be an integer`);
   }
   throw new Error(`no valid ${field} after ${MAX_ATTEMPTS} attempts`);
+}
+
+// Sí/no con default N (vacío = N): mismo tope de reintentos que askChoice.
+async function askYesNo(rl, label) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const answer = (await rl.question(`${label} [y/N]: `)).trim().toLowerCase();
+    if (answer === '' || answer === 'n') return false;
+    if (answer === 'y') return true;
+    console.log(`  ${label} must be y or n`);
+  }
+  throw new Error(`no valid ${label} after ${MAX_ATTEMPTS} attempts`);
+}
+
+// Texto OBLIGATORIO: un vacío se reintenta (tope) — nunca acepta vacío.
+async function askRequired(rl, label) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const answer = await askText(rl, `${label}: `);
+    if (answer !== '') return answer;
+    console.log(`  ${label} is required`);
+  }
+  throw new Error(`no valid ${label} after ${MAX_ATTEMPTS} attempts`);
+}
+
+// Elección cerrada OPCIONAL (feature writeup-links): vacío o 'skip' →
+// undefined (campo omitido). El vocabulario sigue siendo EXACTO, como askChoice.
+async function askOptionalChoice(rl, field, choices) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const answer = (await rl.question(`${field} (${choices.join(' | ')} | skip): `)).trim();
+    if (answer === '' || answer === 'skip') return undefined;
+    if (choices.includes(answer)) return answer;
+    console.log(`  ${field} must be exactly one of: ${choices.join(', ')}`);
+  }
+  throw new Error(`no valid ${field} after ${MAX_ATTEMPTS} attempts`);
+}
+
+// Vocabulario cerrado de `machineLinks[].type`: el MISMO que valida
+// assertValidWriteupLinks (lib/content-kinds.js). 'skip' no es un valor, es la
+// respuesta que omite el campo (T1.1).
+const MACHINE_LINK_TYPES = ['platform', 'download', 'ip', 'cve'];
+
+// Entradas de machineLinks: un `title` vacío termina la lista (T1.1). El
+// ensamblado final lo hace buildWriteupLinks (puro, exportado y testeado).
+async function promptMachineLinks(rl) {
+  const entries = [];
+  for (;;) {
+    const title = await askText(rl, 'machine link title (empty to finish): ');
+    if (title === '') return entries;
+    entries.push({
+      title,
+      url: await askRequired(rl, 'machine link url'),
+      badge: await askText(rl, 'machine link badge (optional): '),
+      type: await askOptionalChoice(rl, 'machine link type', MACHINE_LINK_TYPES),
+    });
+  }
+}
+
+// Entradas de toolLinks: misma forma de bucle (T1.2).
+async function promptToolLinks(rl) {
+  const entries = [];
+  for (;;) {
+    const name = await askText(rl, 'tool link name (empty to finish): ');
+    if (name === '') return entries;
+    entries.push({
+      name,
+      url: await askRequired(rl, 'tool link url'),
+      description: await askText(rl, 'tool link description (optional): '),
+      developedByAuthor: await askYesNo(rl, 'developedByAuthor?'),
+      githubStars: await askText(rl, 'tool link githubStars (optional): '),
+      badge: await askText(rl, 'tool link badge (optional): '),
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -431,6 +574,43 @@ export async function main(argv = process.argv.slice(2)) {
         rl.close();
       }
       rebuild(buildFrontmatterText(data) + body);
+    }
+  }
+
+  // Enlaces opcionales del writeup (feature writeup-links, T1): SOLO writeup en
+  // TTY y sin --dry-run — non-TTY / --dry-run / certificate / project no ven
+  // prompts ni claves nuevas (T1.5, comportamiento actual intacto). Cada puerta
+  // es [y/N] con default N; una lista sin entradas no escribe clave alguna.
+  if (args.kind === 'writeup' && process.stdout.isTTY && !args.dryRun) {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    try {
+      const answers = {};
+      if (await askYesNo(rl, 'add machineLinks?')) {
+        answers.machine = await promptMachineLinks(rl);
+      }
+      if (await askYesNo(rl, 'add toolLinks?')) {
+        answers.tools = await promptToolLinks(rl);
+      }
+      const links = buildWriteupLinks(answers);
+      if (Object.keys(links).length > 0) {
+        data = { ...data, ...links };
+        rebuild(buildFrontmatterText(data) + body);
+      }
+    } finally {
+      rl.close();
+    }
+  }
+
+  // Contrato de enlaces del writeup (T1.4): TODO machineLinks/toolLinks que se
+  // vaya a escribir — salido del paso anterior o ya presente en el frontmatter
+  // fuente — pasa por assertValidWriteupLinks antes de escribir; sus problemas
+  // se suman VERBATIM a los del plan (fail-loud: nada se escribe y el wording
+  // del validador se conserva intacto).
+  if (args.kind === 'writeup') {
+    try {
+      assertValidWriteupLinks(data, sourceFileName);
+    } catch (error) {
+      plan.problems.push(...(error instanceof Error ? error.message : String(error)).split('\n'));
     }
   }
 

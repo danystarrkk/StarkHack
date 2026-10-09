@@ -37,6 +37,33 @@ const BARE_ENTRY: WriteupIndexItem = {
   path: '/writeups/hackthebox/bare.md',
 };
 
+// Real-shaped writeup link sections (writeup-links): optional frontmatter keys
+// in exactly the shape assertValidWriteupLinks validates and the generator
+// passes through verbatim.
+const WAVE_LINKS: {
+  machineLinks: NonNullable<WriteupIndexItem['machineLinks']>;
+  toolLinks: NonNullable<WriteupIndexItem['toolLinks']>;
+} = {
+  machineLinks: [
+    {
+      title: 'HackMyVM // Wave (Perfil Oficial)',
+      url: 'https://hackmyvm.eu/machines/machine.php?vm=Wave',
+      badge: 'PERFIL OFICIAL',
+      type: 'platform',
+    },
+    { title: 'Descarga de la máquina', url: 'https://example.test/wave.zip', type: 'download' },
+  ],
+  toolLinks: [
+    {
+      name: 'stark-jwt-forge',
+      url: 'https://github.com/danystarrkk/stark-jwt-forge',
+      description: 'Forja de tokens JWT.',
+      developedByAuthor: true,
+      githubStars: '142 ★',
+    },
+  ],
+};
+
 const PROJECT_ENTRY: ContentIndexItem = {
   kind: 'project',
   slug: 'autorecon-ng',
@@ -91,8 +118,9 @@ const WRITEUP_TEMPLATE_ONLY_FIELDS = [
   'steps',
   'userFlag',
   'rootFlag',
-  'machineLinks',
-  'toolLinks',
+  // machineLinks / toolLinks are NOT template-only since writeup-links: the
+  // pipeline supplies them (Frontmatter, validated by assertValidWriteupLinks)
+  // and toUiWriteup maps them — pinned by their own conditional-omit tests.
   'markdownContent',
   'author',
   'readTime',
@@ -109,10 +137,12 @@ const PROJECT_TEMPLATE_ONLY_FIELDS = [
   'releaseVersion',
   // githubUrl is NOT template-only: the pipeline really supplies it
   // (Frontmatter.githubUrl). It is pinned by its own conditional-omit tests.
+  // machineLinks / toolLinks are NOT template-only either since writeup-links
+  // put them on Frontmatter; toUiProject maps neither link key (its exact-shape
+  // test above pins its field set) — toUiWriteup maps them for writeups.
   'readme',
   'codeSnippet',
   'projectLinks',
-  'toolLinks',
 ];
 
 // Template-only fields plus the model-layer `category` label: none may appear
@@ -189,6 +219,30 @@ describe('toUiWriteup', () => {
     expect(ui).not.toHaveProperty('summary');
     expect(ui).not.toHaveProperty('tags');
     expect(ui).not.toHaveProperty('image');
+  });
+
+  it('maps machineLinks / toolLinks from the frontmatter verbatim (deep-equal)', () => {
+    const ui = toUiWriteup({ ...WAVE_ENTRY, ...WAVE_LINKS });
+    expect(ui.machineLinks).toEqual(WAVE_LINKS.machineLinks);
+    expect(ui.toolLinks).toEqual(WAVE_LINKS.toolLinks);
+  });
+
+  it('omits machineLinks / toolLinks entirely (no key at all) when the entry has none', () => {
+    const ui = toUiWriteup(BARE_ENTRY);
+    expect(ui).not.toHaveProperty('machineLinks');
+    expect(ui).not.toHaveProperty('toolLinks');
+  });
+
+  it('maps an explicit empty links array as an empty list (the key IS present)', () => {
+    const ui = toUiWriteup({ ...BARE_ENTRY, machineLinks: [], toolLinks: [] });
+    expect(ui.machineLinks).toEqual([]);
+    expect(ui.toolLinks).toEqual([]);
+  });
+
+  it('keeps toolLinks untouched even when githubStars is numeric (validated: string or number)', () => {
+    const toolLinks = [{ name: 'ffuf', url: 'https://github.com/ffuf/ffuf', githubStars: 12400 }];
+    const ui = toUiWriteup({ ...BARE_ENTRY, toolLinks });
+    expect(ui.toolLinks).toEqual(toolLinks);
   });
 
   it('derives iconType deterministically from platform (documented map)', () => {

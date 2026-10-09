@@ -23,7 +23,7 @@
 //   'automatizaciones' → 'scan'
 //   missing/unknown group → 'shield'
 import type { ContentIndexItem, WriteupIndexItem } from '../../types';
-import type { Certification, Project, Writeup } from '../types';
+import type { Certification, Project, ToolLink, Writeup } from '../types';
 
 const WRITEUP_ICON_BY_PLATFORM: Readonly<Record<string, Writeup['iconType']>> = Object.freeze({
   hackmyvm: 'wave',
@@ -63,10 +63,13 @@ const FALLBACK_PROJECT_ICON: Project['iconType'] = 'shield';
  *
  * Mapped (real pipeline data): slug→id, title→title, description→summary,
  * date→releaseDate, platform→platformId (lowercased) + derived iconType,
- * tags→tags. The cover (`image`) is derived from the pipeline `level` via
+ * tags→tags, machineLinks→machineLinks and toolLinks→toolLinks (the validated
+ * frontmatter link sections, passed through VERBATIM). The cover (`image`) is
+ * derived from the pipeline `level` via
  * the documented level→cover map; entries without a level fall back to the
  * real per-writeup `image:` cover; entries with neither carry no image at
- * all (never invented).
+ * all (never invented). Optional fields (including the link sections) are
+ * omitted entirely when absent — conditional-omit, never defaulted.
  */
 export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
   id: item.slug,
@@ -76,6 +79,14 @@ export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
   ...(item.description !== undefined ? { summary: item.description } : {}),
   ...(item.date !== undefined ? { releaseDate: item.date } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
+  ...(item.machineLinks !== undefined ? { machineLinks: item.machineLinks } : {}),
+  // Boundary note (writeup-links A2): validated `toolLinks` mirror the
+  // frontmatter contract (assertValidWriteupLinks), where `githubStars` may be
+  // a string OR a number, while the UI ToolLink types it `string` (display
+  // label). Values pass through VERBATIM (WriteupPage renders either), so this
+  // passthrough carries one documented cast; widening src/types/index.ts is
+  // outside this task's edit surfaces.
+  ...(item.toolLinks !== undefined ? { toolLinks: item.toolLinks as ToolLink[] } : {}),
   ...(() => {
     const levelCover =
       item.level !== undefined
