@@ -141,7 +141,7 @@ export interface Certification {
   // Absent when the group is missing or non-canonical — never an invented
   // category. The legacy template values below stay in the union only for the
   // old mock data; the pipeline never produces them.
-  category?: 'UNIVERSIDAD' | 'HACK4U' | 'CISCO' | 'UDEMY' | 'OFFSEC';
+  category?: 'UNIVERSIDAD' | 'HACK4U' | 'CISCO' | 'HACKER-MENTOR' | 'UDEMY' | 'OFFSEC';
   // Real pipeline fields (frontmatter), present only when the source supplies
   // them — never filled with placeholders.
   description?: string;

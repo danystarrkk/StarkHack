@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { formatList, formatPlan, parseArgs } from '../scripts/registry.js';
+import { applyMode, formatList, formatPlan, parseArgs } from '../scripts/registry.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI_PATH = path.join(REPO_ROOT, 'scripts', 'registry.js');
@@ -144,6 +144,53 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['tag', 'Exposure', 'extra'])).toThrow(/unexpected argument: "extra"/);
     expect(() => parseArgs(['group', 'oscp', '--kind', 'project', 'extra'])).toThrow(/unexpected argument/);
   });
+
+  it('parses `--yes` on any operation: for automation, it implies the y/N confirmation', () => {
+    expect(parseArgs(['group', 'oscp', '--kind', 'certificate', '--yes'])).toEqual({
+      op: 'group',
+      slug: 'oscp',
+      kind: 'certificate',
+      dryRun: false,
+      yes: true,
+    });
+    expect(parseArgs(['tag', 'Exposure', '--yes']).yes).toBe(true);
+    // Absent stays absent — the no-TTY behaviour without --yes is unchanged.
+    expect(parseArgs(['tag', 'Exposure']).yes).toBeUndefined();
+  });
+
+  it('parses `group --icon <i>` for project groups only', () => {
+    expect(parseArgs(['group', 'oscp', '--kind', 'project', '--icon', 'gear'])).toEqual({
+      op: 'group',
+      slug: 'oscp',
+      kind: 'project',
+      icon: 'gear',
+      dryRun: false,
+    });
+    expect(() => parseArgs(['group', 'oscp', '--kind', 'certificate', '--icon', 'gear'])).toThrow(
+      /--icon is only valid for --kind project/
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyMode: the pure write gate (--dry-run > --yes > TTY confirmation)
+// ---------------------------------------------------------------------------
+
+describe('applyMode — the headless write gate', () => {
+  it('--dry-run always wins: prints and exits 0, nothing written', () => {
+    expect(applyMode({ dryRun: true, yes: false, isTTY: false })).toBe('dry-run');
+    expect(applyMode({ dryRun: true, yes: true, isTTY: true })).toBe('dry-run');
+  });
+
+  it('--yes permits applying WITHOUT a TTY (for automation: implies the y/N confirmation)', () => {
+    expect(applyMode({ dryRun: false, yes: true, isTTY: false })).toBe('apply');
+    expect(applyMode({ dryRun: false, yes: true, isTTY: true })).toBe('apply');
+  });
+
+  it('without --yes the behaviour is exactly as today: confirm on a TTY, refuse headless', () => {
+    expect(applyMode({ dryRun: false, yes: false, isTTY: true })).toBe('confirm');
+    expect(applyMode({ dryRun: false, yes: false, isTTY: false })).toBe('refuse');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -253,6 +300,78 @@ describe('formatPlan', () => {
     expect(rows).toEqual(['    + "Exposure",']);
   });
 
+  it('renders `+ <line>` previews ONLY for the rewritten bytes (tag count/intersection rewrites)', () => {
+    // A tag plan now rewrites several regions of the pin: the inserted entry,
+    // the count pin and the intersection literal. The preview shows exactly
+    // those three new lines — never the unchanged lines between them.
+    const before = [
+      'const APPROVED_TAGS = [',
+      "  'Alpha',",
+      "  'Gamma',",
+      '];',
+      "const APPROVED_PROJECT_TAGS = ['Beta'];",
+      'expect(TAGS).toHaveLength(2);',
+      'expect(valuesInCommon(TAGS, PROJECT_TAGS)).toEqual([]);',
+      '',
+    ].join('\n');
+    const after = [
+      'const APPROVED_TAGS = [',
+      "  'Alpha',",
+      "  'Beta',",
+      "  'Gamma',",
+      '];',
+      "const APPROVED_PROJECT_TAGS = ['Beta'];",
+      'expect(TAGS).toHaveLength(3);',
+      "expect(valuesInCommon(TAGS, PROJECT_TAGS)).toEqual(['Beta']);",
+      '',
+    ].join('\n');
+    const result = {
+      plan: {
+        problems: [],
+        files: [{ name: 'tests/taxonomy.test.ts', source: after }],
+        notes: [],
+      },
+      sources: { 'tests/taxonomy.test.ts': before },
+    };
+    const out = formatPlan(result, identity);
+    const rows = out.split('\n').filter((line) => line.trimStart().startsWith('+ '));
+    expect(rows).toEqual([
+      "    + 'Beta',",
+      '    + expect(TAGS).toHaveLength(3);',
+      "    + expect(valuesInCommon(TAGS, PROJECT_TAGS)).toEqual(['Beta']);",
+    ]);
+  });
+
+  it('renders the `+ <line>` previews for the project icon map entry and its pin line', () => {
+    const beforeAdapter = "const PROJECT_ICON_BY_GROUP = Object.freeze({\n  scripts: 'code',\n});\n";
+    const afterAdapter =
+      "const PROJECT_ICON_BY_GROUP = Object.freeze({\n  scripts: 'code',\n  'oscp-labs': 'gear',\n});\n";
+    const anchor = '    // Missing or unknown group → documented fallback.';
+    const afterPin =
+      "    expect(toUiProject({ ...BARE_PROJECT_ENTRY, group: 'oscp-labs' }, 1).iconType).toBe('gear');\n" +
+      `${anchor}\n`;
+    const result = {
+      plan: {
+        problems: [],
+        files: [
+          { name: 'src/lib/contentAdapter.ts', source: afterAdapter },
+          { name: 'tests/ui-content-adapter.test.ts', source: afterPin },
+        ],
+        notes: [],
+      },
+      sources: {
+        'src/lib/contentAdapter.ts': beforeAdapter,
+        'tests/ui-content-adapter.test.ts': `${anchor}\n`,
+      },
+    };
+    const out = formatPlan(result, { op: 'group', kind: 'project', slug: 'oscp-labs', icon: 'gear' });
+    const rows = out.split('\n').filter((line) => line.trimStart().startsWith('+ '));
+    expect(rows).toEqual([
+      "    + 'oscp-labs': 'gear',",
+      "    + expect(toUiProject({ ...BARE_PROJECT_ENTRY, group: 'oscp-labs' }, 1).iconType).toBe('gear');",
+    ]);
+  });
+
   it('renders the exact inserted token for an inline list splice (group lists)', () => {
     // The group lists are inline (`['a', 'scripts']`): the splice is a token,
     // not a line. 'scripting' shares a prefix with its neighbour 'scripts'.
@@ -275,6 +394,24 @@ describe('formatPlan', () => {
 
     const rows = out.split('\n').filter((line) => line.trimStart().startsWith('+ '));
     expect(rows).toEqual(["    + 'scripting'"]);
+  });
+
+  it('renders the no-op plan: zero files plus the `already wired` note, never the blocked line', () => {
+    const result = {
+      plan: {
+        problems: [],
+        files: [],
+        notes: ['already wired'],
+        label: 'HACKER-MENTOR',
+      },
+      sources: {},
+    };
+    const out = formatPlan(result, { op: 'group', kind: 'certificate', slug: 'hacker-mentor' });
+
+    expect(out).toContain('label: HACKER-MENTOR');
+    expect(out).toContain('(none — nothing to do)');
+    expect(out).toContain('already wired');
+    expect(out).not.toContain('problems below block the plan');
   });
 
   it('is byte-identical across two calls (no timestamps, no randomness)', () => {
@@ -395,6 +532,11 @@ describe('registry CLI (spawned, non-TTY)', () => {
     expect(result.stdout).toContain('=== registry plan ===');
     expect(result.stdout).toContain('lib/taxonomy.js');
     expect(result.stdout).toContain('tests/taxonomy.test.ts');
+    // The plan also rewrites the count pin to the NEW list length (T1) — the
+    // number derived from the real pin, never a fixed one.
+    const pin = fs.readFileSync(path.join(REPO_ROOT, 'tests', 'taxonomy.test.ts'), 'utf8');
+    const count = Number(/expect\(TAGS\)\.toHaveLength\((\d+)\)/.exec(pin)![1]);
+    expect(result.stdout).toContain(`+ expect(TAGS).toHaveLength(${count + 1});`);
     expect(result.stdout).toContain('Dry run: nothing written.');
     expect(gitStatus()).toBe(before);
   });
@@ -419,6 +561,53 @@ describe('registry CLI (spawned, non-TTY)', () => {
     expect(gitStatus()).toBe(before);
   });
 
+  it('`group ... --dry-run` prints the FULL plan (vocabulary + UI wiring) and writes nothing', () => {
+    const before = gitStatus();
+    const result = runCli(['group', 'zz-wiring-probe', '--kind', 'certificate', '--dry-run']);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('=== registry plan ===');
+    // The two vocabulary files…
+    expect(result.stdout).toContain('lib/content-kinds.js');
+    expect(result.stdout).toContain('tests/taxonomy.test.ts');
+    // …plus every UI wiring target (zero pending work).
+    expect(result.stdout).toContain('src/types/index.ts');
+    expect(result.stdout).toContain('src/lib/certificationsModel.ts');
+    expect(result.stdout).toContain('src/components/CertificationsScreen.tsx');
+    expect(result.stdout).toContain('tests/certifications-model.test.ts');
+    expect(result.stdout).toContain('tests/content-kinds-api.test.ts');
+    expect(result.stdout).toContain('Dry run: nothing written.');
+    expect(gitStatus()).toBe(before);
+  });
+
+  it('`group … --icon` plan lists the icon map and its pin files (and no deferred note)', () => {
+    const before = gitStatus();
+    const result = runCli(['group', 'zz-icon-probe', '--kind', 'project', '--icon', 'gear', '--dry-run']);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('src/lib/contentAdapter.ts');
+    expect(result.stdout).toContain('tests/ui-content-adapter.test.ts');
+    // The exact inserted lines, quoted key for the hyphen slug included.
+    expect(result.stdout).toContain("'zz-icon-probe': 'gear',");
+    expect(result.stdout).toContain(
+      "expect(toUiProject({ ...BARE_PROJECT_ENTRY, group: 'zz-icon-probe' }, 1).iconType).toBe('gear');"
+    );
+    // The old "deferred" note is gone entirely.
+    expect(result.stdout).not.toContain('deferred');
+    expect(result.stdout).toContain('Dry run: nothing written.');
+    expect(gitStatus()).toBe(before);
+  });
+
+  it('`group` without --dry-run/--yes still exits 1 headless and writes nothing', () => {
+    const before = gitStatus();
+    const result = runCli(['group', 'zz-wiring-probe', '--kind', 'certificate']);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('=== registry plan ===');
+    expect(result.stderr).toMatch(/TTY/);
+    expect(gitStatus()).toBe(before);
+  });
+
   it('no arguments exits 1 printing the usage with the four commands', () => {
     const result = runCli([]);
     expect(result.status).toBe(1);
@@ -427,5 +616,8 @@ describe('registry CLI (spawned, non-TTY)', () => {
     expect(result.stderr).toContain('node scripts/registry.js platform');
     expect(result.stderr).toContain('node scripts/registry.js tag');
     expect(result.stderr).toContain('node scripts/registry.js group');
+    // The usage documents what 'group' writes — including the project icon
+    // map when --icon is given.
+    expect(result.stderr).toContain('the project icon map');
   });
 });

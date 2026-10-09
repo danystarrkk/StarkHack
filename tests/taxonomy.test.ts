@@ -220,7 +220,7 @@ const APPROVED_CERTIFICATE_TAGS = [
 ];
 
 const APPROVED_PROJECT_GROUPS = ['scripts', 'automatizaciones', 'herramientas'];
-const APPROVED_CERTIFICATE_GROUPS = ['universidad', 'hack4u', 'cisco'];
+const APPROVED_CERTIFICATE_GROUPS = ['universidad', 'hack4u', 'cisco', 'hacker-mentor'];
 
 const NEW_LISTS: Array<[string, readonly string[]]> = [
   ['PROJECT_TAGS', PROJECT_TAGS],

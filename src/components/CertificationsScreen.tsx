@@ -436,6 +436,20 @@ export const CertificationsScreen: React.FC = () => {
             <span className="h-2 w-2 rounded-full bg-[#e6b450] shadow-[0_0_6px_#e6b450]" />
             <span>CISCO</span>
           </button>
+
+          {/* Button: HACKER-MENTOR (canonical group; the template's UDEMY category has
+              no pipeline source and is simply gone) */}
+          <button
+            onClick={() => setActiveFilter('HACKER-MENTOR')}
+            className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
+              activeFilter === 'HACKER-MENTOR'
+                ? 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]'
+                : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
+            }`}
+          >
+            <span className="h-2 w-2 rounded-full bg-[#e6b450] shadow-[0_0_6px_#e6b450]" />
+            <span>HACKER-MENTOR</span>
+          </button>
         </div>
 
         {/* Right count */}

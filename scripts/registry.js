@@ -44,7 +44,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { auditGroupUi, planGroupAddition, planPlatformAddition, planTagAddition } from '../lib/registry.js';
+import { auditGroupUi, planGroupAddition, planGroupWiring, planPlatformAddition, planTagAddition } from '../lib/registry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,15 +52,18 @@ const REPO_ROOT = path.join(__dirname, '..');
 
 const USAGE = `Usage:
   node scripts/registry.js list
-  node scripts/registry.js platform <name> [--icon <wave|server|network|database|bug>] [--dry-run]
-  node scripts/registry.js tag <tag> [--kind writeup|project|certificate] [--dry-run]
-  node scripts/registry.js group <slug> --kind project|certificate [--label <LABEL>] [--dry-run]
+  node scripts/registry.js platform <name> [--icon <wave|server|network|database|bug>] [--dry-run] [--yes]
+  node scripts/registry.js tag <tag> [--kind writeup|project|certificate] [--dry-run] [--yes]
+  node scripts/registry.js group <slug> --kind project|certificate [--label <LABEL>] [--icon <code|gear|kernel|scan|shield>] [--dry-run] [--yes]
 
 Notes:
-  Every addition writes the implementation AND its approval pin in ONE step.
+  Every addition writes the implementation AND its approval pin in ONE step;
+  'group' also writes the UI wiring (types, model, filter button, test pins)
+  and, with --icon for project groups, the project icon map (PROJECT_ICON_BY_GROUP) and its pin.
   --icon is required without a TTY (in a terminal it is prompted with the closed vocabulary).
   --dry-run prints the full plan and writes nothing (works headless).
-  Without a TTY the plan prints and the run exits 1 (never hangs, never writes).
+  --yes: for automation: implies the y/N confirmation (applies without a TTY).
+  Without --yes and without a TTY the plan prints and the run exits 1 (never hangs, never writes).
   'list' is read-only and works headless.`;
 
 /** Error de uso del CLI: siempre se acompaña del texto de USAGE. */
@@ -81,7 +84,7 @@ const OP_FLAGS = Object.freeze({
   list: [],
   platform: ['--icon'],
   tag: ['--kind'],
-  group: ['--kind', '--label'],
+  group: ['--kind', '--label', '--icon'],
 });
 
 // Kinds aceptados por --kind según operación (los grupos solo project/certificate).
@@ -100,9 +103,12 @@ const OP_KINDS = Object.freeze({
  * scripts/add-content.js message style. Defaults applied here: `tag --kind` →
  * `writeup`. An omitted `platform --icon` is intentionally NOT an error: it is
  * prompted with the closed vocabulary in a TTY and required without one.
+ * `--yes` (any operation) is the automation switch: it implies the y/N
+ * confirmation and permits applying WITHOUT a TTY; `group --icon` is valid for
+ * project groups only.
  *
  * @param {string[]} argv arguments after the script name, e.g. process.argv.slice(2)
- * @returns {{ op: string, dryRun: boolean, name?: string, icon?: string,
+ * @returns {{ op: string, dryRun: boolean, yes?: boolean, name?: string, icon?: string,
  *   tag?: string, kind?: string, slug?: string, label?: string }}
  */
 export function parseArgs(argv) {
@@ -142,6 +148,10 @@ export function parseArgs(argv) {
       args.dryRun = true;
       continue;
     }
+    if (token === '--yes') {
+      args.yes = true;
+      continue;
+    }
     if (!token.startsWith('--')) throw new UsageError(`unexpected argument: ${JSON.stringify(token)}`);
     if (!Object.prototype.hasOwnProperty.call(FLAG_KEYS, token)) {
       throw new UsageError(`unknown option: ${token}`);
@@ -167,7 +177,26 @@ export function parseArgs(argv) {
       throw new UsageError(`invalid --kind value: ${JSON.stringify(args.kind)} (expected one of ${listed})`);
     }
   }
+  if (op === 'group' && args.icon !== undefined && args.kind !== 'project') {
+    throw new UsageError('option --icon is only valid for --kind project (the icon map is project-only)');
+  }
   return args;
+}
+
+/**
+ * The pure write gate of main(): what to do AFTER a clean plan was printed.
+ * `--dry-run` always wins (exit 0, nothing written); `--yes` permits applying
+ * WITHOUT a TTY (for automation: it implies the y/N confirmation); without
+ * `--yes` the behaviour is exactly as today — `confirm` on a TTY, `refuse`
+ * headless (exit 1, nothing written).
+ *
+ * @param {{ dryRun: boolean, yes: boolean, isTTY: boolean }} gate
+ * @returns {'dry-run' | 'apply' | 'confirm' | 'refuse'}
+ */
+export function applyMode({ dryRun, yes, isTTY }) {
+  if (dryRun) return 'dry-run';
+  if (yes) return 'apply';
+  return isTTY ? 'confirm' : 'refuse';
 }
 
 // ---------------------------------------------------------------------------
@@ -236,12 +265,50 @@ function insertedTokens(beforeLine, afterLine) {
 }
 
 /**
+ * The new-side lines a line-granular diff adds (LCS by exact line equality):
+ * inserted lines AND the new halves of changed lines, in order. The region
+ * between two separate splices can hold UNCHANGED lines (a tag plan edits the
+ * count and the intersection pins far from the inserted entry) and those must
+ * never render as preview rows.
+ */
+function addedByLineDiff(oldRegion, newRegion) {
+  const n = oldRegion.length;
+  const m = newRegion.length;
+  const lcs = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i -= 1) {
+    for (let j = m - 1; j >= 0; j -= 1) {
+      lcs[i][j] = oldRegion[i] === newRegion[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  const added = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (oldRegion[i] === newRegion[j]) {
+      i += 1;
+      j += 1;
+    } else if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+      i += 1;
+    } else {
+      added.push(newRegion[j]);
+      j += 1;
+    }
+  }
+  while (j < m) {
+    added.push(newRegion[j]);
+    j += 1;
+  }
+  return added;
+}
+
+/**
  * The `+ <line>` preview rows for one planned file: one row per inserted line
  * or inserted quoted token — the REAL bytes that will be written.
  *
  * Diffing is done at the right granularity so a value sharing an edge with its
  * neighbour ('Exposure' next to 'Exposed Service') still previews whole:
- *   - whole-line insertions (tag lists, map entry, pin line) → line diff;
+ *   - whole-line insertions and rewrites (tag lists, map entry, pin lines,
+ *     count/intersection rewrites) → line diff, ONLY the new bytes;
  *   - a single changed line (the inline group lists) → quoted-token diff;
  *   - a leading inline-append separator (`, `) is folded away so the row reads
  *     as the inserted entry itself.
@@ -276,7 +343,7 @@ function previewRows(before, after) {
       return rows;
     }
   }
-  push(newRegion.join('\n'));
+  push(addedByLineDiff(oldRegion, newRegion).join('\n'));
   return rows;
 }
 
@@ -304,7 +371,7 @@ export function formatPlan(result, identity) {
   lines.push('');
   lines.push('files to write:');
   if (result.plan.files.length === 0) {
-    lines.push('  (none — problems below block the plan)');
+    lines.push(result.plan.problems.length > 0 ? '  (none — problems below block the plan)' : '  (none — nothing to do)');
   }
   for (const file of result.plan.files) {
     lines.push(`  ${file.name}`);
@@ -398,6 +465,7 @@ const SOURCE_FILES = Object.freeze({
   taxonomy: 'lib/taxonomy.js',
   taxonomyPin: 'tests/taxonomy.test.ts',
   kinds: 'lib/content-kinds.js',
+  types: 'src/types/index.ts',
   adapter: 'src/lib/contentAdapter.ts',
   adapterPin: 'tests/ui-content-adapter.test.ts',
   index: 'public/index.json',
@@ -407,19 +475,36 @@ const SOURCE_FILES = Object.freeze({
   projScreen: 'src/components/ProjectsScreen.tsx',
   certModelTest: 'tests/certifications-model.test.ts',
   projModelTest: 'tests/projects-model.test.ts',
+  contentKindsApiTest: 'tests/content-kinds-api.test.ts',
+});
+
+// Fuentes del cableado de UI (planGroupWiring) por kind — las que el plan de
+// `group` lista además del vocabulario y su pin (hasta 9 archivos en total).
+// `project` incluye adapter/adapterPin: con --icon el plan escribe también el
+// mapa de iconos del grupo (T4/T5) y sin ellos el motor falla fuerte.
+const WIRING_SOURCE_KEYS = Object.freeze({
+  certificate: Object.freeze(['types', 'certModel', 'certScreen', 'certModelTest', 'contentKindsApiTest']),
+  project: Object.freeze(['projModel', 'projScreen', 'projModelTest', 'contentKindsApiTest', 'adapter', 'adapterPin']),
 });
 
 // Fuentes de la auditoría de UI (las 7 claves de auditGroupUi).
 const UI_SOURCE_KEYS = Object.freeze(['certModel', 'projModel', 'certScreen', 'projScreen', 'adapter', 'certModelTest', 'projModelTest']);
 
-// Fuentes por operación. `group` también lee las fuentes de UI porque su plan
-// imprime los pendientes filtrados por kind; `list` lo lee todo (la auditoría
-// completa) y es de solo lectura.
+// Fuentes por operación. `group` también lee las fuentes de su cableado de UI
+// (el plan escribe vocabulario + pin + UI en UN paso); `list` lo lee todo (la
+// auditoría completa) y es de solo lectura.
 const OP_SOURCE_KEYS = Object.freeze({
   list: Object.keys(SOURCE_FILES),
   tag: ['taxonomy', 'taxonomyPin'],
   platform: ['adapter', 'adapterPin'],
-  group: ['kinds', 'taxonomyPin', ...UI_SOURCE_KEYS],
+  group: [
+    'kinds',
+    'taxonomyPin',
+    'types',
+    ...UI_SOURCE_KEYS,
+    'contentKindsApiTest',
+    'adapterPin', // T5: el pin del mapa de iconos project (--icon)
+  ],
 });
 
 /**
@@ -565,11 +650,14 @@ async function askChoice(rl, field, choices) {
   throw new Error(`no valid ${field} after ${MAX_ATTEMPTS} attempts`);
 }
 
-// Suites de verificación por operación (el pin editado) + la del motor.
+// Suites de verificación por operación (el pin editado) + las del cableado.
 const VERIFY_SUITES = Object.freeze({
   tag: 'tests/taxonomy.test.ts',
   platform: 'tests/ui-content-adapter.test.ts',
-  group: 'tests/taxonomy.test.ts',
+  group: Object.freeze({
+    certificate: 'tests/taxonomy.test.ts tests/certifications-model.test.ts tests/content-kinds-api.test.ts',
+    project: 'tests/taxonomy.test.ts tests/projects-model.test.ts tests/content-kinds-api.test.ts',
+  }),
 });
 
 /**
@@ -653,26 +741,40 @@ export async function main(argv = process.argv.slice(2)) {
         pinSource: sources[SOURCE_FILES.adapterPin],
       });
     } else {
-      plan = planGroupAddition({
+      // `group` = ASEGURAR registrado y cableado (T5, "el script lo escribe
+      // todo"): vocabulario + pin (ifPresent: 'skip' — un slug ya registrado
+      // es nota, no problema, para que un re-run pueda aplicar lo que falte) y
+      // TODO el cableado de UI en el mismo plan (hasta 7 archivos).
+      const vocabPlan = planGroupAddition({
         kind: args.kind,
         slug: args.slug,
         label: args.label,
         kindsSource: sources[SOURCE_FILES.kinds],
         pinSource: sources[SOURCE_FILES.taxonomyPin],
+        ifPresent: 'skip',
       });
+      const wiringSources = {};
+      for (const key of WIRING_SOURCE_KEYS[args.kind]) wiringSources[SOURCE_FILES[key]] = sources[SOURCE_FILES[key]];
+      const wiringPlan = planGroupWiring({
+        kind: args.kind,
+        slug: args.slug,
+        label: args.label,
+        icon: args.icon,
+        sources: wiringSources,
+      });
+      plan = {
+        problems: [...vocabPlan.problems, ...wiringPlan.problems],
+        files: [...vocabPlan.files, ...wiringPlan.files],
+        notes: [...vocabPlan.notes, ...wiringPlan.notes],
+        label: vocabPlan.label,
+      };
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
 
-  // Pendientes de UI filtrados por kind (regla 8) — solo los grupos los tienen.
-  let ui;
-  if (args.op === 'group') {
-    ui = filterAuditForKind(args.kind, auditGroupUi({ slug: args.slug, sources: uiSources(sources) })).pending;
-  }
-
-  process.stdout.write(formatPlan({ plan, sources, ui }, identity));
+  process.stdout.write(formatPlan({ plan, sources }, identity));
 
   // --- 3. problemas ⇒ exit 1, nada escrito --------------------------------
   if (plan.problems.length > 0) {
@@ -682,31 +784,39 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   // --- 4. --dry-run ⇒ salida headless, exit 0 ------------------------------
-  if (args.dryRun) {
+  // --- 5. --yes ⇒ aplica sin TTY (para automatización: implica la
+  //         confirmación y/N); sin --yes y sin TTY ⇒ plan + exit 1 ----------
+  const mode = applyMode({
+    dryRun: args.dryRun,
+    yes: args.yes === true,
+    isTTY: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+  });
+  if (mode === 'dry-run') {
     console.log('');
     console.log('Dry run: nothing written.');
     return 0;
   }
-
-  // --- 5. sin TTY ⇒ plan + mensaje explícito, exit 1 (nunca cuelga) --------
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  if (mode === 'refuse') {
     console.error(
-      'interactive TTY required to confirm — re-run in a terminal or use --dry-run to only print the plan. Nothing was written.',
+      'interactive TTY required to confirm — re-run in a terminal, use --yes for automation or --dry-run to only print the plan. Nothing was written.',
     );
     return 1;
   }
 
-  // --- 6. confirmación explícita + escritura de SOLO los archivos del plan --
-  const confirmRl = createInterface({ input: process.stdin, output: process.stdout });
-  let confirmed;
-  try {
-    confirmed = (await confirmRl.question('apply this change? [y/N]: ')).trim();
-  } finally {
-    confirmRl.close();
-  }
-  if (!/^y(es)?$/i.test(confirmed)) {
-    console.log('aborted — nothing written.');
-    return 0;
+  // --- 6. confirmación explícita (salvo --yes) + escritura de SOLO los
+  //         archivos del plan ----------------------------------------------
+  if (mode === 'confirm') {
+    const confirmRl = createInterface({ input: process.stdin, output: process.stdout });
+    let confirmed;
+    try {
+      confirmed = (await confirmRl.question('apply this change? [y/N]: ')).trim();
+    } finally {
+      confirmRl.close();
+    }
+    if (!/^y(es)?$/i.test(confirmed)) {
+      console.log('aborted — nothing written.');
+      return 0;
+    }
   }
 
   // Seguridad: cada archivo del plan debe ser EXACTAMENTE una de las fuentes
@@ -725,10 +835,12 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(`wrote ${file.name}`);
   }
 
-  console.log(
-    `[+] ${showIdentity(identity)} → ${plan.files.length} files written (implementation + approval pin)`,
-  );
-  console.log(`next: npx vitest run ${VERIFY_SUITES[args.op]}`);
+  if (plan.files.length === 0) {
+    console.log(`nothing to do — ${showIdentity(identity)} is already fully registered and wired (0 files written).`);
+  } else {
+    console.log(`[+] ${showIdentity(identity)} → ${plan.files.length} files written`);
+  }
+  console.log(`next: npx vitest run ${args.op === 'group' ? VERIFY_SUITES.group[args.kind] : VERIFY_SUITES[args.op]}`);
   console.log('next: npx vitest run tests/registry.test.ts');
   return 0;
 }

@@ -338,7 +338,7 @@ describe('getProjects(group?) / getProjectGroups() / getCertificateGroups()', ()
     ]);
   });
 
-  it('getCertificateGroups() returns all 3 canonical groups in order, counts included, zero counted', async () => {
+  it('getCertificateGroups() returns all 4 canonical groups in order, counts included, zero counted', async () => {
     fetchMock.mockResolvedValue(jsonResponse(groupedIndex));
 
     const groups = await getCertificateGroups();
@@ -347,6 +347,7 @@ describe('getProjects(group?) / getProjectGroups() / getCertificateGroups()', ()
       { id: 'universidad', count: 1 },
       { id: 'hack4u', count: 2 },
       { id: 'cisco', count: 0 },
+      { id: 'hacker-mentor', count: 0 },
     ]);
   });
 

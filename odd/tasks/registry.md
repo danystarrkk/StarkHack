@@ -79,6 +79,34 @@ node scripts/registry.js group <slug> --kind project|certificate [--label <LABEL
 | T2 | CLI `scripts/registry.js` + `tests/registry-cli.test.ts` (RED primero) | ✅ | RED → **GREEN 30/30**; suite completa **566/566**; sanity: sin args → 1 + usage, `list` → 0 con auditoría (`GAP: none`, tags 20/11/21), `tag Exposure --dry-run` → 0 con preview `+ "Exposure",` en lib y pin sin escribir |
 | T3 | Verificación integral (tsc + build + vitest completo + prueba real en seco) | ✅ | `tsc` limpio · `npm test` = **24 archivos / 566 tests verdes** · `list` sin huecos (`GAP: none`, tags 20/11/21) · `tag Exposure --dry-run` muestra el preview en lib y pin sin escribir · re-ejecutar un plan repetido falla por duplicado (no duplica) |
 | T4 | Cierre: doc, memoria, commits por unidad, revisión RDD en rangos seguros | ✅ | 4 commits + **4 revisiones aprobadas y quemadas** (una con corrección CRITICAL) |
+| T5 | **Cableado automático de UI** (decisión humana posterior: "el script lo escribe todo") | pendiente | |
+
+### T5 — por qué existe (decisión humana, verbatim)
+
+> "la cosa era que **automáticamente se hiciera todo** no que nos dejara trabajo a nosotros"
+
+El usuario registró `hacker-mentor` y quedó **a medio camino**: el motor y su
+pin quedaron aplicados pero la UI no. La suite quedó **roja en 3 tests**
+(`certifications-model` detecta el drift 3↔4, `content-kinds-api` pinea el
+conteo 3, y `registry.test.ts` — un test nuestro — asumía la lista original
+de 3). Además, el inventario por grep muestra que un grupo vive en **6 archivos**:
+
+| # | Archivo | Papel |
+|---|---|---|
+| 1 | `lib/content-kinds.js` | vocabulario (lo escribe el script ✓) |
+| 2 | `tests/taxonomy.test.ts` | pin de aprobación (lo escribe el script ✓) |
+| 3 | `src/types/index.ts` | unión `Certification['category']` |
+| 4 | `src/lib/certificationsModel.ts` | unión de label + `CERTIFICATE_GROUP_LABELS` + `CERTIFICATION_FILTER_CATEGORIES` |
+| 5 | `src/components/CertificationsScreen.tsx` | botón de filtro (el badge usa la rama `default` → **no** hace falta case) |
+| 6 | `tests/certifications-model.test.ts` | pines de labels/filtros/conteos |
+| 7 | `tests/content-kinds-api.test.ts` | esperanza "all 3 canonical groups" |
+
+También se arregla el **test frágil propio** (`registry.test.ts`) que asumía la
+lista exacta de grupos — era el que rompía por un registro legítimo.
+
+Para *projects* el inventario equivalente es: `projectsModel.ts` (unión/mapa/
+filtros), `ProjectsScreen.tsx` (botón), `projects-model.test.ts` (pines) y, si
+se pasa `--icon`, `contentAdapter.ts` + `tests/ui-content-adapter.test.ts`.
 
 ### Revisión nativa (RDD on): 4 slices, 4 recibos
 

@@ -141,18 +141,21 @@ describe('buildCertificationsModel — filter categories from the REAL groups', 
       'UNIVERSIDAD',
       'HACK4U',
       'CISCO',
+      'HACKER-MENTOR',
     ]);
     expect(model.filterCategories.map((c) => c.group)).toEqual([
       null,
       'universidad',
       'hack4u',
       'cisco',
+      'hacker-mentor',
     ]);
     expect(model.filterCategories.map((c) => c.count)).toEqual([
       ENTRIES.length, // TODOS
       1, // universidad: grado-informatica
       3, // hack4u: hacking-etico, linux-hardening, upper (case-insensitive)
       1, // cisco: ccna
+      0,
     ]);
   });
 
@@ -178,8 +181,9 @@ describe('buildCertificationsModel — filter categories from the REAL groups', 
       'UNIVERSIDAD',
       'HACK4U',
       'CISCO',
+      'HACKER-MENTOR',
     ]);
-    expect(model.filterCategories.map((c) => c.count)).toEqual([1, 1, 0, 0]);
+    expect(model.filterCategories.map((c) => c.count)).toEqual([1, 1, 0, 0, 0]);
   });
 });
 
@@ -197,7 +201,7 @@ describe('buildCertificationsModel — category filter is driven by the real gro
   });
 
   it('entries with a missing or non-canonical group only ever appear under TODOS', () => {
-    for (const category of ['UNIVERSIDAD', 'HACK4U', 'CISCO'] as const) {
+    for (const category of ['UNIVERSIDAD', 'HACK4U', 'CISCO', 'HACKER-MENTOR'] as const) {
       const ids = buildCertificationsModel(ENTRIES, filters({ category })).certificates.map((c) => c.id);
       expect(ids).not.toContain('minimal');
       expect(ids).not.toContain('udemy-linux');
@@ -282,6 +286,7 @@ describe('buildCertificationsModel — honest mapping', () => {
       universidad: 'UNIVERSIDAD',
       hack4u: 'HACK4U',
       cisco: 'CISCO',
+      'hacker-mentor': 'HACKER-MENTOR',
     });
     expect(byId.get('grado-informatica')!.category).toBe('UNIVERSIDAD');
     expect(byId.get('hacking-etico')!.category).toBe('HACK4U');
@@ -328,8 +333,9 @@ describe('real public/index.json entries', () => {
       'UNIVERSIDAD',
       'HACK4U',
       'CISCO',
+      'HACKER-MENTOR',
     ]);
-    expect(model.filterCategories.map((c) => c.count)).toEqual([0, 0, 0, 0]);
+    expect(model.filterCategories.map((c) => c.count)).toEqual([0, 0, 0, 0, 0]);
   });
 
   it('counts and numbers always agree with the index, whatever it contains', () => {

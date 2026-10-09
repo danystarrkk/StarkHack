@@ -34,10 +34,10 @@ import type { Certification } from '../types';
 import { toUiCertification } from './contentAdapter';
 
 /** Real pipeline certificate groups (lib/content-kinds.js), verbatim. */
-export type CertificateGroup = 'universidad' | 'hack4u' | 'cisco';
+export type CertificateGroup = 'universidad' | 'hack4u' | 'cisco' | 'hacker-mentor';
 
 /** The category pill label on a card: the group's uppercase label. */
-export type CertificationGroupLabel = 'UNIVERSIDAD' | 'HACK4U' | 'CISCO';
+export type CertificationGroupLabel = 'UNIVERSIDAD' | 'HACK4U' | 'CISCO' | 'HACKER-MENTOR';
 
 /**
  * Screen filter values: 'TODOS' plus the uppercase display labels of the real
@@ -52,6 +52,7 @@ export const CERTIFICATE_GROUP_LABELS: Readonly<Record<CertificateGroup, Certifi
     universidad: 'UNIVERSIDAD',
     hack4u: 'HACK4U',
     cisco: 'CISCO',
+    'hacker-mentor': 'HACKER-MENTOR',
   });
 
 /** One filter button: UI id + the real group it selects (null = TODOS). */
@@ -76,6 +77,7 @@ export const CERTIFICATION_FILTER_CATEGORIES: readonly CertificationFilterCatego
   Object.freeze({ id: 'UNIVERSIDAD', group: 'universidad' }),
   Object.freeze({ id: 'HACK4U', group: 'hack4u' }),
   Object.freeze({ id: 'CISCO', group: 'cisco' }),
+  Object.freeze({ id: 'HACKER-MENTOR', group: 'hacker-mentor' }),
 ] as CertificationFilterCategory[]);
 
 /** The screen's filter state. Every field backs a real pipeline field. */
@@ -110,7 +112,7 @@ export interface CertificationsModel {
 // pipeline does not recognize stays absent — never mapped onto a real group.
 const normalizeGroup = (value: string | undefined): CertificateGroup | undefined => {
   const lower = (value ?? '').trim().toLowerCase();
-  return lower === 'universidad' || lower === 'hack4u' || lower === 'cisco' ? lower : undefined;
+  return lower === 'universidad' || lower === 'hack4u' || lower === 'cisco' || lower === 'hacker-mentor' ? lower : undefined;
 };
 
 // Real pipeline entry → the screen's certification: toUiCertification's honest
