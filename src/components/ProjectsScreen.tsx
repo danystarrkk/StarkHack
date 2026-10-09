@@ -378,7 +378,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                     </p>
                   )}
 
-                  {/* Tags with two dots matching screenshot: • • Tag */}
+                  {/* Tags with one dot matching screenshot: • Tag */}
                   {project.tags && (
                     <div className="mb-5 flex flex-wrap gap-2">
                       {project.tags.map((tag, idx) => (
@@ -386,7 +386,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                           key={idx}
                           className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017] px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
                         >
-                          <span className="text-[#39bae6]">• •</span>
+                          <span className="text-[#39bae6]">•</span>
                           <span>{tag}</span>
                         </div>
                       ))}
@@ -588,7 +588,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                       </p>
                     )}
 
-                    {/* Tags with two dots matching screenshot: • • Tag */}
+                    {/* Tags with one dot matching screenshot: • Tag */}
                     {project.tags && (
                       <div className="mb-5 flex flex-wrap gap-2">
                         {project.tags.map((tag, idx) => (
@@ -596,7 +596,7 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
                             key={idx}
                             className="flex items-center gap-1 rounded border border-[#1b1f29] bg-[#0d1017] px-2 py-0.5 text-[10px] font-mono text-[#bdc8cf]"
                           >
-                            <span className="text-[#39bae6]">• •</span>
+                            <span className="text-[#39bae6]">•</span>
                             <span>{tag}</span>
                           </div>
                         ))}

@@ -92,11 +92,26 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
               </div>
             )}
 
-            {/* Dotted Blueprint Grid Banner */}
+            {/* Dotted Blueprint Grid Banner (real cover when the entry
+                carries one; dotted grid + icon is the fallback) */}
             <div className="relative mb-4 flex h-28 w-full flex-col items-center justify-center overflow-hidden rounded border border-[#1b1f29] bg-[#0d1017] bg-grid-dots">
-              <div className="transition-transform duration-300 group-hover:scale-105">
-                {renderBannerIcon(p.iconType)}
-              </div>
+              {/* Readability scrim over the cover */}
+              {p.image && <div className="absolute inset-0 bg-gradient-to-t from-[#0b0e15]/70 via-transparent to-transparent" />}
+              {/* Cover image (real pipeline cover, only when the entry
+                  really carries one) — icon fallback for entries that carry
+                  no cover */}
+              {p.image ? (
+                <img
+                  src={p.image}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="transition-transform duration-300 group-hover:scale-105">
+                  {renderBannerIcon(p.iconType)}
+                </div>
+              )}
               {/* Sub badge label (only when the data exists) */}
               {p.subBadge && (
                 <span className="mt-2 text-[10px] font-mono tracking-wider text-[#5a6673] group-hover:text-[#879299] transition-colors">

@@ -340,6 +340,10 @@ describe('project card cover contract (project-cover-github)', () => {
     path.join(repoRoot, 'src', 'components', 'ProjectsScreen.tsx'),
     'utf8',
   );
+  const featuredProjects = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'FeaturedProjects.tsx'),
+    'utf8',
+  );
 
   it('both project card banners render project.image in an <img', () => {
     const coverImgs = projectsScreen.match(/<img[^>]*src=\{project\.image\}[^>]*>/g) ?? [];
@@ -358,5 +362,65 @@ describe('project card cover contract (project-cover-github)', () => {
         'object-cover transition-transform duration-500 group-hover:scale-105',
       );
     }
+  });
+
+  it('the Home FeaturedProjects banner renders p.image in an <img', () => {
+    const homeCoverImgs = featuredProjects.match(/<img[^>]*src=\{p\.image\}[^>]*>/g) ?? [];
+    expect(
+      homeCoverImgs,
+      'the Home project card must render the real cover in an <img',
+    ).toHaveLength(1);
+  });
+
+  it('the Home cover <img> carries the writeup-card cover classes and attrs', () => {
+    const homeCoverImgs = featuredProjects.match(/<img[^>]*src=\{p\.image\}[^>]*>/g) ?? [];
+    expect(
+      homeCoverImgs.length,
+      'a Home cover <img> must exist before its attributes can be pinned',
+    ).toBeGreaterThan(0);
+    for (const img of homeCoverImgs) {
+      expect(img, 'the Home cover <img> must use the writeup-card cover classes').toContain(
+        'object-cover transition-transform duration-500 group-hover:scale-105',
+      );
+      expect(img, 'the Home cover <img> must load lazily').toContain('loading="lazy"');
+      expect(img, 'the decorative Home cover <img> must carry an empty alt').toContain('alt=""');
+    }
+    expect(
+      featuredProjects,
+      'the Home banner must keep the NewsWriteups readability scrim over the cover',
+    ).toContain('bg-gradient-to-t from-[#0b0e15]/70 via-transparent to-transparent');
+  });
+});
+
+// Project card tag chip contract (project-cover-github follow-up): each tag
+// chip renders ONE bullet before the tag (• Tag), never the old two-dot chip.
+// Precise pin by span shape: the statusBadge template lines legitimately keep
+// the substring "• • " inside .replace('• • ', ''), so a naive file-wide
+// not.toContain('• •') could never go green.
+
+describe('project card tag chip contract (one dot per chip)', () => {
+  const projectsScreen = fs.readFileSync(
+    path.join(repoRoot, 'src', 'components', 'ProjectsScreen.tsx'),
+    'utf8',
+  );
+
+  it('both tag chips render a single dot before {tag}', () => {
+    const singleDotChips =
+      projectsScreen.match(
+        /<span className="text-\[#39bae6\]">•<\/span>\s*\n\s*<span>\{tag\}<\/span>/g,
+      ) ?? [];
+    expect(
+      singleDotChips,
+      'the featured and the archive card chip must each render one dot before the tag',
+    ).toHaveLength(2);
+  });
+
+  it('the two-dot chip span and the old two-dot comment are gone', () => {
+    expect(projectsScreen.match(/>• •<\/span>/g) ?? [], 'no chip span may render • •').toHaveLength(
+      0,
+    );
+    expect(projectsScreen, 'the retired "Tags with two dots" comment must be gone').not.toContain(
+      'Tags with two dots',
+    );
   });
 });

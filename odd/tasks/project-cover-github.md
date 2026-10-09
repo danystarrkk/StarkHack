@@ -39,6 +39,12 @@ real `githubUrl` flows to the detail page as the GITHUB REPO link.
 - [x] T2 RED: ProjectsScreen renders `project.image` as banner cover in BOTH
       cards (featured + archive), icon fallback; source-contract pins in
       tests/styling.test.ts ("project card cover contract").
+- [x] T5 (human follow-up): Home `FeaturedProjects` now renders `p.image`
+      with the exact NewsWriteups markup (scrim + lazy cover img + icon
+      fallback); 2 source pins added to the cover contract describe.
+- [x] T6 (human follow-up): tag chips render ONE dot (`• Tag`) in both card
+      variants; comments updated; pins: chip span anchored to `{tag}` ×2,
+      `>• •</span>` count 0, old comment gone (statusBadge lines untouched).
 - [x] T3 Gate: tsc clean; focused suites 53/53; media.test 6/6 after deleting
       the user's 4 orphan webps (human decision: keep only cover.webp).
       Full `npm test` stands at 611/613: the 2 remaining failures are the
@@ -57,3 +63,10 @@ real `githubUrl` flows to the detail page as the GITHUB REPO link.
   (tests/projects-model.test.ts, tests/terminal-data.test.ts) remain RED until
   a later session; plus tests/registry.test.ts's hardcoded 11-tag prefix.
 - Visual verification (`npm run dev`) left to the human.
+- Round 2 (T5/T6): RED 4 observed → GREEN 33/33 focused; tsc clean;
+  `npm test` 614/617 — the 3 reds are exactly the human-deferred stale pins
+  (projects-model "zero projects", terminal-data "zero projects",
+  registry rule-2 hardcoded tag tail). No regression from this round.
+- Note: NewsWriteups' scrim precedes its `<img>` in the DOM (copied verbatim
+  for consistency); if the scrim should paint OVER the cover, reorder in both
+  as a separate follow-up.
