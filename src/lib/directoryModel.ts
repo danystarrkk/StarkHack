@@ -10,9 +10,9 @@
 //
 // Honesty rules (same family as src/lib/contentAdapter.ts):
 //   - Filters back ONLY real pipeline fields: `platform`, `tags`, `level`,
-//     and search over real `title`/`description`. There is no os/ports/
-//     template-difficulty filter because those fields do not exist in the
-//     pipeline — dead controls cannot live here.
+//     and search over real `title`/`description`/`tags`/`level`/`platform`.
+//     There is no os/ports/template-difficulty filter because those fields do
+//     not exist in the pipeline — dead controls cannot live here.
 //   - `level` is displayed with its REAL vocabulary, verbatim:
 //     'Easy' | 'Medium' | 'Hard'. It is NEVER translated into the template's
 //     FÁCIL|MEDIO|DIFÍCIL vocabulary (that is the separate template-only
@@ -46,7 +46,7 @@ export interface DirectoryFilters {
   level: DirectoryLevel | 'ALL';
   /** Real `tags` entry (exact match). null = no tag filter. */
   tag: string | null;
-  /** Free text matched against real `title`/`description`. '' = no search. */
+  /** Free text matched against real `title`/`description`/`tags`/`level`/`platform`. '' = no search. */
   search: string;
 }
 
@@ -103,15 +103,20 @@ export const normalizePlatformId = (value: string | null | undefined): string | 
   return normalized === '' ? null : normalized;
 };
 
-// Search matches real title/description only — case-insensitive substring.
-// Template-only text (IPs, ports, vulnerabilities) can never match because it
-// does not exist in the pipeline.
+// Search matches real title/description/tags/level/platform fields only —
+// case-insensitive substring over each field the /writeups placeholder
+// promises (name, tag, level, platform). Template-only text (IPs, ports,
+// vulnerabilities) can never match because it does not exist in the pipeline.
 const matchesSearch = (item: WriteupIndexItem, query: string): boolean => {
   const q = query.trim().toLowerCase();
   if (q === '') return true;
   return (
     item.title.toLowerCase().includes(q) ||
-    (item.description ?? '').toLowerCase().includes(q)
+    (item.description ?? '').toLowerCase().includes(q) ||
+    (item.tags ?? []).some((tag) => tag.toLowerCase().includes(q)) ||
+    (item.level ?? '').toLowerCase().includes(q) ||
+    item.platform.toLowerCase().includes(q) ||
+    (item.categories?.[0] ?? '').toLowerCase().includes(q)
   );
 };
 

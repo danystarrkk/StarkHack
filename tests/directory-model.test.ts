@@ -7,7 +7,8 @@
 // Honesty rules under test (same family as tests/ui-content-adapter.test.ts):
 //   - ONLY real pipeline fields back the filters: platform, tags, level
 //     (verbatim 'Easy' | 'Medium' | 'Hard' — NEVER the template's
-//     FÁCIL/MEDIO/DIFÍCIL vocabulary), search over real title/description.
+//     FÁCIL/MEDIO/DIFÍCIL vocabulary), search over real title/description/
+//     tags/level/platform.
 //   - Template-only fields (os, ports, difficulty, vulnerabilities, ipAddress,
 //     ...) never appear on the mapped writeups — no dead UI backing.
 //   - Derived display data (counts, last deploy date, level breakdown) is
@@ -221,7 +222,13 @@ describe('buildDirectoryModel — filtered writeup list', () => {
     for (const tag of all.availableTags) expect(TAGS).toContain(tag);
   });
 
-  it('search matches real title/description only (case-insensitive substring)', () => {
+  // CONTRACT CHANGE (deliberate, documented — not a silent weakening): search
+  // used to match real title/description only; it now matches the real fields
+  // the /writeups placeholder promises (name, tag, level, platform):
+  // title/description/tags/level/platform. Semantics are unchanged —
+  // case-insensitive substring over REAL pipeline fields only. Template-only
+  // text (IPs, ports) still can never match: those fields do not exist.
+  it('search matches real title/description/tags/level/platform fields (case-insensitive substring, real pipeline fields only)', () => {
     expect(buildDirectoryModel(ENTRIES, filters({ search: 'WAVE' })).writeups.map((w) => w.id)).toEqual(['wave']);
     expect(buildDirectoryModel(ENTRIES, filters({ search: 'pkexec' })).writeups.map((w) => w.id)).toEqual(['flossy']);
     // Title-only entry matches its title.
@@ -231,12 +238,33 @@ describe('buildDirectoryModel — filtered writeup list', () => {
     expect(buildDirectoryModel(ENTRIES, filters({ search: '443' })).writeups).toEqual([]);
   });
 
+  it('search matches real tags (case-insensitive substring per tag)', () => {
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'privilege escalation' })).writeups.map((w) => w.id)).toEqual(['wave', 'flossy']);
+    // Single-word tag fragment.
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'buffer' })).writeups.map((w) => w.id)).toEqual(['nolvl']);
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'PRIVILEGE' })).writeups.map((w) => w.id)).toEqual(['wave', 'flossy']);
+  });
+
+  it('search matches the real level vocabulary verbatim (case-insensitive substring)', () => {
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'easy' })).writeups.map((w) => w.id)).toEqual(['bare']);
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'medium' })).writeups.map((w) => w.id)).toEqual(['wave']);
+  });
+
+  it('search matches the real platform id and the visible platform name (categories[0])', () => {
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'hackthebox' })).writeups.map((w) => w.id)).toEqual(['bare']);
+    // Visible platform display name (categories[0] 'HackMyVM') matches too.
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'hackmyvm' })).writeups.map((w) => w.id)).toEqual(['wave', 'flossy']);
+    expect(buildDirectoryModel(ENTRIES, filters({ search: 'vulnhub' })).writeups.map((w) => w.id)).toEqual(['nolvl']);
+  });
+
   it('searchResults are global (search text only) and empty without search text', () => {
     expect(buildDirectoryModel(ENTRIES, EMPTY_DIRECTORY_FILTERS).searchResults).toEqual([]);
     expect(buildDirectoryModel(ENTRIES, filters({ search: '   ' })).searchResults).toEqual([]);
     const model = buildDirectoryModel(ENTRIES, filters({ platformId: 'vulnhub', search: 'hackmyvm' }));
     expect(model.writeups).toEqual([]); // platform + search intersect: no match
-    expect(model.searchResults.map((w) => w.id)).toEqual(['wave']); // global overlay still finds it
+    // Platform matching now hits BOTH HackMyVM entries (platform id /
+    // categories[0]); the overlay stays global — it ignores the other filters.
+    expect(model.searchResults.map((w) => w.id)).toEqual(['wave', 'flossy']);
   });
 
   it('all filters intersect', () => {
