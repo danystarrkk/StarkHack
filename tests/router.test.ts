@@ -16,7 +16,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '../src/lib/router';
 import {
   hasTemplateProjectContent,
-  hasTemplateWriteupContent,
   resolveProjectDetail,
   resolveWriteupDetail,
 } from '../src/lib/detailRoutes';
@@ -136,13 +135,13 @@ describe('detail route resolution against the real content pipeline', () => {
     expect(await resolveProjectDetail('autorecon-ng')).toBeNull();
   });
 
-  it('template detail components only render where they hold curated content (never generated fakes)', () => {
-    // WriteupPage reads getWriteupContent(): custom sample for "wave"
-    // ("hmv-wave"), fabricated/generated fallback otherwise. The fallback
-    // invents IPs, scan output, links and star counts and throws on
-    // pipeline-mapped objects, so the detail routes must NOT render it.
-    expect(hasTemplateWriteupContent('wave')).toBe(true);
-    expect(hasTemplateWriteupContent('krustykrab')).toBe(false);
+  it('project detail components only render where they hold curated content (never generated fakes)', () => {
+    // SAMPLE_PROJECTS_CONTENT holds curated project content only; its
+    // generated fallback invents IPs, scan output, links and star counts, so
+    // the detail routes must NOT render it and only report availability.
+    // (Writeup-side there is no template source anymore: links come from the
+    // writeup's frontmatter alone — the writeup-side availability export was
+    // deleted.)
     expect(hasTemplateProjectContent('autorecon-ng')).toBe(true);
     expect(hasTemplateProjectContent('not-a-project')).toBe(false);
   });

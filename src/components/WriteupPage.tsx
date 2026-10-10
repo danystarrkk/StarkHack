@@ -1,10 +1,10 @@
 // Writeup detail page. Everything it renders comes from the PURE view-model
 // builder (src/lib/writeupView.ts) fed by the writeup resolved from the REAL
 // content pipeline: the body is the real markdown (writeup.markdownContent,
-// the pipeline doc.content) — the template's SAMPLE_WRITEUPS_CONTENT is never
-// the source of the body. Chips render only fields that really exist (no
-// invented badges); the link sections render only when curated template data
-// provides them.
+// the pipeline doc.content) and the link sections render only when the
+// writeup's own frontmatter carries machineLinks/toolLinks (the frontmatter
+// is the single source; no curated template data exists). Chips render only
+// fields that really exist (no invented badges).
 import React, { useState, useEffect, useMemo } from 'react';
 import { Writeup } from '../types';
 import { buildWriteupView, type WriteupViewChipTone } from '../lib/writeupView';

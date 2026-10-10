@@ -10,10 +10,9 @@
 // WriteupPage renders the REAL markdown body (writeup.markdownContent = the
 // pipeline doc.content) through the pure view-model builder in
 // src/lib/writeupView.ts. Every writeup that resolves from the pipeline gets
-// the full detail page — there is no template-content gate anymore. Template
-// data (SAMPLE_WRITEUPS_CONTENT) only ever supplies optional curated links for
-// the sidebar; its generated fallback (getWriteupContent) fabricates data and
-// is never used.
+// the full detail page — there is no template-content gate and no curated
+// template source anymore: the sidebar links come from the writeup's own
+// frontmatter alone (wave's curated links were migrated there verbatim).
 //
 // Project detail (real readme, mirrors the writeup port):
 // ProjectPage renders the REAL markdown body (project.readme = the pipeline
@@ -21,8 +20,7 @@
 // Every project that resolves from the pipeline gets the full detail page —
 // there is no template-content gate anymore. The template content map
 // (SAMPLE_PROJECTS_CONTENT) is only consulted by hasTemplateProjectContent to
-// report whether curated template content EXISTS for a slug (the same
-// availability-report role as hasTemplateWriteupContent); it is never a
+// report whether curated template content EXISTS for a slug; it is never a
 // rendering source. Loading, missing and error states are always honest, and a
 // render error boundary converts any residual render crash into an honest
 // visible state instead of crashing the app.
@@ -30,7 +28,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchIndex, fetchProject, fetchWriteup, getProjects } from '../../lib/content';
 import { toUiProject, toUiWriteup } from './contentAdapter';
-import { findCuratedTemplateExtras } from './writeupView';
 import { ProjectPage } from '../components/ProjectPage';
 import { WriteupPage } from '../components/WriteupPage';
 import { SAMPLE_PROJECTS_CONTENT } from '../data/projectContents';
@@ -82,17 +79,15 @@ export const resolveProjectDetail = async (slug: string): Promise<ResolvedProjec
 };
 
 // ---------------------------------------------------------------------------
-// Curated-template availability report
+// Curated-template availability report (projects)
 // ---------------------------------------------------------------------------
 
-// True when the template content map holds CURATED content for the slug
-// (lookup keys: id, then `hmv-${id}`). These are availability reports only —
-// the detail routes never gate rendering on them and the template content is
-// never the source of a rendered body (see the file header).
-export const hasTemplateWriteupContent = (slug: string): boolean =>
-  findCuratedTemplateExtras(slug) !== null;
-
-// Mirrors getProjectContent's lookup (id only). Same rationale.
+// True when the project template content map holds CURATED content for the
+// slug (lookup key: id only, mirroring getProjectContent). Availability report
+// only — the detail routes never gate rendering on it and the template content
+// is never the source of a rendered body (see the file header). Writeup-side
+// there is no template source anymore: links come from the writeup's own
+// frontmatter alone.
 export const hasTemplateProjectContent = (slug: string): boolean =>
   SAMPLE_PROJECTS_CONTENT[slug] !== undefined;
 

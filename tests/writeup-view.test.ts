@@ -6,20 +6,19 @@
 // the sections TOC.
 //
 // Hard rules under test:
-//   1. The body is ALWAYS the real pipeline markdown. The template's
-//      SAMPLE_WRITEUPS_CONTENT is never the source of the body (not even when
-//      curated template data exists for the slug).
+//   1. The body is ALWAYS the real pipeline markdown. There is no template
+//      data source at all anymore (the curated map was deleted once wave's
+//      links were migrated verbatim into its frontmatter).
 //   2. Chips render only what the real data has. The invented
 //      "PWNED: ROOT (100%)" badge is gone for good; DIFICULTAD / OS render
 //      only when the field exists.
 //   3. Tags come from the real entry only, and absent os / difficulty /
 //      vulnerabilities can NEVER crash the builder (the old tags useMemo
 //      spread `...writeup.vulnerabilities`).
-//   4. Links follow the approved precedence (writeup-links): the writeup's own
-//      frontmatter links win whenever the key is present — an explicit empty
-//      array means "none". Absent keys fall back to the curated template links;
-//      with neither, the lists stay empty (the page hides the sections) —
-//      never fabricated.
+//   4. Links come from the writeup's frontmatter ONLY (writeup-links, single
+//      source of truth): a present key renders verbatim — an explicit empty
+//      array means "none"; an absent key resolves to [] (the page hides the
+//      section). There is no fallback source; nothing is ever fabricated.
 //   5. The TOC is extracted from the real markdown body: fenced-code comments
 //      are not headings, and every TOC anchor matches the id MarkdownRenderer
 //      actually renders (so the sidebar links scroll to the right place).
@@ -30,8 +29,7 @@ import { describe, expect, it } from 'vitest';
 import { parseFrontmatter } from '../lib/frontmatter.js';
 import { toUiWriteup } from '../src/lib/contentAdapter';
 import { MarkdownRenderer } from '../src/components/MarkdownRenderer';
-import { SAMPLE_WRITEUPS_CONTENT, type RichWriteupData } from '../src/data/writeupContents';
-import { buildWriteupView, findCuratedTemplateExtras } from '../src/lib/writeupView';
+import { buildWriteupView } from '../src/lib/writeupView';
 import type { WriteupIndexItem } from '../types';
 import type { Writeup } from '../src/types';
 
@@ -60,21 +58,8 @@ const BARE_SOURCE: Writeup = {
   iconType: 'wave',
 };
 
-// A minimal curated-template fixture (links only — the builder must never take
-// its body or tags from template data).
-const TEMPLATE_FIXTURE: RichWriteupData = {
-  markdown: 'MARKDOWN DE PLANTILLA — NUNCA debe ser el cuerpo',
-  machineLinks: [
-    { title: 'Perfil Oficial', url: 'https://example.test/machine', badge: 'PERFIL OFICIAL', type: 'platform' },
-  ],
-  toolLinks: [
-    { name: 'herramienta', url: 'https://example.test/tool', description: 'recurso de referencia' },
-  ],
-  tags: ['Tag De Plantilla'],
-};
-
 // Real-shaped frontmatter links (writeup-links): what toUiWriteup maps onto the
-// Writeup when the human authors the keys — the WINNING precedence source.
+// Writeup when the human authors the keys — the ONLY link source.
 const FRONTMATTER_LINKS: {
   machineLinks: NonNullable<Writeup['machineLinks']>;
   toolLinks: NonNullable<Writeup['toolLinks']>;
@@ -103,19 +88,13 @@ describe('buildWriteupView — body source', () => {
     expect(view.markdownContent).toContain('sudo arp-scan');
   });
 
-  it('never takes the body from SAMPLE_WRITEUPS_CONTENT, even for a slug with curated template content', () => {
-    const curated = SAMPLE_WRITEUPS_CONTENT['hmv-wave'];
-    expect(curated).toBeDefined(); // "wave" DOES hold curated template content
-    expect(curated.markdown).not.toBe(WAVE_BODY); // and it is a different document
-    const view = buildWriteupView(WAVE_SOURCE);
-    expect(view.markdownContent).not.toBe(curated.markdown);
-  });
+  // The old "never takes the body from the retired curated sample map" pin
+  // died with that deleted map: nothing imports that data anymore, so the
+  // concern is extinct (not merely untested) — the body has no other source by
+  // construction.
 
-  it('an absent markdown body yields an empty body — template markdown is still not used', () => {
-    const view = buildWriteupView(
-      { ...BARE_SOURCE, markdownContent: undefined },
-      { template: TEMPLATE_FIXTURE }
-    );
+  it('an absent markdown body yields an empty body', () => {
+    const view = buildWriteupView({ ...BARE_SOURCE, markdownContent: undefined });
     expect(view.markdownContent).toBe('');
   });
 });
@@ -204,10 +183,9 @@ describe('buildWriteupView — tags', () => {
     expect(view.tags).toEqual(['Privilege Escalation', 'File Upload']);
   });
 
-  it('takes no tags from template data', () => {
-    const view = buildWriteupView(BARE_SOURCE, { template: TEMPLATE_FIXTURE });
-    expect(view.tags).toEqual([]);
-    expect(view.tags).not.toContain('Tag De Plantilla');
+  it('takes no tags from anywhere but the real entry (no template source exists)', () => {
+    expect(buildWriteupView(BARE_SOURCE).tags).toEqual([]);
+    expect(buildWriteupView({ ...WAVE_SOURCE, tags: undefined }).tags).toEqual([]);
   });
 
   it('maps the real metadata the entry supplies and nothing more', () => {
@@ -219,79 +197,67 @@ describe('buildWriteupView — tags', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 4. Links: frontmatter (present key) wins → curated template → []
+// 4. Links: frontmatter is the ONLY source (no template/fallback data exists)
 // ---------------------------------------------------------------------------
 
-describe('buildWriteupView — machineLinks / toolLinks precedence', () => {
-  it('frontmatter links win over the curated template links', () => {
-    const curated = SAMPLE_WRITEUPS_CONTENT['hmv-wave'];
-    expect(curated).toBeDefined(); // "wave" DOES hold curated template links
+describe('buildWriteupView — machineLinks / toolLinks (frontmatter only)', () => {
+  it('frontmatter links render verbatim (the single source of truth)', () => {
     const view = buildWriteupView({ ...WAVE_SOURCE, ...FRONTMATTER_LINKS });
     expect(view.machineLinks).toEqual(FRONTMATTER_LINKS.machineLinks);
     expect(view.toolLinks).toEqual(FRONTMATTER_LINKS.toolLinks);
-    // and the template is NOT merged in behind the frontmatter
-    expect(view.machineLinks).not.toEqual(curated.machineLinks);
-    expect(view.toolLinks).not.toEqual(curated.toolLinks);
   });
 
-  it('an explicit empty frontmatter array beats a non-empty template (human said none)', () => {
-    const curated = SAMPLE_WRITEUPS_CONTENT['hmv-wave'];
-    expect(curated.machineLinks.length).toBeGreaterThan(0); // template really has links
-    expect(curated.toolLinks.length).toBeGreaterThan(0);
+  it('wave renders its migrated frontmatter links verbatim (1 machine + 5 tool links, categories kept)', () => {
+    const view = buildWriteupView(WAVE_SOURCE);
+    expect(view.machineLinks).toEqual(WAVE_SOURCE.machineLinks);
+    expect(view.toolLinks).toEqual(WAVE_SOURCE.toolLinks);
+    expect(view.machineLinks).toHaveLength(1); // migrated machineLinks entry
+    expect(view.toolLinks).toHaveLength(5); // migrated toolLinks entries
+    expect(view.toolLinks.every((link) => link.category !== undefined)).toBe(true); // incl. category
+  });
+
+  it('absent links keys resolve to [] for ANY slug — wave included (no fallback source exists)', () => {
+    const stripped = { ...WAVE_SOURCE, machineLinks: undefined, toolLinks: undefined };
+    const view = buildWriteupView(stripped);
+    expect(view.machineLinks).toEqual([]);
+    expect(view.toolLinks).toEqual([]);
+    const bare = buildWriteupView({ ...BARE_SOURCE, id: 'krustykrab' });
+    expect(bare.machineLinks).toEqual([]);
+    expect(bare.toolLinks).toEqual([]);
+  });
+
+  it('an explicit empty frontmatter array means "none" (never filled from anywhere)', () => {
     const view = buildWriteupView({ ...WAVE_SOURCE, machineLinks: [], toolLinks: [] });
     expect(view.machineLinks).toEqual([]);
     expect(view.toolLinks).toEqual([]);
   });
 
-  it('resolves each key independently: frontmatter machineLinks + template toolLinks', () => {
-    const view = buildWriteupView({ ...WAVE_SOURCE, machineLinks: FRONTMATTER_LINKS.machineLinks });
-    expect(view.machineLinks).toEqual(FRONTMATTER_LINKS.machineLinks);
-    expect(view.toolLinks).toEqual(SAMPLE_WRITEUPS_CONTENT['hmv-wave'].toolLinks);
-  });
-
-  it('absent frontmatter keys fall back to the curated template (hmv-wave keeps working)', () => {
-    const curated = SAMPLE_WRITEUPS_CONTENT['hmv-wave'];
-    expect(curated).toBeDefined();
-    const view = buildWriteupView(WAVE_SOURCE); // id "wave" → curated key "hmv-wave"; toUiWriteup omits the links keys (wave's frontmatter has none)
-    expect(view.machineLinks).toEqual(curated.machineLinks);
-    expect(view.toolLinks).toEqual(curated.toolLinks);
-  });
-
-  it('absent keys and no template ⇒ empty lists (both sections stay hidden)', () => {
-    const view = buildWriteupView({
-      ...BARE_SOURCE,
-      id: 'krustykrab', // a real writeup with NO curated template content
+  it('never fabricates links: no option, argument or slug lookup can inject them', () => {
+    const stripped = { ...WAVE_SOURCE, machineLinks: undefined, toolLinks: undefined };
+    // The retired template override passed extras as a second argument; any
+    // such argument must be inert — links come from the writeup or not at all.
+    const withStaleArgument = (
+      buildWriteupView as unknown as (
+        w: Writeup,
+        o?: Record<string, unknown>
+      ) => ReturnType<typeof buildWriteupView>
+    )(stripped, {
+      template: {
+        markdown: 'MARKDOWN DE PLANTILLA — NUNCA debe ser el cuerpo',
+        machineLinks: [
+          { title: 'Inyectado', url: 'https://example.test/injected', badge: 'FALSO', type: 'platform' },
+        ],
+        toolLinks: [
+          { name: 'inyectada', url: 'https://example.test/injected-tool', description: 'falso' },
+        ],
+      },
     });
-    expect(findCuratedTemplateExtras('krustykrab')).toBeNull();
-    expect(view.machineLinks).toEqual([]);
-    expect(view.toolLinks).toEqual([]);
-  });
-
-  it('never fabricates links (the generated template fallback is not a source)', () => {
-    const view = buildWriteupView({ ...BARE_SOURCE, id: 'krustykrab' });
-    const urls = [...view.machineLinks, ...view.toolLinks].map((l) => l.url);
+    expect(withStaleArgument).toEqual(buildWriteupView(stripped));
+    const urls = [...withStaleArgument.machineLinks, ...withStaleArgument.toolLinks].map((l) => l.url);
     expect(urls).not.toContain(
-      'https://github.com/danystark/stark-recon-suite' // the generated fallback's fake link
+      'https://github.com/danystark/stark-recon-suite' // the old generated fallback's fake link
     );
     expect(urls).toEqual([]);
-  });
-
-  it('accepts explicit template data as the fallback and honors an explicit null template', () => {
-    // absent frontmatter keys + explicit template → the template links
-    const view = buildWriteupView(WAVE_SOURCE, { template: TEMPLATE_FIXTURE });
-    expect(view.machineLinks).toEqual(TEMPLATE_FIXTURE.machineLinks);
-    expect(view.toolLinks).toEqual(TEMPLATE_FIXTURE.toolLinks);
-    // explicitly NO template data + absent keys → no links even for a slug with curated content
-    const none = buildWriteupView(WAVE_SOURCE, { template: null });
-    expect(none.machineLinks).toEqual([]);
-    expect(none.toolLinks).toEqual([]);
-    // and explicit template data NEVER beats frontmatter links
-    const frontmattered = buildWriteupView(
-      { ...WAVE_SOURCE, ...FRONTMATTER_LINKS },
-      { template: TEMPLATE_FIXTURE }
-    );
-    expect(frontmattered.machineLinks).toEqual(FRONTMATTER_LINKS.machineLinks);
-    expect(frontmattered.toolLinks).toEqual(FRONTMATTER_LINKS.toolLinks);
   });
 });
 
@@ -408,7 +374,7 @@ describe('WriteupPage (rendered with real pipeline data)', () => {
     expect(markup).not.toContain('OS:');
   });
 
-  it('renders link sections exactly when the resolved view carries them (template fallback for wave)', async () => {
+  it('renders link sections exactly when the resolved view carries them (frontmatter links for wave)', async () => {
     const withLinks = await renderPage(WAVE_SOURCE);
     expect(withLinks).toContain('ENLACES DE LA MÁQUINA');
     expect(withLinks).toContain('HERRAMIENTAS');

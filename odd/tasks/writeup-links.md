@@ -10,8 +10,11 @@ fail-loud by the pipeline, asked for by add-content. Nothing is auto-populated.
 
 - NO automatic content: the 15 writeups without links stay empty until the
   human writes their frontmatter.
-- Precedence: frontmatter wins when present; the curated hmv-wave template
-  remains as FALLBACK (migration to wave.md is a later human action).
+- Precedence: SUPERSEDED by a later human decision ("vamos a ser
+  coherentes"): the frontmatter is the SINGLE source. Wave's links were
+  migrated verbatim into wave.md and the curated template
+  (src/data/writeupContents.ts, findCuratedTemplateExtras, options.template,
+  hasTemplateWriteupContent) was DELETED.
 
 ## Design (approved plan)
 
@@ -47,7 +50,13 @@ fail-loud by the pipeline, asked for by add-content. Nothing is auto-populated.
       verbatim; non-TTY/dry-run unchanged).
 - [x] A4 Gate: tsc clean; npm test 644/647 — only the 3 human-deferred stale
       pins; writeup dry-run smoke unchanged (no prompts/keys).
-- [x] A5 Evidence + work-unit commit.
+- [x] A5 Evidence + work-unit commit (12dcafb + docs a7eec88).
+- [x] A6 Coherence (human: single source): wave.md migrated verbatim (1
+      machineLink + 5 toolLinks incl. category), template source deleted
+      (writeupContents.ts −492 lines), fallback/options/export removed,
+      router + writeup-view pins revised (RED 2 genuine behavior → GREEN
+      71/71; the 3 pre-existing migrated-wave failures resolved by the
+      rewrite).
 
 ## Evidence
 
@@ -60,5 +69,9 @@ fail-loud by the pipeline, asked for by add-content. Nothing is auto-populated.
   validator no-op for valid sources).
 - Full gate: tsc clean; `npm test` 644 passed / 3 failed = exactly the
   human-deferred stale pins.
+- A6: grep proof — zero references to SAMPLE_WRITEUPS_CONTENT /
+  findCuratedTemplateExtras / hasTemplateWriteupContent / writeupContents
+  remain in src+tests; writeup-view pins now read the REAL wave.md (verbatim
+  1+5 links, incl. category) and prove absent keys ⇒ [] for any slug.
 - Human decisions honored: no .md written by us (sections stay empty until the
   human writes them); wave keeps the curated fallback (writeup-view pin (c)).
