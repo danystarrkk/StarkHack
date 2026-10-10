@@ -14,39 +14,6 @@ tags:
   ]
 image: "/writeups/hackmyvm/wave/media/cover.webp"
 level: Medium
-machineLinks:
-  - title: "HackMyVM // Wave (Perfil Oficial)"
-    url: "https://hackmyvm.eu/machines/machine.php?vm=Wave"
-    badge: "PERFIL OFICIAL"
-    type: platform
-toolLinks:
-  - name: "stark-jwt-forge"
-    url: "https://github.com/danystarrkk/stark-jwt-forge"
-    description: "Herramienta CLI propia en Python para forja de tokens JWT con algoritmos None, inyección SpEL y bypass de HMAC secrets débiles."
-    category: CUSTOM_TOOL
-    developedByAuthor: true
-    githubStars: "142 ★"
-  - name: "stark-recon-suite"
-    url: "https://github.com/danystarrkk/stark-recon-suite"
-    description: "Script automatizado de enumeración agresiva de puertos, wrappers de nmap, ffuf y análisis de cabeceras HTTP."
-    category: CUSTOM_TOOL
-    developedByAuthor: true
-    githubStars: "89 ★"
-  - name: "SecLists / Discovery Wordlists"
-    url: "https://github.com/danielmiessler/SecLists"
-    description: "Colección estándar de diccionarios de seguridad para fuzzing de directorios, parámetros y extensiones web."
-    category: WORDLIST
-    developedByAuthor: false
-  - name: "GTFOBins / Python Capabilities"
-    url: "https://gtfobins.github.io/gtfobins/python/#capabilities"
-    description: "Referencia técnica para aprovechamiento de binarios del sistema Unix y escalada mediante Linux Capabilities cap_setuid."
-    category: REFERENCE
-    developedByAuthor: false
-  - name: "HackTricks / Spring Boot Actuator & SpEL"
-    url: "https://book.hacktricks.xyz/pentesting-web/spel-injection"
-    description: "Guía exhaustiva para detección y explotación de Spring Expression Language e inyección de expresiones en backend Java."
-    category: REFERENCE
-    developedByAuthor: false
 ---
 
 # Enumeración

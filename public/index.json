@@ -1,5 +1,72 @@
 [
   {
+    "title": "VirtualBox to VMware",
+    "date": "2026-10-09",
+    "group": "herramientas",
+    "image": "/projects/convertmachines/media/cover.webp",
+    "tags": [
+      "Linux",
+      "Automation",
+      "Virtualization"
+    ],
+    "description": "Herramienta para preparar máquinas virtuales Linux y adaptar su configuración de red entre entornos de virtualización.",
+    "githubUrl": "https://github.com/danystarrkk/virtualbox-to-vmware",
+    "draft": false,
+    "kind": "project",
+    "slug": "convertmachines",
+    "path": "/projects/convertmachines.md"
+  },
+  {
+    "title": "Docker Hack Environment",
+    "date": "2026-10-09",
+    "group": "automatizaciones",
+    "tags": [
+      "CLI Utilities",
+      "Integrations",
+      "Networking"
+    ],
+    "description": "Entorno de pentesting basado en Docker con Kali Linux e integración de terminal gráfica.",
+    "githubUrl": "https://github.com/danystarrkk/DockerHack-Entorno",
+    "draft": false,
+    "image": "/projects/dockerhack/media/cover.webp",
+    "kind": "project",
+    "slug": "dockerhack",
+    "path": "/projects/dockerhack.md"
+  },
+  {
+    "title": "Entorno",
+    "date": "2026-10-09",
+    "group": "automatizaciones",
+    "tags": [
+      "CLI Utilities",
+      "Integrations"
+    ],
+    "description": "Automatización para instalar y configurar un entorno Linux personalizado orientado al desarrollo y la productividad.",
+    "githubUrl": "https://github.com/danystarrkk/Entorno",
+    "draft": false,
+    "image": "/projects/entorno/media/cover.webp",
+    "kind": "project",
+    "slug": "entorno",
+    "path": "/projects/entorno.md"
+  },
+  {
+    "title": "Colección de Herramientas Personalizadas",
+    "date": "2026-10-09",
+    "group": "scripts",
+    "tags": [
+      "CLI Utilities",
+      "Web",
+      "Scanning"
+    ],
+    "description": "Colección de herramientas propias para automatizar tareas de análisis y resolución de retos CTF.",
+    "githubUrl": "https://github.com/danystarrkk/Hacking-Tools",
+    "draft": false,
+    "image": "/projects/starktools/media/cover.webp",
+    "kind": "project",
+    "slug": "starktools",
+    "path": "/projects/starktools.md"
+  },
+  {
     "title": "Wave",
     "date": "2026-09-15",
     "draft": false,
@@ -355,9 +422,13 @@
   {
     "title": "Introducción al Hacking",
     "order": 1,
-    "description": "Curso de Introducción al Hacking",
+    "description": "Introducción práctica al hacking ético y al pentesting, abarcando reconocimiento, enumeración de servicios, análisis de redes, vulnerabilidades web, explotación en laboratorios, escalada de privilegios y movimiento entre sistemas.",
     "group": "hack4u",
     "tags": [
+      "Ethical Hacking",
+      "Pentesting",
+      "Networking",
+      "Web Security",
       "OWASP Top 10",
       "Linux",
       "Escalada de privilegios",
@@ -365,8 +436,116 @@
     ],
     "draft": false,
     "image": "/certificates/certificado/media/cover.webp",
+    "imageHires": "/certificates/certificado/media/hires.webp",
     "kind": "certificate",
     "slug": "certificado",
     "path": "/certificates/certificado.md"
+  },
+  {
+    "title": "Introducción a Linux",
+    "order": 2,
+    "description": "Fundamentos de Linux, administración básica del sistema, navegación por terminal, gestión de archivos, procesos, permisos y uso de herramientas esenciales para entornos técnicos y de ciberseguridad.",
+    "group": "hack4u",
+    "tags": [
+      "Linux",
+      "Systems",
+      "System Administration",
+      "Bash"
+    ],
+    "draft": false,
+    "image": "/certificates/in_linux/media/cover.webp",
+    "imageHires": "/certificates/in_linux/media/hires.webp",
+    "kind": "certificate",
+    "slug": "in_linux",
+    "path": "/certificates/in_linux.md"
+  },
+  {
+    "title": "Personalización de Entorno en Linux",
+    "order": 3,
+    "description": "Configuración y personalización de un entorno Linux de trabajo mediante gestores de ventanas, terminal, atajos de teclado, barras de estado y herramientas que mejoran la productividad en tareas técnicas.",
+    "group": "hack4u",
+    "tags": [
+      "Linux",
+      "Systems",
+      "System Administration"
+    ],
+    "draft": false,
+    "image": "/certificates/per_entorno/media/cover.webp",
+    "imageHires": "/certificates/per_entorno/media/hires.webp",
+    "kind": "certificate",
+    "slug": "per_entorno",
+    "path": "/certificates/per_entorno.md"
+  },
+  {
+    "title": "Arch Linux desde Cero",
+    "order": 4,
+    "description": "Instalación y configuración de Arch Linux desde una base mínima, incluyendo la gestión de paquetes, personalización del entorno y preparación de un sistema adaptado a las necesidades del usuario.",
+    "group": "hack4u",
+    "tags": [
+      "Linux",
+      "Systems",
+      "System Administration"
+    ],
+    "draft": false,
+    "image": "/certificates/arch_cero/media/cover.webp",
+    "imageHires": "/certificates/arch_cero/media/hires.webp",
+    "kind": "certificate",
+    "slug": "arch_cero",
+    "path": "/certificates/arch_cero.md"
+  },
+  {
+    "title": "Python Ofensivo",
+    "order": 5,
+    "description": "Desarrollo de herramientas de ciberseguridad con Python, desde los fundamentos del lenguaje y la programación orientada a objetos hasta la automatización de tareas, el análisis de redes y la creación de utilidades para pruebas de seguridad.",
+    "group": "hack4u",
+    "tags": [
+      "Python",
+      "Programming",
+      "Security Automation",
+      "Networking",
+      "Ethical Hacking"
+    ],
+    "draft": false,
+    "image": "/certificates/pythonofe/media/cover.webp",
+    "imageHires": "/certificates/pythonofe/media/hires.webp",
+    "kind": "certificate",
+    "slug": "pythonofe",
+    "path": "/certificates/pythonofe.md"
+  },
+  {
+    "title": "Hacking Web",
+    "order": 6,
+    "description": "Análisis y evaluación de la seguridad de aplicaciones web mediante la identificación y explotación controlada de vulnerabilidades, pruebas de autenticación y sesiones, inyecciones, fallos de autorización y evaluación de APIs.",
+    "group": "hack4u",
+    "tags": [
+      "Web Security",
+      "OWASP Top 10",
+      "Pentesting",
+      "Burp Suite"
+    ],
+    "draft": false,
+    "image": "/certificates/hack_web/media/cover.webp",
+    "imageHires": "/certificates/hack_web/media/hires.webp",
+    "kind": "certificate",
+    "slug": "hack_web",
+    "path": "/certificates/hack_web.md"
+  },
+  {
+    "title": "Ethical Hacking y Pentesting — Training Gratuito",
+    "order": 7,
+    "description": "Entrenamiento introductorio de tres días en ciberseguridad, centrado en los fundamentos del hacking ético, las metodologías de pentesting y el reconocimiento de sistemas y servicios mediante ejercicios prácticos.",
+    "group": "hacker-mentor",
+    "tags": [
+      "Ethical Hacking",
+      "Pentesting",
+      "Networking",
+      "Linux",
+      "Web Security"
+    ],
+    "draft": false,
+    "image": "/certificates/hacker_mentor/media/cover.webp",
+    "kind": "certificate",
+    "slug": "hacker_mentor",
+    "path": "/certificates/hacker_mentor.md"
   }
 ]

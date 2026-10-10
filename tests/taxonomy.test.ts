@@ -188,6 +188,9 @@ const APPROVED_PROJECT_TAGS = [
   'Integrations',
   'Reporting',
   'Databases',
+  'Linux',
+  'Automation',
+  'Virtualization',
 ];
 
 const APPROVED_CERTIFICATE_TAGS = [
@@ -275,7 +278,7 @@ describe('per-kind group lists and tag vocabularies', () => {
     // NOTE: the two approved vocabularies legitimately share the words
     // 'Networking' and 'Cryptography'; that overlap is pinned verbatim below.
     // They are still independent lists (own order, own length, own identity).
-    expect(valuesInCommon(PROJECT_TAGS, CERTIFICATE_TAGS)).toEqual(['Networking', 'Cryptography']);
+    expect(valuesInCommon(PROJECT_TAGS, CERTIFICATE_TAGS)).toEqual(['Networking', 'Cryptography', 'Linux', 'Automation']);
     expect(PROJECT_TAGS).not.toEqual(CERTIFICATE_TAGS);
     expect(PROJECT_TAGS).not.toBe(CERTIFICATE_TAGS);
   });
