@@ -43,7 +43,8 @@ fail-loud by the pipeline, asked for by add-content. Nothing is auto-populated.
       revised; types.ts structural MachineLinkFm/ToolLinkFm; stale comments
       in src/types/index.ts + WriteupPage updated).
 - [x] A3 add-content links prompts + validation (RED 4 → GREEN 30/30; pure
-      buildWriteupLinks helper; validator problems join plan.problems verbatim;\      non-TTY/dry-run unchanged).
+      buildWriteupLinks helper; validator problems join plan.problems
+      verbatim; non-TTY/dry-run unchanged).
 - [x] A4 Gate: tsc clean; npm test 644/647 — only the 3 human-deferred stale
       pins; writeup dry-run smoke unchanged (no prompts/keys).
 - [x] A5 Evidence + work-unit commit.

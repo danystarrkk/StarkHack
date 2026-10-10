@@ -51,9 +51,9 @@ automatically by the scripts on every new certificate.
       orchestrator after a worker stall (RED 3 → GREEN 103/103 focused).
 - [x] B5 Gate: tsc clean; npm test 670/673 = the 3 human-deferred stale pins;
       add-content certificate dry-run plans cover+hires with both markers.
-- [ ] B6 Backfill: matching → human-approved mapping → hires + imageHires +
+- [x] B6 Backfill: matching → human-approved mapping → hires + imageHires +
       index regeneration.
-- [ ] B7 Evidence + work-unit commits (code slices first; backfill content
+- [x] B7 Evidence + work-unit commits (code slices first; backfill content
       committed per human decision).
 
 ## Evidence
@@ -70,3 +70,14 @@ automatically by the scripts on every new certificate.
 - Smoke (dry-run, nothing written): certificate plan lists
   `media/cover.webp   (cover)` + `media/hires.webp   (hires)` from the same
   source and writes imageHires in the planned frontmatter.
+- B6: visual matching (RMSE over 256px grayscale) mapped all 6 jpgs
+  unambiguously (best ~155-165 vs next-best ~15000+); human approved the
+  table; hires.webp (q95, 1800x1200 originals) generated for arch_cero,
+  hack_web, in_linux, certificado, per_entorno, pythonofe; imageHires set in
+  those 6 .md files; index regenerated (16 writeups / 1 project /
+  7 certificates). hacker_mentor has NO original in Downloads/certificados →
+  stays on the cover fallback until the human supplies one.
+- Code commit: 355b531 (16 files, +952/−65). Backfill content (hires.webp ×6,
+  6 .md edits, index.json) stays uncommitted for the human, consistent with
+  every prior round. Full suite after backfill: 670/673 = the three
+  human-deferred stale pins.
