@@ -187,14 +187,39 @@ export const getMachinesByPlatform = async (platformId: string): Promise<Writeup
   return index.filter(item => item.platform.toLowerCase() === platformId.toLowerCase());
 };
 
+// The shared "most recent first" rule (home-featured-projects), used by
+// getRecentWriteups and the Home featured projects so the two cannot drift:
+//   - sorted by `date` descending (parseable dates only);
+//   - an entry with a missing or unparseable `date` sorts AFTER every dated
+//     entry — its date is NEVER invented;
+//   - STABLE tie-break: entries whose dates tie keep their input order (the
+//     index order), so "the N most recent" is deterministic even when every
+//     entry shares one date;
+//   - returns a NEW array (the input is never mutated), sliced to `limit`;
+//   - `limit <= 0` → [].
+export const mostRecentByDate = <T extends { readonly date?: string }>(
+  items: readonly T[],
+  limit: number
+): T[] => {
+  if (limit <= 0) return [];
+  const timeOf = (item: T): number => (item.date === undefined ? NaN : Date.parse(item.date));
+  return [...items]
+    .sort((a, b) => {
+      const timeA = timeOf(a);
+      const timeB = timeOf(b);
+      const datedA = !Number.isNaN(timeA);
+      const datedB = !Number.isNaN(timeB);
+      if (!datedA) return datedB ? 1 : 0;
+      if (!datedB) return -1;
+      return timeB - timeA; // ties → 0 → Array#sort keeps input order (stable)
+    })
+    .slice(0, limit);
+};
+
 // Get the N most recent writeups regardless of platform
 export const getRecentWriteups = async (limit: number = 3): Promise<WriteupIndexItem[]> => {
-  const index = await fetchIndex();
   // Ensure sorting by date descending just in case index.json isn't perfectly sorted
-  const sorted = index.sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
-  });
-  return sorted.slice(0, limit);
+  return mostRecentByDate(await fetchIndex(), limit);
 };
 
 // Shared loader for one markdown document: fetch, parse the frontmatter with the

@@ -9,6 +9,7 @@ import {
   getPlatforms,
   getProjects,
   getRecentWriteups,
+  mostRecentByDate,
 } from '../lib/content';
 import type { WriteupIndexItem } from '../types';
 
@@ -294,6 +295,70 @@ describe('getMachinesByPlatform', () => {
 
     expect(upper.map((item) => item.slug)).toEqual(['wave']);
     expect(lower.map((item) => item.slug)).toEqual(['blue']);
+  });
+});
+
+describe('mostRecentByDate', () => {
+  const entry = (id: string, date?: string): { id: string; date?: string } =>
+    date === undefined ? { id } : { id, date };
+
+  it('returns entries sorted by date descending within the limit', () => {
+    const items = [
+      entry('old', '2024-01-01'),
+      entry('new', '2026-05-05'),
+      entry('mid', '2025-03-03'),
+      entry('extra', '2026-01-01'),
+    ];
+
+    expect(mostRecentByDate(items, 2).map((item) => item.id)).toEqual(['new', 'extra']);
+  });
+
+  it('keeps the input order for tied dates (stable tie-break)', () => {
+    const items = [
+      entry('a', '2026-01-01'),
+      entry('b', '2026-01-01'),
+      entry('x', '2026-06-01'),
+      entry('c', '2026-01-01'),
+    ];
+
+    expect(mostRecentByDate(items, 4).map((item) => item.id)).toEqual(['x', 'a', 'b', 'c']);
+    expect(mostRecentByDate(items, 3).map((item) => item.id)).toEqual(['x', 'a', 'b']);
+  });
+
+  it('sorts missing or unparseable dates after every dated entry, never inventing a date', () => {
+    const items = [
+      entry('undated'),
+      entry('bad', 'not-a-date'),
+      entry('new', '2026-01-02'),
+      entry('old', '2025-01-01'),
+    ];
+
+    const result = mostRecentByDate(items, 4);
+
+    expect(result.map((item) => item.id)).toEqual(['new', 'old', 'undated', 'bad']);
+    // Never invented: the undated entry stays undated, the bad date passes through verbatim.
+    expect(result[2].date).toBeUndefined();
+    expect(result[3].date).toBe('not-a-date');
+    // Dated entries always outrank undated/unparseable ones inside the limit.
+    expect(mostRecentByDate(items, 2).map((item) => item.id)).toEqual(['new', 'old']);
+  });
+
+  it('returns everything when the limit exceeds the input, and [] for limit <= 0', () => {
+    const items = [entry('a', '2025-01-01'), entry('b', '2026-01-01')];
+
+    expect(mostRecentByDate(items, 10).map((item) => item.id)).toEqual(['b', 'a']);
+    expect(mostRecentByDate(items, 0)).toEqual([]);
+    expect(mostRecentByDate(items, -1)).toEqual([]);
+  });
+
+  it('does not mutate the input array', () => {
+    const items = [entry('undated'), entry('a', '2025-01-01'), entry('b', '2026-01-01')];
+    const snapshot = [...items];
+
+    mostRecentByDate(items, 2);
+
+    expect(items).toEqual(snapshot);
+    expect(items.map((item) => item.id)).toEqual(['undated', 'a', 'b']);
   });
 });
 

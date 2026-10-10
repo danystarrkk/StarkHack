@@ -4,15 +4,21 @@ import { Search, Terminal, Settings, ArrowRight } from 'lucide-react';
 
 interface FeaturedProjectsProps {
   projects: Project[];
+  // Real total of project entries in the index: the grid shows only the
+  // featured slice, so both counters report this total (honesty rule). Falls
+  // back to the grid length when a caller has no total to report.
+  totalCount?: number;
   onSelectProject: (project: Project) => void;
   onExploreAll: () => void;
 }
 
 export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
   projects,
+  totalCount,
   onSelectProject,
   onExploreAll,
 }) => {
+  const total = totalCount ?? projects.length;
   const renderBannerIcon = (type: Project['iconType']) => {
     switch (type) {
       case 'scan':
@@ -50,7 +56,7 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
 
         <div className="flex items-center gap-2 rounded border border-[#1b1f29] bg-[#10141c] px-2.5 py-1 text-[11px] font-mono text-[#879299]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#39bae6] shadow-[0_0_6px_#39bae6]" />
-          <span>INDEX: {String(projects.length).padStart(2, '0')} REPOSITORIOS</span>
+          <span>INDEX: {String(total).padStart(2, '0')} REPOSITORIOS</span>
         </div>
       </div>
 
@@ -174,7 +180,7 @@ export const FeaturedProjects: React.FC<FeaturedProjectsProps> = ({
         </button>
 
         <p className="mt-2 text-[11px] font-mono text-[#5a6673]">
-          • {projects.length} REPOSITORIOS INDEXADOS // ARCHIVO PÚBLICO •
+          • {total} REPOSITORIOS INDEXADOS // ARCHIVO PÚBLICO •
         </p>
       </div>
     </section>

@@ -11,8 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { TerminalHero } from '../components/TerminalHero';
 import { NewsWriteups } from '../components/NewsWriteups';
 import { FeaturedProjects } from '../components/FeaturedProjects';
-import { getProjects, getRecentWriteups } from '../../lib/content';
-import { toUiProject, toUiWriteup } from './contentAdapter';
+import { loadHomeContent } from './homeModel';
 import { Project, Writeup } from '../types';
 import { projectDetailPath, writeupDetailPath } from './paths';
 import { useTerminal } from './terminal';
@@ -23,21 +22,20 @@ export const Home: React.FC = () => {
 
   const [homeWriteups, setHomeWriteups] = useState<Writeup[]>([]);
   const [homeProjects, setHomeProjects] = useState<Project[]>([]);
+  const [homeProjectTotal, setHomeProjectTotal] = useState<number>(0);
   const [homeStatus, setHomeStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [homeError, setHomeError] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadHomeContent = async () => {
+    const initHome = async () => {
       try {
-        const [recentWriteups, projects] = await Promise.all([
-          getRecentWriteups(3),
-          getProjects(),
-        ]);
+        const content = await loadHomeContent();
         if (cancelled) return;
-        setHomeWriteups(recentWriteups.map(toUiWriteup));
-        setHomeProjects(projects.map((item, index) => toUiProject(item, index + 1)));
+        setHomeWriteups(content.writeups);
+        setHomeProjects(content.projects);
+        setHomeProjectTotal(content.projectTotal);
         setHomeStatus('ready');
       } catch (error) {
         if (cancelled) return;
@@ -46,7 +44,7 @@ export const Home: React.FC = () => {
       }
     };
 
-    void loadHomeContent();
+    void initHome();
     return () => {
       cancelled = true;
     };
@@ -94,6 +92,7 @@ export const Home: React.FC = () => {
 
           <FeaturedProjects
             projects={homeProjects}
+            totalCount={homeProjectTotal}
             onSelectProject={(project) => navigate(projectDetailPath(project.id))}
             onExploreAll={() => navigate('/projects')}
           />
