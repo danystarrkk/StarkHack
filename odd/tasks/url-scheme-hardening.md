@@ -44,3 +44,9 @@ defensa en profundidad con `public/_headers` (M3).
 - **L2** · evidencia · `npm audit` 0 vulns; sin `dangerouslySetInnerHTML`;
   guardas de render nuevas son defensa en profundidad (el pipeline ya rechaza
   en escritura con add-content/generate-index).
+- **L3** · evidencia/lección · T4: el `continue` del guard de imagen dentro
+  del `while (i < lines.length)` de `MarkdownRenderer` provocó un OOM
+  (loop infinito) porque el branch no incrementaba `i` antes del `continue`
+  (los branches existentes sí lo hacen). Fix: `i++` antes del `continue`.
+  RED observado (href javascript: en el DOM) → GREEN tras el fix; aislado
+  con tests scratch bisectando link vs imagen.

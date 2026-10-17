@@ -10,6 +10,7 @@ import {
   Maximize2,
   ExternalLink,
 } from 'lucide-react';
+import { isSafeUrl } from '../../lib/url-safety.js';
 
 export interface TocHeading {
   id: string;
@@ -176,6 +177,15 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       // Link [text](url)
       const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (linkMatch) {
+        // Security guard (url-scheme-hardening S4): an unsafe scheme never
+        // becomes an href — the visible text still renders as plain text.
+        if (!isSafeUrl(linkMatch[2])) {
+          return (
+            <span key={index} className="text-[#bdc8cf]">
+              {linkMatch[1]}
+            </span>
+          );
+        }
         return (
           <a
             key={index}
@@ -438,6 +448,22 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       const alt = imageMatch[1];
       const src = imageMatch[2];
       const caption = imageMatch[3] || alt;
+
+      // Security guard (url-scheme-hardening S4): an unsafe src never renders
+      // (no <img>, no lightbox). The pipeline rejects it fail-loud at write
+      // time; this guard covers hand-edited bodies/indexes reaching the UI.
+      if (!isSafeUrl(src)) {
+        renderedElements.push(
+          <p
+            key={`img-blocked-${renderedElements.length}`}
+            className="my-4 font-mono text-xs text-[#5a6673]"
+          >
+            [imagen no renderizada: esquema de URL inseguro]
+          </p>
+        );
+        i++;
+        continue;
+      }
 
       renderedElements.push(
         <div

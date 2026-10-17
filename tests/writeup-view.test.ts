@@ -389,3 +389,44 @@ describe('WriteupPage (rendered with real pipeline data)', () => {
     expect(withoutLinks).toContain('Hola'); // body still renders
   });
 });
+
+// ---------------------------------------------------------------------------
+// Security (url-scheme-hardening S4): render-time guard on top of the pipeline
+// validation — a body or index.json edited by hand can still reach the
+// renderer, and unsafe schemes must never become DOM attributes.
+// ---------------------------------------------------------------------------
+
+describe('WriteupPage render — unsafe URL schemes never reach the DOM', () => {
+  const renderBody = async (markdownContent: string): Promise<string> => {
+    const { WriteupPage } = await import('../src/components/WriteupPage');
+    return renderToStaticMarkup(
+      createElement(WriteupPage, {
+        writeup: { ...BARE_SOURCE, markdownContent },
+        onBack: () => undefined,
+      })
+    );
+  };
+
+  it('never emits a javascript: href or a data: img src, and keeps the visible text', async () => {
+    const markup = await renderBody(
+      [
+        '# Título',
+        '[click aquí](javascript:alert(1))',
+        '![foto](data:text/html;base64,PHNjcmlwdD4=)',
+      ].join('\n\n')
+    );
+    expect(markup).not.toContain('href="javascript:');
+    expect(markup).not.toContain('data:text/html');
+    expect(markup).toContain('click aquí'); // the link text still renders as text
+  });
+
+  it('still renders safe https links and site-relative images as real elements', async () => {
+    const markup = await renderBody(
+      ['# Título', '[ok](https://example.com/doc)', '![foto](/writeups/x/media/01.webp)'].join(
+        '\n\n'
+      )
+    );
+    expect(markup).toContain('href="https://example.com/doc"');
+    expect(markup).toContain('src="/writeups/x/media/01.webp"');
+  });
+});
