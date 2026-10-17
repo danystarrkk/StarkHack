@@ -8,6 +8,7 @@
 // supplies a link source (githubUrl / explicit link lists).
 import React, { useState, useEffect, useMemo } from 'react';
 import { Project } from '../types';
+import { isSafeUrl } from '../../lib/url-safety.js';
 import { buildProjectView, type ProjectViewChipTone } from '../lib/projectView';
 import { MarkdownRenderer, TocHeading } from './MarkdownRenderer';
 import {
@@ -50,7 +51,12 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
   const [readingProgress, setReadingProgress] = useState(0);
 
   // Sidebar link lists (real sources only; empty → the section stays hidden)
-  const { projectLinks, toolLinks } = view;
+  // Security guard (url-scheme-hardening T5): link entries whose url is
+  // outside the shared scheme allowlist never render an anchor (the pipeline
+  // rejects them fail-loud at write time; this covers hand-edited indexes).
+  const { projectLinks: rawProjectLinks, toolLinks: rawToolLinks } = view;
+  const projectLinks = rawProjectLinks.filter((link) => isSafeUrl(link.url));
+  const toolLinks = rawToolLinks.filter((tool) => isSafeUrl(tool.url));
 
   // Headings extracted from the real readme markdown
   const headings: TocHeading[] = view.headings;
@@ -215,7 +221,7 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
             </button>
 
             {/* External Repo link — only when the real data has a repo URL */}
-            {view.repoUrl && (
+            {isSafeUrl(view.repoUrl) && (
               <a
                 href={view.repoUrl}
                 target="_blank"

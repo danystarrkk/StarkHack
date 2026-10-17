@@ -7,6 +7,7 @@
 // fields that really exist (no invented badges).
 import React, { useState, useEffect, useMemo } from 'react';
 import { Writeup } from '../types';
+import { isSafeUrl } from '../../lib/url-safety.js';
 import { buildWriteupView, type WriteupViewChipTone } from '../lib/writeupView';
 import { MarkdownRenderer, TocHeading } from './MarkdownRenderer';
 import {
@@ -46,7 +47,12 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
   const [readingProgress, setReadingProgress] = useState(0);
 
   // Links lists (only from curated template data; empty → section hidden)
-  const { machineLinks, toolLinks } = view;
+  // Security guard (url-scheme-hardening T5): link entries whose url is
+  // outside the shared scheme allowlist never render a card (the pipeline
+  // rejects them fail-loud at write time; this covers hand-edited indexes).
+  const { machineLinks: rawMachineLinks, toolLinks: rawToolLinks } = view;
+  const machineLinks = rawMachineLinks.filter((link) => isSafeUrl(link.url));
+  const toolLinks = rawToolLinks.filter((tool) => isSafeUrl(tool.url));
 
   // Headings extracted from the real markdown body
   const headings: TocHeading[] = view.headings;

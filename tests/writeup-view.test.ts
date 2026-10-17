@@ -430,3 +430,37 @@ describe('WriteupPage render — unsafe URL schemes never reach the DOM', () => 
     expect(markup).toContain('src="/writeups/x/media/01.webp"');
   });
 });
+
+describe('WriteupPage render — frontmatter link cards with unsafe schemes never render', () => {
+  const renderLinks = async (links: {
+    machineLinks?: Writeup['machineLinks'];
+    toolLinks?: Writeup['toolLinks'];
+  }): Promise<string> => {
+    const { WriteupPage } = await import('../src/components/WriteupPage');
+    return renderToStaticMarkup(
+      createElement(WriteupPage, {
+        writeup: { ...BARE_SOURCE, markdownContent: '# Título', ...links },
+        onBack: () => undefined,
+      })
+    );
+  };
+
+  it('drops machineLinks/toolLinks entries whose url has an unsafe scheme (section hides when empty)', async () => {
+    const markup = await renderLinks({
+      machineLinks: [{ title: 'Evil', url: 'javascript:alert(1)' }],
+      toolLinks: [{ name: 'evil', url: 'data:text/html;base64,AAAA', description: 'payload' }],
+    });
+    expect(markup).not.toContain('javascript:');
+    expect(markup).not.toContain('data:text/html');
+    expect(markup).not.toContain('ENLACES DE LA MÁQUINA');
+    expect(markup).not.toContain('HERRAMIENTAS');
+  });
+
+  it('still renders safe link cards verbatim', async () => {
+    const markup = await renderLinks({
+      machineLinks: [{ title: 'HMV', url: 'https://hackmyvm.eu/x' }],
+    });
+    expect(markup).toContain('href="https://hackmyvm.eu/x"');
+    expect(markup).toContain('ENLACES DE LA MÁQUINA');
+  });
+});

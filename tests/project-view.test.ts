@@ -400,3 +400,40 @@ describe('ProjectPage (rendered with real pipeline data)', () => {
     expect(withRepo).not.toContain('HERRAMIENTAS & OTROS LINKS');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Security (url-scheme-hardening T5): render-time guard over frontmatter-driven
+// anchors — unsafe schemes never become href attributes even if the index was
+// hand-edited past the pipeline validation.
+// ---------------------------------------------------------------------------
+
+describe('ProjectPage render — unsafe URL schemes never reach the DOM', () => {
+  it('drops repoUrl / projectLinks / toolLinks anchors with an unsafe scheme', async () => {
+    const { ProjectPage } = await import('../src/components/ProjectPage');
+    const markup = renderToStaticMarkup(
+      createElement(ProjectPage, {
+        project: {
+          ...BARE_SOURCE,
+          githubUrl: 'javascript:alert(1)',
+          projectLinks: [{ title: 'docs', url: 'javascript:alert(2)', type: 'docs' }],
+          toolLinks: [{ name: 'evil', url: 'data:text/html;base64,AAAA', description: 'payload' }],
+        },
+        onBack: () => undefined,
+      })
+    );
+    expect(markup).not.toContain('javascript:');
+    expect(markup).not.toContain('data:text/html');
+    expect(markup).not.toContain('GITHUB REPO');
+  });
+
+  it('still renders a safe githubUrl as the repo anchor', async () => {
+    const { ProjectPage } = await import('../src/components/ProjectPage');
+    const markup = renderToStaticMarkup(
+      createElement(ProjectPage, {
+        project: { ...BARE_SOURCE, githubUrl: 'https://github.com/danystarrkk/StarkHack' },
+        onBack: () => undefined,
+      })
+    );
+    expect(markup).toContain('href="https://github.com/danystarrkk/StarkHack"');
+  });
+});

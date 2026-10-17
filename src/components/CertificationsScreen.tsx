@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Certification } from '../types';
+import { isSafeUrl } from '../../lib/url-safety.js';
 import type { ContentIndexItem } from '../../types';
 import { getCertificates } from '../../lib/content';
 import { buildCertificationsModel, type CertificationFilterId } from '../lib/certificationsModel';
@@ -573,7 +574,7 @@ export const CertificationsScreen: React.FC = () => {
               </div>
 
               {/* Action Link: VER CREDENCIAL — rendered only when a real PDF exists */}
-              {cert.pdfUrl && (
+              {isSafeUrl(cert.pdfUrl) && (
               <a
                 href={cert.pdfUrl}
                 target="_blank"
