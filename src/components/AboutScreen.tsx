@@ -73,10 +73,12 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
         {/* Left Column: Operator Profile Card (5 cols on lg) */}
         <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
           {/* Header: the alias block sits FIRST, then the big centered
-              portrait (human decision: face first for trust) — the portrait
-              stretches with the card (flex-1, min floor on mobile, capped on
-              desktop) so the metadata table below fills the remainder with no
-              dead space. The red-tuned frame matches the illustration. */}
+              portrait (human decision: face first for trust). HEIGHT
+              CONTRACT: the card height is dictated by the RIGHT ABOUT_ME
+              column - this wrapper is shrinkable (min-h-0) and carries no
+              floor; the box takes a per-breakpoint height (256/320px, then
+              whatever the stretched card has left, capped at 28rem) so the
+              portrait only fills what remains and never inflates the card. */}
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-sans text-2xl font-bold text-white tracking-tight">STARK</h2>
@@ -95,8 +97,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
             </div>
           </div>
 
-          <div className="flex min-h-56 flex-1 items-center justify-center">
-            <div className="aspect-square h-full max-h-96 max-w-full overflow-hidden rounded-2xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_28px_rgba(240,113,120,0.3)]">
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <div className="aspect-square h-64 sm:h-80 lg:h-full max-h-[28rem] max-w-full overflow-hidden rounded-2xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_28px_rgba(240,113,120,0.3)]">
               <img
                 src="/ui/avatar.webp"
                 alt="Stark"

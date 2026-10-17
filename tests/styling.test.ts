@@ -319,13 +319,23 @@ describe('motion surface contract (site-motion)', () => {
     const identityBox = (aboutScreen.match(/<div className="aspect-square[^"]*">[\s\S]*?<\/div>/g) ?? []).find((block) =>
       block.includes('avatar.webp'),
     );
+    // Height contract (human fix): the card height is dictated by the RIGHT
+    // ABOUT_ME column; the portrait only fills what remains. So the flex
+    // wrapper must be shrinkable (min-h-0), must carry NO height floor, and
+    // the box height is per-breakpoint with a desktop cap — the image can
+    // never inflate the card again.
     expect(identityBox, 'the portrait box is aspect-square').toBeDefined();
     expect(identityBox).toContain('rounded-2xl');
     expect(identityBox).toContain('border-[#f07178]/40'); // the red frame
     expect(identityBox).toContain('object-cover');
-    // The portrait grows with the card (flex-1) from a mobile floor (min-h).
-    expect(aboutScreen).toContain('flex-1');
-    expect(aboutScreen).toContain('min-h-56');
+    expect(identityBox).toContain('h-64 sm:h-80 lg:h-full'); // per-breakpoint height
+    expect(identityBox).toContain('max-h-[28rem]'); // desktop cap
+    expect(aboutScreen, 'the wrapper must be shrinkable, never floor the height').toContain(
+      'min-h-0',
+    );
+    expect(aboutScreen, 'no height floor may inflate the card natural height').not.toContain(
+      'min-h-56',
+    );
     expect(aboutScreen, 'the portrait must stay lazy').toContain('loading="lazy"');
     expect(aboutScreen, 'the portrait carries the operator alias as alt').toContain('alt="Stark"');
     expect(aboutScreen, 'the old tiny identity box must not come back').not.toContain(
