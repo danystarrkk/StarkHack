@@ -18,10 +18,9 @@
 // ProjectPage renders the REAL markdown body (project.readme = the pipeline
 // doc.content) through the pure view-model builder in src/lib/projectView.ts.
 // Every project that resolves from the pipeline gets the full detail page —
-// there is no template-content gate anymore. The template content map
-// (SAMPLE_PROJECTS_CONTENT) is only consulted by hasTemplateProjectContent to
-// report whether curated template content EXISTS for a slug; it is never a
-// rendering source. Loading, missing and error states are always honest, and a
+// there is no template-content gate anymore (the retired template content map
+// and its availability report were deleted as dead code). Loading, missing
+// and error states are always honest, and a
 // render error boundary converts any residual render crash into an honest
 // visible state instead of crashing the app.
 import React, { useEffect, useState } from 'react';
@@ -30,8 +29,7 @@ import { fetchIndex, fetchProject, fetchWriteup, getProjects } from '../../lib/c
 import { toUiProject, toUiWriteup } from './contentAdapter';
 import { ProjectPage } from '../components/ProjectPage';
 import { WriteupPage } from '../components/WriteupPage';
-import { SAMPLE_PROJECTS_CONTENT } from '../data/projectContents';
-import type { Project, ProjectViewSource, Writeup } from '../types';
+import type { ProjectViewSource, Writeup } from '../types';
 import type { ContentDoc, ContentIndexItem, WriteupContent, WriteupIndexItem } from '../../types';
 import { projectDetailPath, writeupDetailPath } from './paths';
 
@@ -77,19 +75,6 @@ export const resolveProjectDetail = async (slug: string): Promise<ResolvedProjec
   if (index === -1 || !doc) return null;
   return { entry: projects[index], doc, position: index + 1 };
 };
-
-// ---------------------------------------------------------------------------
-// Curated-template availability report (projects)
-// ---------------------------------------------------------------------------
-
-// True when the project template content map holds CURATED content for the
-// slug (lookup key: id only, mirroring getProjectContent). Availability report
-// only — the detail routes never gate rendering on it and the template content
-// is never the source of a rendered body (see the file header). Writeup-side
-// there is no template source anymore: links come from the writeup's own
-// frontmatter alone.
-export const hasTemplateProjectContent = (slug: string): boolean =>
-  SAMPLE_PROJECTS_CONTENT[slug] !== undefined;
 
 // ---------------------------------------------------------------------------
 // Honest async states (same aesthetic as the Home loading/error panels)

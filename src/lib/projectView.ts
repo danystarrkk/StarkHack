@@ -11,11 +11,10 @@
 // metadata and the sections TOC.
 //
 // Honesty rules (pinned by tests/project-view.test.ts):
-//   - The body is ALWAYS the real pipeline markdown. Template content
-//     (SAMPLE_PROJECTS_CONTENT) is NEVER a source — not for the body, tags or
-//     links. Its generated fallback (getProjectContent) fabricates data and
-//     crashes on pipeline-mapped objects, so this builder has zero dependency
-//     on src/data (which the next phase deletes).
+//   - The body is ALWAYS the real pipeline markdown. Nothing else can supply
+//     one: the template-era content map and its
+//     generated fallback are deleted, and this builder has zero dependency on
+//     src/data.
 //   - Chips render only fields that really exist on the data: the group-derived
 //     badge (documented PROJECT_GROUP_LABELS map of lib/projectsModel.ts) and
 //     the real date. The invented "• • ACTIVE" status badge and the
@@ -23,11 +22,11 @@
 //     through toUiProject (documented map of lib/contentAdapter.ts), never
 //     relabeled here.
 //   - Absent optional fields (group, date, description, tags, readme) can
-//     NEVER crash the builder (the old getProjectContent fallback threw on
+//     NEVER crash the builder (the template-era fallback used to throw on
 //     pipeline-mapped objects).
 //   - Sidebar links come ONLY from fields with a real source: githubUrl → one
 //     repo link, or explicit projectLinks / toolLinks when the real data
-//     carries them. Template-sample links are never used; without a real
+//     carries them. No link is invented; without a real
 //     source the lists stay empty and the page hides the sections. Fields with
 //     no pipeline source at all (stars, versions, badges) stay ABSENT.
 import { extractHeadingsFromMarkdown, type TocHeading } from '../components/MarkdownRenderer';
@@ -125,7 +124,7 @@ export const buildProjectView = (project: ProjectViewSource): ProjectView => {
     ...(isPresent(project.githubUrl) ? { repoUrl: project.githubUrl } : {}),
     // Links: real sources ONLY. Explicit link lists when the data carries
     // them; otherwise one repo link derived from the real githubUrl; never
-    // template-sample links (SAMPLE_PROJECTS_CONTENT is not imported here).
+    // an invented link.
     projectLinks:
       project.projectLinks ??
       (isPresent(project.githubUrl)

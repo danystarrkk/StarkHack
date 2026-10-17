@@ -1,8 +1,8 @@
 // Project detail page. Everything it renders comes from the PURE view-model
 // builder (src/lib/projectView.ts) fed by the project resolved from the REAL
 // content pipeline: the body is the real readme (project.readme, the pipeline
-// doc.content from public/projects/<slug>.md) — the template's
-// SAMPLE_PROJECTS_CONTENT / getProjectContent is never a source. Chips render
+// doc.content from public/projects/<slug>.md) — nothing else can supply one
+// (the template-era content map is deleted). Chips render
 // only fields that really exist (group-derived badge + real date, no invented
 // "• • ACTIVE" status); the link sections render only when the real data
 // supplies a link source (githubUrl / explicit link lists).
@@ -40,7 +40,8 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
   // tags, chips only for fields that exist, real-source sidebar links and the
   // sections TOC extracted from the real body. Absent optional fields
   // (group / date / description / tags / readme / links) can never crash this
-  // (the old getProjectContent fallback threw on pipeline-mapped objects).
+  // (the template-era generated fallback used to throw on pipeline-mapped
+  // objects).
   const view = useMemo(() => buildProjectView(project), [project]);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');

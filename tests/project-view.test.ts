@@ -7,41 +7,42 @@
 // TOC.
 //
 // Hard rules under test:
-//   1. The body is ALWAYS the real pipeline markdown. The template's
-//      SAMPLE_PROJECTS_CONTENT is never the source of the body (its generated
-//      fallback fabricates data and crashes on pipeline-mapped objects).
+//   1. The body is ALWAYS the real pipeline markdown (the retired template
+//      content map is deleted; nothing else can supply a body, and the old
+//      generated fallback used to fabricate data and crash on
+//      pipeline-mapped objects).
 //   2. Chips/badges render only what the real data has: the group-derived
 //      badge (the documented PROJECT_GROUP_LABELS map) and the real date. The
 //      invented status badge ("• • ACTIVE") and the template-only subBadge
 //      are gone for good.
 //   3. Tags / description / date / number come from the real entry only, and
-//      absent optional fields can NEVER crash the builder (the old
-//      getProjectContent fallback threw on pipeline-mapped objects).
+//      absent optional fields can NEVER crash the builder (the template-era
+//      fallback threw on pipeline-mapped objects).
 //   4. Sidebar links come ONLY from fields with a real source (githubUrl →
 //      one repo link; explicit projectLinks / toolLinks when the data really
-//      carries them). Template-sample links are NEVER used — the sections
-//      hide when there is no real source. Stars / versions / badges stay
-//      absent, never invented.
+//      carries them). No link is ever invented — the sections hide when there
+//      is no real source. Stars / versions / badges stay absent, never
+//      invented.
 //   5. The TOC is extracted from the real markdown body: fenced-code comments
 //      are not headings, and every TOC anchor matches the id MarkdownRenderer
 //      actually renders (so the sidebar links scroll to the right place).
 //
-// public/index.json has 0 project entries today, so correctness is pinned over
-// synthetic pipeline-shaped entries (ContentIndexItem) assembled exactly like
-// ProjectDetailRoute assembles them — the same approach tests/router.test.ts
-// uses for the project resolution paths.
+// Correctness is pinned over synthetic pipeline-shaped entries
+// (ContentIndexItem) assembled exactly like ProjectDetailRoute assembles them
+// — the same approach tests/router.test.ts uses for the project resolution
+// paths — so the builder contract stays independent of whichever entries the
+// real index carries.
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { toUiProject } from '../src/lib/contentAdapter';
 import { MarkdownRenderer } from '../src/components/MarkdownRenderer';
-import { SAMPLE_PROJECTS_CONTENT } from '../src/data/projectContents';
 import { buildProjectView } from '../src/lib/projectView';
 import type { ContentIndexItem } from '../types';
 import type { Project, ProjectLink, ProjectViewSource, ToolLink } from '../src/types';
 
 // ---------------------------------------------------------------------------
-// Synthetic pipeline-shaped fixtures (the pipeline has no project entries yet)
+// Synthetic pipeline-shaped fixtures
 // ---------------------------------------------------------------------------
 
 const PIPELINE_ENTRY: ContentIndexItem = {
@@ -96,10 +97,9 @@ const BARE_ENTRY: ContentIndexItem = {
 };
 const BARE_SOURCE: Project = pipelineProject(BARE_ENTRY, 2, null);
 
-// A pipeline entry for a slug that DOES hold curated template content, so the
-// "template is never the source" rules can be pinned against real template
-// data (SAMPLE_PROJECTS_CONTENT['autorecon-ng']).
-const NO_TEMPLATE_ENTRY: ContentIndexItem = {
+// A second pipeline entry (different slug and group) used to pin
+// group-derived badges and icons against more than one shape.
+const ALT_ENTRY: ContentIndexItem = {
   kind: 'project',
   slug: 'krustykrab',
   path: '/projects/krustykrab.md',
@@ -120,16 +120,7 @@ describe('buildProjectView — body source', () => {
     expect(view.markdownContent).toContain('## Arquitectura');
   });
 
-  it('never takes the body from SAMPLE_PROJECTS_CONTENT, even for a slug with curated template content', () => {
-    const curated = SAMPLE_PROJECTS_CONTENT['autorecon-ng'];
-    expect(curated).toBeDefined(); // "autorecon-ng" DOES hold curated template content
-    expect(curated.markdown).not.toBe(PIPELINE_README); // and it is a different document
-    const view = buildProjectView(pipelineProject());
-    expect(view.markdownContent).not.toBe(curated.markdown);
-    expect(view.markdownContent).toBe(PIPELINE_README);
-  });
-
-  it('an absent readme yields an empty body — template markdown is still not used', () => {
+  it('an absent readme yields an empty body', () => {
     const view = buildProjectView(pipelineProject(PIPELINE_ENTRY, 1, null));
     expect(view.markdownContent).toBe('');
   });
@@ -151,14 +142,14 @@ describe('buildProjectView — chips and group-derived badge/icon', () => {
 
   it('derives the badge through the documented PROJECT_GROUP_LABELS map, case-insensitively', () => {
     const badgeFor = (group: string) =>
-      buildProjectView(pipelineProject({ ...NO_TEMPLATE_ENTRY, group })).groupBadge;
+      buildProjectView(pipelineProject({ ...ALT_ENTRY, group })).groupBadge;
     expect(badgeFor('herramientas')).toBe('HERRAMIENTA');
     expect(badgeFor('scripts')).toBe('SCRIPT');
     expect(badgeFor('Automatizaciones')).toBe('AUTOMATIZACIÓN');
   });
 
   it('has no group badge when the group is missing or non-canonical — never an invented one', () => {
-    for (const entry of [BARE_ENTRY, { ...NO_TEMPLATE_ENTRY, group: 'exploit' }, { ...NO_TEMPLATE_ENTRY, group: '' }]) {
+    for (const entry of [BARE_ENTRY, { ...ALT_ENTRY, group: 'exploit' }, { ...ALT_ENTRY, group: '' }]) {
       const view = buildProjectView(pipelineProject(entry));
       expect(view.groupBadge).toBeUndefined();
       expect(view.chips.map((c) => c.kind)).not.toContain('group');
@@ -169,7 +160,7 @@ describe('buildProjectView — chips and group-derived badge/icon', () => {
   it('passes through the group-derived icon (contentAdapter map via toUiProject) without relabeling', () => {
     expect(buildProjectView(pipelineProject()).iconType).toBe('gear'); // herramientas
     expect(
-      buildProjectView(pipelineProject({ ...NO_TEMPLATE_ENTRY, group: 'scripts' }, 3)).iconType
+      buildProjectView(pipelineProject({ ...ALT_ENTRY, group: 'scripts' }, 3)).iconType
     ).toBe('code');
     expect(buildProjectView(BARE_SOURCE).iconType).toBe('shield'); // no group → honest fallback
   });
@@ -178,7 +169,7 @@ describe('buildProjectView — chips and group-derived badge/icon', () => {
     const sources = [
       BARE_SOURCE,
       pipelineProject(),
-      pipelineProject(NO_TEMPLATE_ENTRY, 3, null),
+      pipelineProject(ALT_ENTRY, 3, null),
     ];
     for (const source of sources) {
       const labels = buildProjectView(source)
@@ -220,7 +211,7 @@ describe('buildProjectView — metadata and tags', () => {
     expect(view.tags).toEqual([]);
   });
 
-  it('absent optional fields can never crash the builder (old getProjectContent regression)', () => {
+  it('absent optional fields can never crash the builder (template-era fallback regression)', () => {
     expect(() => buildProjectView(BARE_SOURCE)).not.toThrow();
     const view = buildProjectView(BARE_SOURCE);
     expect(view.date).toBeUndefined();
@@ -236,21 +227,18 @@ describe('buildProjectView — metadata and tags', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildProjectView — sidebar links', () => {
-  it('hides both link sections (empty lists) when the real data has no link source — even with curated template content', () => {
+  it('hides both link sections (empty lists) when the real data has no link source at all', () => {
     const view = buildProjectView(pipelineProject(PIPELINE_ENTRY, 1, null));
     expect(view.projectLinks).toEqual([]);
     expect(view.toolLinks).toEqual([]);
     expect(view.repoUrl).toBeUndefined();
   });
 
-  it('never fabricates links (template samples and the generated fallback are not a source)', () => {
-    const curated = SAMPLE_PROJECTS_CONTENT['autorecon-ng'];
-    expect(curated).toBeDefined();
-    expect(curated.projectLinks.length).toBeGreaterThan(0);
+  it('never fabricates links when the real data carries no link source', () => {
     const view = buildProjectView(pipelineProject(PIPELINE_ENTRY, 1, null));
     const urls = [...view.projectLinks, ...view.toolLinks].map((l) => l.url);
     expect(urls).toEqual([]);
-    // neither the curated template URL nor the generated fallback's fake link
+    // not even the template-era fake links can reappear
     expect(urls).not.toContain('https://github.com/starkhack/autorecon-ng');
     expect(urls).not.toContain('https://github.com/danystark/stark-recon-suite');
   });
@@ -386,7 +374,7 @@ describe('ProjectPage (rendered with real pipeline data)', () => {
     expect(markup).not.toContain('Clonación del repositorio oficial');
   });
 
-  it('renders a minimal pipeline project without crashing (the old getProjectContent fallback threw on it)', async () => {
+  it('renders a minimal pipeline project without crashing (the template-era fallback threw on it)', async () => {
     const markup = await renderPage(BARE_SOURCE);
     expect(markup).toContain('Nuevo Proyecto');
   });
