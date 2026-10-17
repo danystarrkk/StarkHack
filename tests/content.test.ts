@@ -3,6 +3,7 @@ import {
   ContentIndexError,
   fetchIndex,
   fetchIndexByKind,
+  fetchWithTimeout,
   fetchWriteup,
   getCertificates,
   getMachinesByPlatform,
@@ -55,7 +56,9 @@ describe('fetchIndex', () => {
     fetchMock.mockResolvedValue(jsonResponse(items));
 
     await expect(fetchIndex()).resolves.toEqual(items);
-    expect(fetchMock).toHaveBeenCalledWith('/index.json');
+    expect(fetchMock).toHaveBeenCalledWith('/index.json', {
+      signal: expect.any(AbortSignal),
+    });
   });
 
   // CONTRACT CHANGE (R3-index-kind-silent-empty): the old contract resolved [] on
@@ -441,7 +444,9 @@ describe('fetchWriteup', () => {
 
     const result = await fetchWriteup('hackmyvm', 'wave');
 
-    expect(fetchMock).toHaveBeenCalledWith('/writeups/hackmyvm/wave.md');
+    expect(fetchMock).toHaveBeenCalledWith('/writeups/hackmyvm/wave.md', {
+      signal: expect.any(AbortSignal),
+    });
     expect(result).toEqual({
       slug: 'wave',
       content: '\n# Body\n\nText.\n',
@@ -529,5 +534,46 @@ describe('fetchWriteup metadata guarantees (R3-04)', () => {
     expect(result?.slug).toBe('wave');
     expect(result?.content).toBe('body\n');
     expect(result?.title).toBe('Wave');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P1 reliability (p1-reliability S2): bounded fetches — a hung request must
+// abort and reject instead of leaving every screen in `loading` forever.
+// ---------------------------------------------------------------------------
+
+describe('fetchWithTimeout', () => {
+  it('aborts and rejects when the request exceeds the timeout', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(
+      (_input: unknown, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(init.signal?.reason ?? new DOMException('aborted', 'AbortError')),
+          );
+        }),
+    );
+
+    const pending = fetchWithTimeout('/index.json', {}, 50);
+    const assertion = expect(pending).rejects.toThrow(/timed out/i);
+    await vi.advanceTimersByTimeAsync(60);
+    await assertion;
+    vi.useRealTimers();
+  });
+
+  it('resolves normally when the request wins the race', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([]));
+
+    const response = await fetchWithTimeout('/index.json', {}, 10_000);
+
+    expect(response.ok).toBe(true);
+  });
+
+  it('passes an AbortSignal to the underlying fetch', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([]));
+
+    await fetchWithTimeout('/index.json', {}, 10_000);
+
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 });

@@ -14,6 +14,29 @@ import {
 
 const INDEX_URL = '/index.json';
 
+// Default bound for every content fetch (p1-reliability S2): a hung request
+// aborts and rejects instead of leaving every screen in `loading` forever.
+export const DEFAULT_FETCH_TIMEOUT_MS = 10_000;
+
+// fetch() with a hard timeout. The AbortSignal is handed to the underlying
+// fetch so the connection is really released; on timeout the rejection message
+// names the timeout (callers convert it into their honest error type).
+export const fetchWithTimeout = async (
+  resource: string,
+  options: RequestInit = {},
+  timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS
+): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort(new DOMException(`Request timed out after ${timeoutMs}ms`, 'TimeoutError'));
+  }, timeoutMs);
+  try {
+    return await fetch(resource, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 // Actionable hint kept verbatim from the old console-only path: without a
 // generated index the fix is always to run the generator.
 const INDEX_HINT = "Did you run 'node scripts/generate-index.js'?";
@@ -38,7 +61,7 @@ export class ContentIndexError extends Error {
 const fetchRawIndex = async (): Promise<ContentIndexItem[]> => {
   let response: Response;
   try {
-    response = await fetch(INDEX_URL);
+    response = await fetchWithTimeout(INDEX_URL);
   } catch (error) {
     throw new ContentIndexError(
       `Failed to fetch content index: ${error instanceof Error ? error.message : String(error)}. ${INDEX_HINT}`,
@@ -243,7 +266,7 @@ async function fetchMarkdownDoc(
   label: string
 ): Promise<CertificateDoc | null> {
   try {
-    const response = await fetch(filePath);
+    const response = await fetchWithTimeout(filePath);
     if (!response.ok) throw new Error("File not found");
     const text = await response.text();
 
