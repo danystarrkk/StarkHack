@@ -347,12 +347,16 @@ describe('real public/index.json entries', () => {
       'SCRIPTS',
       'AUTOMATIZACIÓN',
     ]);
-    expect(model.filterCategories.map((c) => c.count)).toEqual([
+    // Derived from the entries themselves (kept OUT of a bare toEqual([…])
+    // literal on purpose: the registry CLI rewrites those arrays by anchor,
+    // and a publish-fragile literal here would break on every publish).
+    const expectedCounts = [
       projects.length,
-      ...['herramientas', 'scripts', 'automatizaciones'].map(
-        (group) => projects.filter((entry) => entry.group === group).length
+      ...['herramientas', 'scripts', 'automatizaciones'].map((group) =>
+        projects.filter((entry) => entry.group === group).length
       ),
-    ]);
+    ];
+    expect(model.filterCategories.map((c) => c.count)).toEqual(expectedCounts);
   });
 
   it('an EMPTY index still yields empty lists and zero-count categories (empty-state contract)', () => {

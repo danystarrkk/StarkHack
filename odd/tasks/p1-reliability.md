@@ -56,3 +56,18 @@ derivado (E5).
   jsdom, el boundary se pinnea estructuralmente (estilo styling.test.ts).
   El pin `content.test.ts:480` ("returns null when the response is not ok")
   es el contrato que S1 debe preservar.
+- **L3** · evidencia · differential check post-cambio: el gate completo
+  mostró 4 fallos en tests hermanos que comparten el código tocado
+  (content-kinds-api: 3 pines de llamada que ahora deben esperar el
+  AbortSignal; registry.test planGroupWiring: sus anclas de texto pinean los
+  arrays literales `c.count)).toEqual([…])` de projects-model.test — la
+  versión derivada los rompió). Arreglos: pines de llamada actualizados y
+  los conteos derivados reescritos con `const expectedCounts` fuera del
+  patrón literal que el CLI reescribe (comentario en el test explicándolo).
+  Lección: el registry CLI edita tests por ancla de texto — cualquier
+  refactor de esa zona debe conservar el patrón literal o actualizar el CLI
+  (deuda H4 del reporte).
+- **L4** · gate final · 28 archivos / 719 tests verdes, tsc superset exit 0,
+  build ok, árbol limpio. Commits: 0af0338 (doc) · bd34f97 (timeout) ·
+  3649b0b (errores honestos) · c7fc8a5 (boundary global) · e2d53e3 (pins
+  derivados) · este commit (pines hermanos + doc).

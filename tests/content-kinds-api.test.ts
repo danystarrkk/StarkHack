@@ -102,7 +102,7 @@ describe('fetchIndex with a multi-kind index', () => {
 
     expect(items.map((item) => item.slug)).toEqual(['w1', 'w2']);
     expect(items.every((item) => item.kind === 'writeup')).toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith('/index.json');
+    expect(fetchMock).toHaveBeenCalledWith('/index.json', { signal: expect.any(AbortSignal) });
   });
 });
 
@@ -369,7 +369,7 @@ describe('fetchProject / fetchCertificate', () => {
 
     const result = await fetchProject('tool');
 
-    expect(fetchMock).toHaveBeenCalledWith('/projects/tool.md');
+    expect(fetchMock).toHaveBeenCalledWith('/projects/tool.md', { signal: expect.any(AbortSignal) });
     expect(result).toEqual({
       slug: 'tool',
       content: '\n# Body\n\nText.\n',
@@ -386,7 +386,7 @@ describe('fetchProject / fetchCertificate', () => {
 
     const result = await fetchCertificate('oscp');
 
-    expect(fetchMock).toHaveBeenCalledWith('/certificates/oscp.md');
+    expect(fetchMock).toHaveBeenCalledWith('/certificates/oscp.md', { signal: expect.any(AbortSignal) });
     expect(result?.title).toBe('OSCP');
     expect(result?.order).toBe(3);
     expect(result?.content).toBe('\nbody\n');
