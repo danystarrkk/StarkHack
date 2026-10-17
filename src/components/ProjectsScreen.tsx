@@ -96,6 +96,31 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
 
   // A missing group falls through to the documented default style (honest:
   // projects without a group render the neutral chip).
+  // Filter accents per group filter id (p2 U6b): ONE frozen map instead of a
+  // hand-cloned button per group — the buttons below render from
+  // model.filterCategories, so a new group only needs its label (models) and
+  // this accent entry; missing accent falls back to the neutral chip.
+  const PROJECT_FILTER_ACCENT: Readonly<
+    Record<string, { dot: string; active: string }>
+  > = Object.freeze({
+    HERRAMIENTAS: {
+      dot: 'bg-[#ffb4ab] shadow-[0_0_6px_#ffb4ab]',
+      active: 'bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/40 shadow-[0_0_10px_rgba(255,180,171,0.25)]',
+    },
+    SCRIPTS: {
+      dot: 'bg-[#7edc73] shadow-[0_0_6px_#7edc73]',
+      active: 'bg-[#7edc73]/20 text-[#7edc73] border border-[#7edc73]/40 shadow-[0_0_10px_rgba(126,220,115,0.25)]',
+    },
+    'AUTOMATIZACIÓN': {
+      dot: 'bg-[#e6b450] shadow-[0_0_6px_#e6b450]',
+      active: 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]',
+    },
+  });
+  const FALLBACK_FILTER_ACCENT = {
+    dot: 'bg-[#879299] shadow-[0_0_6px_#879299]',
+    active: 'bg-[#879299]/20 text-[#879299] border border-[#879299]/40',
+  };
+
   const getCategoryBadgeStyle = (category: ProjectGroupLabel | undefined) => {
     switch (category) {
       case 'HERRAMIENTA':
@@ -210,61 +235,46 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[#5a6673] font-mono text-[11px] mr-1">• FILTRO:</span>
 
-              {/* Button: TODOS */}
-              <button
-                onClick={() => setActiveFilter('TODOS')}
-                className={`flex items-center gap-2 rounded px-3 py-1 text-xs font-semibold transition-all ${
-                  activeFilter === 'TODOS'
-                    ? 'bg-[#39bae6] text-[#0b0e15] shadow-[0_0_12px_rgba(57,186,230,0.4)]'
-                    : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    activeFilter === 'TODOS' ? 'bg-[#0b0e15]' : 'bg-[#39bae6] shadow-[0_0_6px_#39bae6]'
-                  }`}
-                />
-                <span>TODOS</span>
-              </button>
-
-              {/* Button: HERRAMIENTAS */}
-              <button
-                onClick={() => setActiveFilter('HERRAMIENTAS')}
-                className={`flex items-center gap-2 rounded px-3 py-1 text-xs transition-all ${
-                  activeFilter === 'HERRAMIENTAS'
-                    ? 'bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/40 shadow-[0_0_10px_rgba(255,180,171,0.25)]'
-                    : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-                }`}
-              >
-                <span className="h-2 w-2 rounded-full bg-[#ffb4ab] shadow-[0_0_6px_#ffb4ab]" />
-                <span>HERRAMIENTAS</span>
-              </button>
-
-              {/* Button: SCRIPTS */}
-              <button
-                onClick={() => setActiveFilter('SCRIPTS')}
-                className={`flex items-center gap-2 rounded px-3 py-1 text-xs transition-all ${
-                  activeFilter === 'SCRIPTS'
-                    ? 'bg-[#7edc73]/20 text-[#7edc73] border border-[#7edc73]/40 shadow-[0_0_10px_rgba(126,220,115,0.25)]'
-                    : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-                }`}
-              >
-                <span className="h-2 w-2 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-                <span>SCRIPTS</span>
-              </button>
-
-              {/* Button: AUTOMATIZACIÓN */}
-              <button
-                onClick={() => setActiveFilter('AUTOMATIZACIÓN')}
-                className={`flex items-center gap-2 rounded px-3 py-1 text-xs transition-all ${
-                  activeFilter === 'AUTOMATIZACIÓN'
-                    ? 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]'
-                    : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-                }`}
-              >
-                <span className="h-2 w-2 rounded-full bg-[#e6b450] shadow-[0_0_6px_#e6b450]" />
-                <span>AUTOMATIZACIÓN</span>
-              </button>
+              {/* Filter buttons rendered from the model (p2 U6b): one button
+                  per real category — no hand-cloned button blocks anymore. */}
+              {model.filterCategories.map((category) => {
+                const isActive = activeFilter === category.id;
+                const inactive =
+                  'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white';
+                if (category.group === null) {
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setActiveFilter(category.id)}
+                      className={`flex items-center gap-2 rounded px-3 py-1 text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-[#39bae6] text-[#0b0e15] shadow-[0_0_12px_rgba(57,186,230,0.4)]'
+                          : inactive
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isActive ? 'bg-[#0b0e15]' : 'bg-[#39bae6] shadow-[0_0_6px_#39bae6]'
+                        }`}
+                      />
+                      <span>{category.id}</span>
+                    </button>
+                  );
+                }
+                const accent = PROJECT_FILTER_ACCENT[category.id] ?? FALLBACK_FILTER_ACCENT;
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveFilter(category.id)}
+                    className={`flex items-center gap-2 rounded px-3 py-1 text-xs transition-all ${
+                      isActive ? accent.active : inactive
+                    }`}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
+                    <span>{category.id}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Right count: MOSTRANDO: X RECIENTES // Y TOTALES */}

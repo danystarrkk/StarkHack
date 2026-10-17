@@ -1068,7 +1068,6 @@ describe('planGroupWiring — certificate UI wiring (T5)', () => {
     expect(plan.files.map((file) => file.name)).toEqual([
       'src/types/index.ts',
       'src/lib/certificationsModel.ts',
-      'src/components/CertificationsScreen.tsx',
       'tests/certifications-model.test.ts',
       'tests/content-kinds-api.test.ts',
     ]);
@@ -1088,13 +1087,9 @@ describe('planGroupWiring — certificate UI wiring (T5)', () => {
     expect(model).toContain('export type { CertificateGroup }'); // derivation kept intact
     expect(model).not.toContain(`| 'oscp-labs';`); // no per-kind group union anymore
 
-    // 3. ONE filter button cloned from the CISCO block (label + activeFilter
-    //    id only); getCategoryBadgeStyle is NOT touched (default covers it).
-    const screen = byName(plan.files, 'src/components/CertificationsScreen.tsx');
-    expect(screen.split(`setActiveFilter('OSCP-LABS')`).length - 1).toBe(1);
-    expect(screen).toContain(`<span>OSCP-LABS</span>`);
-    expect(screen).toContain(`setActiveFilter('CISCO')`); // the clone source stays
-    expect(screen).toContain('getCategoryBadgeStyle'); // untouched, still present
+    // 3. The screens render their filter buttons from the model (p2 U6b) —
+    //    the plan never touches them; the badge default stays a plan note.
+    expect(plan.notes.some((note) => note.includes('getCategoryBadgeStyle'))).toBe(true);
 
     // 4-5. The two test pins: label map, filter ids arrays, count arrays and
     //      the getCertificateGroups() expectation + its embedded count.
@@ -1132,7 +1127,6 @@ describe('planGroupWiring — certificate UI wiring (T5)', () => {
     });
     expect(explicit.problems).toEqual([]);
     expect(byName(explicit.files, 'src/types/index.ts')).toContain(`'OSCP Labs' | 'UDEMY'`);
-    expect(byName(explicit.files, 'src/components/CertificationsScreen.tsx')).toContain(`<span>OSCP Labs</span>`);
 
     const defaulted = planGroupWiring({ kind: 'certificate', slug, sources: certSources });
     expect(byName(defaulted.files, 'src/lib/certificationsModel.ts')).toContain(`'oscp-labs': 'OSCP-LABS',`);
@@ -1147,16 +1141,6 @@ describe('planGroupWiring — certificate UI wiring (T5)', () => {
     expect(noTypes.files).toEqual([]);
     expect(noTypes.problems).toEqual([
       `Missing Certification category union in src/types/index.ts: expected the "category?: 'UNIVERSIDAD' …" line.`,
-    ]);
-
-    const noButton = planGroupWiring({
-      kind: 'certificate',
-      slug,
-      sources: { ...certSources, 'src/components/CertificationsScreen.tsx': 'const x = 1;\n' },
-    });
-    expect(noButton.files).toEqual([]);
-    expect(noButton.problems).toEqual([
-      `Missing the 'CISCO' filter button in src/components/CertificationsScreen.tsx: expected the static "onClick={() => setActiveFilter('CISCO')}" button block.`,
     ]);
   });
 
@@ -1192,7 +1176,6 @@ describe('planGroupWiring — project UI wiring (T5)', () => {
     expect(plan.problems).toEqual([]);
     expect(plan.files.map((file) => file.name)).toEqual([
       'src/lib/projectsModel.ts',
-      'src/components/ProjectsScreen.tsx',
       'tests/projects-model.test.ts',
       'tests/content-kinds-api.test.ts',
     ]);
@@ -1206,10 +1189,8 @@ describe('planGroupWiring — project UI wiring (T5)', () => {
     expect(model).toContain('export type { ProjectGroup }'); // derivation kept intact
     expect(model).not.toContain(`| 'oscp-labs';`); // no per-kind group union anymore
 
-    const screen = byName(plan.files, 'src/components/ProjectsScreen.tsx');
-    expect(screen.split(`setActiveFilter('OSCP-LABS')`).length - 1).toBe(1);
-    expect(screen).toContain(`<span>OSCP-LABS</span>`);
-    expect(screen).toContain(`setActiveFilter('AUTOMATIZACIÓN')`); // clone source stays
+    // The screens render their filter buttons from the model (p2 U6b) — the
+    // plan never touches them.
 
     const modelTest = byName(plan.files, 'tests/projects-model.test.ts');
     expect(modelTest).toContain(`'oscp-labs',`); // the filter-groups array
@@ -1284,7 +1265,6 @@ describe('planGroupWiring — project --icon writes the icon map and its pin (T4
     expect(plan.problems).toEqual([]);
     expect(plan.files.map((file) => file.name)).toEqual([
       'src/lib/projectsModel.ts',
-      'src/components/ProjectsScreen.tsx',
       'tests/projects-model.test.ts',
       'tests/content-kinds-api.test.ts',
       'src/lib/contentAdapter.ts',
@@ -1317,7 +1297,6 @@ describe('planGroupWiring — project --icon writes the icon map and its pin (T4
     expect(plan.problems).toEqual([]);
     expect(plan.files.map((file) => file.name)).toEqual([
       'src/lib/projectsModel.ts',
-      'src/components/ProjectsScreen.tsx',
       'tests/projects-model.test.ts',
       'tests/content-kinds-api.test.ts',
     ]);
@@ -1403,11 +1382,11 @@ describe('auditGroupUi — pending/ready with one-line hints (rule 6)', () => {
       },
       {
         file: 'src/components/CertificationsScreen.tsx',
-        hint: "add a filter button for 'oscp'",
+        hint: "add an accent entry for 'oscp' to CERT_FILTER_ACCENT (buttons render from the model)",
       },
       {
         file: 'src/components/ProjectsScreen.tsx',
-        hint: "add a filter button for 'oscp'",
+        hint: "add an accent entry for 'oscp' to PROJECT_FILTER_ACCENT (buttons render from the model)",
       },
       {
         file: 'src/lib/contentAdapter.ts',

@@ -35,3 +35,32 @@ describe('detail pages share the scroll/copy machinery (p2 U2)', () => {
     expect(source).not.toContain('window.setInterval'); // re-anchoring lives in the hook
   });
 });
+
+// ---------------------------------------------------------------------------
+// P2 U6b (p2-structure, H4): both filter rows render from the model — the
+// hand-cloned button blocks (and the CLI's text-anchor cloning) are gone; a
+// new group needs its label/entry in the models and an accent entry, never a
+// new JSX button.
+// ---------------------------------------------------------------------------
+
+describe('filter buttons render from the model (p2 U6b)', () => {
+  const projects = readFileSync(
+    new URL('../src/components/ProjectsScreen.tsx', import.meta.url),
+    'utf8'
+  );
+  const certifications = readFileSync(
+    new URL('../src/components/CertificationsScreen.tsx', import.meta.url),
+    'utf8'
+  );
+
+  it.each([
+    ['ProjectsScreen', projects, 'PROJECT_FILTER_ACCENT'],
+    ['CertificationsScreen', certifications, 'CERT_FILTER_ACCENT'],
+  ])('%s maps model.filterCategories with its accent map and no static filter click', (_name, source, accent) => {
+    expect(source).toContain('model.filterCategories.map(');
+    expect(source).toContain(accent);
+    expect(source).toContain('FALLBACK');
+    // No hand-written per-group button with a static filter id remains.
+    expect(source).not.toMatch(/onClick=\{\(\) => setActiveFilter\('[^']+'\)\}/);
+  });
+});

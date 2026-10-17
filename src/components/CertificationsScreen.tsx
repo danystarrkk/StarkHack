@@ -67,6 +67,33 @@ export const CertificationsScreen: React.FC = () => {
 
   const filteredCerts = model.certificates;
 
+  // Filter accents per group filter id (p2 U6b): ONE frozen map instead of a
+  // hand-cloned button per group; missing accent falls back to the neutral
+  // chip (a new group renders honestly even before its accent exists).
+  const CERT_FILTER_ACCENT: Readonly<Record<string, { dot: string; active: string }>> =
+    Object.freeze({
+      UNIVERSIDAD: {
+        dot: 'bg-[#ffb4ab] shadow-[0_0_6px_#ffb4ab]',
+        active: 'bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/40 shadow-[0_0_10px_rgba(255,180,171,0.25)]',
+      },
+      HACK4U: {
+        dot: 'bg-[#7edc73] shadow-[0_0_6px_#7edc73]',
+        active: 'bg-[#7edc73]/20 text-[#7edc73] border border-[#7edc73]/40 shadow-[0_0_10px_rgba(126,220,115,0.25)]',
+      },
+      CISCO: {
+        dot: 'bg-[#e6b450] shadow-[0_0_6px_#e6b450]',
+        active: 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]',
+      },
+      'HACKER-MENTOR': {
+        dot: 'bg-[#e6b450] shadow-[0_0_6px_#e6b450]',
+        active: 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]',
+      },
+    });
+  const FALLBACK_CERT_ACCENT = {
+    dot: 'bg-[#879299] shadow-[0_0_6px_#879299]',
+    active: 'bg-[#879299]/20 text-[#879299] border border-[#879299]/40',
+  };
+
   const getCategoryBadgeStyle = (category: Certification['category']) => {
     switch (category) {
       case 'UNIVERSIDAD':
@@ -374,82 +401,51 @@ export const CertificationsScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Filter Row with clean LED indicator dots */}
+      {/* Filter Row with clean LED indicator dots (p2 U6b: rendered from the
+          model — one button per real category, no hand-cloned blocks). */}
       {status === 'ready' && model.totalCount > 0 && (
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-y border-[#1b1f29]/80 py-3 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[#5a6673] font-mono text-[11px] mr-1">• FILTRO:</span>
 
-          {/* Button: TODOS */}
-          <button
-            onClick={() => setActiveFilter('TODOS')}
-            className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold transition-all ${
-              activeFilter === 'TODOS'
-                ? 'bg-[#39bae6] text-[#0b0e15] shadow-[0_0_12px_rgba(57,186,230,0.4)]'
-                : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                activeFilter === 'TODOS' ? 'bg-[#0b0e15]' : 'bg-[#39bae6] shadow-[0_0_6px_#39bae6]'
-              }`}
-            />
-            <span>TODOS</span>
-          </button>
-
-          {/* Button: UNIVERSIDAD */}
-          <button
-            onClick={() => setActiveFilter('UNIVERSIDAD')}
-            className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
-              activeFilter === 'UNIVERSIDAD'
-                ? 'bg-[#ffb4ab]/20 text-[#ffb4ab] border border-[#ffb4ab]/40 shadow-[0_0_10px_rgba(255,180,171,0.25)]'
-                : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-[#ffb4ab] shadow-[0_0_6px_#ffb4ab]" />
-            <span>UNIVERSIDAD</span>
-          </button>
-
-          {/* Button: HACK4U */}
-          <button
-            onClick={() => setActiveFilter('HACK4U')}
-            className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
-              activeFilter === 'HACK4U'
-                ? 'bg-[#7edc73]/20 text-[#7edc73] border border-[#7edc73]/40 shadow-[0_0_10px_rgba(126,220,115,0.25)]'
-                : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-            <span>HACK4U</span>
-          </button>
-
-          {/* Button: CISCO (canonical group; the template's UDEMY category has
-              no pipeline source and is simply gone) */}
-          <button
-            onClick={() => setActiveFilter('CISCO')}
-            className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
-              activeFilter === 'CISCO'
-                ? 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]'
-                : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-[#e6b450] shadow-[0_0_6px_#e6b450]" />
-            <span>CISCO</span>
-          </button>
-
-          {/* Button: HACKER-MENTOR (canonical group; the template's UDEMY category has
-              no pipeline source and is simply gone) */}
-          <button
-            onClick={() => setActiveFilter('HACKER-MENTOR')}
-            className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
-              activeFilter === 'HACKER-MENTOR'
-                ? 'bg-[#e6b450]/20 text-[#e6b450] border border-[#e6b450]/40 shadow-[0_0_10px_rgba(230,180,80,0.25)]'
-                : 'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white'
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-[#e6b450] shadow-[0_0_6px_#e6b450]" />
-            <span>HACKER-MENTOR</span>
-          </button>
+          {model.filterCategories.map((category) => {
+            const isActive = activeFilter === category.id;
+            const inactive =
+              'border border-[#1b1f29] bg-[#10141c] text-[#879299] hover:text-white';
+            if (category.group === null) {
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveFilter(category.id)}
+                  className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-[#39bae6] text-[#0b0e15] shadow-[0_0_12px_rgba(57,186,230,0.4)]'
+                      : inactive
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isActive ? 'bg-[#0b0e15]' : 'bg-[#39bae6] shadow-[0_0_6px_#39bae6]'
+                    }`}
+                  />
+                  <span>{category.id}</span>
+                </button>
+              );
+            }
+            const accent = CERT_FILTER_ACCENT[category.id] ?? FALLBACK_CERT_ACCENT;
+            return (
+              <button
+                key={category.id}
+                onClick={() => setActiveFilter(category.id)}
+                className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-all ${
+                  isActive ? accent.active : inactive
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
+                <span>{category.id}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Right count */}
