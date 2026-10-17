@@ -25,10 +25,11 @@
  *   4. certificates → imagen directa (--image); writeups/projects → carpeta
  *      (--images) cuyos archivos se copian convertidos, jamás se mueven.
  *
- * Idempotencia y honestidad (al estilo scripts/migrate-images.js): el plan se
- * imprime completo antes de actuar, --dry-run no toca el disco y es
- * byte-idempotente, los problemas fallan con exit 1 sin escribir nada, y un
- * .md ya colocado en su destino se reescribe en lugar (re-ejecución limpia).
+ * Idempotencia y honestidad (convención heredada de la migración histórica
+ * de imágenes, cuyo script ya fue retirado): el plan se imprime completo
+ * antes de actuar, --dry-run no toca el disco y es byte-idempotente, los
+ * problemas fallan con exit 1 sin escribir nada, y un .md ya colocado en su
+ * destino se reescribe en lugar (re-ejecución limpia).
  *
  * El núcleo testeable vive junto a un main() protegido por el guard de
  * import.meta.url (mismo patrón que scripts/generate-index.js exporta
