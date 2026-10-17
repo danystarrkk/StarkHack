@@ -305,20 +305,24 @@ describe('motion surface contract (site-motion)', () => {
     expect(aboutScreen, 'AboutScreen.tsx must carry data-reveal').toContain('data-reveal');
   });
 
-  it('the operator profile card renders the real avatar in its identity box (red frame)', () => {
-    // The identity box keeps its geometry (h-14/16 w-14/16 rounded-xl) and
-    // swaps the Shield glyph for the real portrait served from /ui/.
-    const identityBox = (aboutScreen.match(/<div className="h-14 w-14 sm:h-16 sm:w-16[^"]*">[\s\S]*?<\/div>/g) ?? []).find((block) =>
+  it('the operator profile card renders the real avatar in its identity box (red frame, recognizable size)', () => {
+    // The identity box keeps the portrait VISIBLE without zoom (128px, 144px
+    // from sm) and the red-tuned frame; the face must be recognizable at the
+    // rendered size, so the box can never shrink back to the old 56/64px.
+    const identityBox = (aboutScreen.match(/<div className="h-32 w-32 sm:h-36 sm:w-36[^"]*">[\s\S]*?<\/div>/g) ?? []).find((block) =>
       block.includes('avatar.webp'),
     );
-    expect(identityBox, 'the identity box must render /ui/avatar.webp').toBeDefined();
+    expect(identityBox, 'the identity box must render /ui/avatar.webp at 128/144px').toBeDefined();
     expect(identityBox).toContain('object-cover');
-    expect(identityBox).toContain('rounded-xl');
+    expect(identityBox).toContain('rounded-2xl');
     expect(identityBox).toContain('border-[#f07178]/40'); // the red frame
     expect(aboutScreen, 'the avatar must be lazy like the rest of the media').toContain(
       'loading="lazy"',
     );
     expect(aboutScreen, 'the portrait carries the operator alias as alt').toContain('alt="Stark"');
+    expect(aboutScreen, 'the old tiny identity box must not come back').not.toContain(
+      'h-14 w-14 sm:h-16 sm:w-16',
+    );
   });
 });
 
