@@ -5,11 +5,13 @@
 // writeup's own frontmatter carries machineLinks/toolLinks (the frontmatter
 // is the single source; no curated template data exists). Chips render only
 // fields that really exist (no invented badges).
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Writeup } from '../types';
 import { isSafeUrl } from '../../lib/url-safety.js';
 import { buildWriteupView, type WriteupViewChipTone } from '../lib/writeupView';
 import { MarkdownRenderer, TocHeading } from './MarkdownRenderer';
+import { useDetailScroll } from '../lib/useDetailScroll';
+import { useCopyFlag } from '../lib/useCopyFlag';
 import {
   ArrowLeft,
   Share2,
@@ -42,9 +44,11 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
   // (os / difficulty / vulnerabilities / tags) can never crash this.
   const view = useMemo(() => buildWriteupView(writeup), [writeup]);
 
-  const [activeHeadingId, setActiveHeadingId] = useState<string>('');
-  const [copiedShare, setCopiedShare] = useState(false);
-  const [readingProgress, setReadingProgress] = useState(0);
+  // Shared detail machinery (p2 U2): scroll progress + active TOC heading +
+  // anchored smooth scroll, and the copy-to-clipboard confirmation flag.
+  const { activeHeadingId, readingProgress, scrollToHeading } = useDetailScroll(view.headings);
+  const shareCopy = useCopyFlag();
+  const handleCopyShare = () => shareCopy.copy(window.location.href);
 
   // Links lists (only from curated template data; empty → section hidden)
   // Security guard (url-scheme-hardening T5): link entries whose url is
@@ -59,80 +63,6 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
 
   // Tags assigned to this writeup (real data only)
   const writeupTags: string[] = view.tags;
-
-  // Track scroll position & update active heading and reading progress
-  useEffect(() => {
-    const handleScroll = () => {
-      // Calculate reading progress
-      const scrollY = window.scrollY;
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = Math.min(100, Math.max(0, Math.round((scrollY / totalHeight) * 100)));
-        setReadingProgress(progress);
-      }
-
-      // Detect active heading
-      const headingElements = headings
-        .map((h) => document.getElementById(h.id))
-        .filter((el): el is HTMLElement => el !== null);
-
-      if (headingElements.length === 0) return;
-
-      const triggerPosition = 180;
-      let currentActiveId = headingElements[0].id;
-
-      for (const el of headingElements) {
-        const top = el.getBoundingClientRect().top;
-        if (top <= triggerPosition) {
-          currentActiveId = el.id;
-        } else {
-          break;
-        }
-      }
-
-      setActiveHeadingId(currentActiveId);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [headings]);
-
-  const scrollToHeading = (id: string) => {
-    const element = document.getElementById(id);
-    if (!element) return;
-
-    const topOffset = 90;
-    const targetTop = () =>
-      element.getBoundingClientRect().top + window.pageYOffset - topOffset;
-
-    // Smooth scroll to the position computed right now.
-    window.scrollTo({ top: targetTop(), behavior: 'smooth' });
-    setActiveHeadingId(id);
-
-    // Re-anchor after the scroll settles: images use loading="lazy" and have
-    // no reserved height, so when they load above/below the target the layout
-    // shifts and the heading ends up short of the top offset. Keep correcting
-    // for a few seconds until the delta is negligible.
-    window.setTimeout(() => {
-      let attempts = 0;
-      const settle = window.setInterval(() => {
-        const delta = targetTop() - window.pageYOffset;
-        if (Math.abs(delta) <= 3 || attempts >= 20) {
-          window.clearInterval(settle);
-          return;
-        }
-        window.scrollTo({ top: targetTop(), behavior: 'auto' });
-        attempts += 1;
-      }, 150);
-    }, 700);
-  };
-
-  const handleCopyShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedShare(true);
-    setTimeout(() => setCopiedShare(false), 2000);
-  };
 
   return (
     <div className="min-h-screen bg-[#10131a] text-[#e0e2ec] font-mono selection:bg-[#39bae6]/30 selection:text-white pb-24">
@@ -192,7 +122,7 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
               className="flex items-center gap-1.5 rounded border border-[#242936] bg-[#141821] px-3 py-1.5 text-xs text-[#879299] transition-all hover:border-[#39bae6] hover:text-[#6ad5ff]"
               title="Copiar enlace del writeup"
             >
-              {copiedShare ? (
+              {shareCopy.copied ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-[#7edc73]" />
                   <span className="text-[#7edc73] font-bold text-[11px]">COPIADO</span>

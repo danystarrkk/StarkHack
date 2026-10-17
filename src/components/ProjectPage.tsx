@@ -6,11 +6,13 @@
 // only fields that really exist (group-derived badge + real date, no invented
 // "• • ACTIVE" status); the link sections render only when the real data
 // supplies a link source (githubUrl / explicit link lists).
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Project } from '../types';
 import { isSafeUrl } from '../../lib/url-safety.js';
 import { buildProjectView, type ProjectViewChipTone } from '../lib/projectView';
 import { MarkdownRenderer, TocHeading } from './MarkdownRenderer';
+import { useDetailScroll } from '../lib/useDetailScroll';
+import { useCopyFlag } from '../lib/useCopyFlag';
 import {
   ArrowLeft,
   Share2,
@@ -45,10 +47,14 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
   // objects).
   const view = useMemo(() => buildProjectView(project), [project]);
 
-  const [activeHeadingId, setActiveHeadingId] = useState<string>('');
-  const [copiedShare, setCopiedShare] = useState(false);
-  const [copiedMarkdown, setCopiedMarkdown] = useState(false);
-  const [readingProgress, setReadingProgress] = useState(0);
+  // Shared detail machinery (p2 U2): scroll progress + active TOC heading +
+  // anchored smooth scroll, and the copy-to-clipboard confirmation flags
+  // (one per copy button).
+  const { activeHeadingId, readingProgress, scrollToHeading } = useDetailScroll(view.headings);
+  const shareCopy = useCopyFlag();
+  const markdownCopy = useCopyFlag();
+  const handleCopyShare = () => shareCopy.copy(window.location.href);
+  const handleCopyMarkdown = () => markdownCopy.copy(view.markdownContent);
 
   // Sidebar link lists (real sources only; empty → the section stays hidden)
   // Security guard (url-scheme-hardening T5): link entries whose url is
@@ -60,75 +66,6 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
 
   // Headings extracted from the real readme markdown
   const headings: TocHeading[] = view.headings;
-
-  // Track scroll position & update active heading and reading progress
-  useEffect(() => {
-    const handleScroll = () => {
-      // Calculate reading progress
-      const scrollY = window.scrollY;
-      const totalHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = Math.min(
-          100,
-          Math.max(0, Math.round((scrollY / totalHeight) * 100))
-        );
-        setReadingProgress(progress);
-      }
-
-      // Detect active heading
-      const headingElements = headings
-        .map((h) => document.getElementById(h.id))
-        .filter((el): el is HTMLElement => el !== null);
-
-      if (headingElements.length === 0) return;
-
-      const triggerPosition = 180;
-      let currentActiveId = headingElements[0].id;
-
-      for (const el of headingElements) {
-        const top = el.getBoundingClientRect().top;
-        if (top <= triggerPosition) {
-          currentActiveId = el.id;
-        } else {
-          break;
-        }
-      }
-
-      setActiveHeadingId(currentActiveId);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [headings]);
-
-  const scrollToHeading = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const topOffset = 90;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - topOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      });
-      setActiveHeadingId(id);
-    }
-  };
-
-  const handleCopyShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedShare(true);
-    setTimeout(() => setCopiedShare(false), 2000);
-  };
-
-  const handleCopyMarkdown = () => {
-    navigator.clipboard.writeText(view.markdownContent);
-    setCopiedMarkdown(true);
-    setTimeout(() => setCopiedMarkdown(false), 2000);
-  };
 
   return (
     <div className="min-h-screen bg-[#10131a] text-[#e0e2ec] font-mono selection:bg-[#39bae6]/30 selection:text-white pb-24">
@@ -188,7 +125,7 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
               className="hidden md:flex items-center gap-1.5 rounded border border-[#242936] bg-[#141821] px-3 py-1.5 text-xs text-[#879299] transition-all hover:border-[#7edc73] hover:text-[#7edc73]"
               title="Copiar documentación Markdown"
             >
-              {copiedMarkdown ? (
+              {markdownCopy.copied ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-[#7edc73]" />
                   <span className="text-[#7edc73] font-bold text-[11px]">MD COPIADO</span>
@@ -207,7 +144,7 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
               className="flex items-center gap-1.5 rounded border border-[#242936] bg-[#141821] px-3 py-1.5 text-xs text-[#879299] transition-all hover:border-[#39bae6] hover:text-[#6ad5ff]"
               title="Copiar enlace del proyecto"
             >
-              {copiedShare ? (
+              {shareCopy.copied ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-[#7edc73]" />
                   <span className="text-[#7edc73] font-bold text-[11px]">COPIADO</span>
