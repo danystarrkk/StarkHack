@@ -7,6 +7,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { MainframeTerminalModal } from './components/MainframeTerminalModal';
+import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
 import { TerminalContext } from './lib/terminal';
 import { initReveal } from './lib/reveal';
 
@@ -59,8 +60,11 @@ export default function App() {
           <Navbar onOpenTerminal={() => setIsTerminalOpen(true)} />
 
           {/* Routed screen (Home, Writeups, Projects, Certifications, About,
-              detail pages or the 404 state) */}
-          <Outlet />
+              detail pages or the 404 state) — a render crash anywhere below
+              becomes the honest global fallback, never a white screen */}
+          <GlobalErrorBoundary>
+            <Outlet />
+          </GlobalErrorBoundary>
 
           {/* Bottom Telemetry Bar */}
           <Footer />
