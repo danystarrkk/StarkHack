@@ -52,3 +52,24 @@ propio commit; este doc es el índice del epic.
   not-found) — mismo comportamiento observable, cero lógica nueva en las
   pantallas. `MainframeTerminalModal` queda fuera (ciclo de vida one-shot
   documentado, no es el mismo patrón).
+
+## Log (ejecución)
+
+- **L3** · U1 `87d689a` · U2 `5456ec1` · U3 `b8e2d0f` · U4 `1f549d7` · U5
+  `c76f5b8` · U6a `d8d1c91` · U6b `44d79df`. Cada unidad cerró con gate
+  completo verde y differential check (los pines hermanos tocados se
+  arreglaron en la misma unidad: styling.test source pins, home-model path,
+  content-kinds-api call pins, registry wiring pins).
+- **L4** · U6 (opción B elegida por el humano) en dos sub-units: U6a tipos
+  derivados (`@type` de tuple literal en content-kinds + `src/types/kinds.ts`
+  + drift pin + normalizeGroup genérico + CLI sin unions per-kind; el CLI
+  extiende el tuple junto al array); U6b botones data-driven (mapa de
+  acentos por pantalla con fallback; clonado por ancla de texto eliminado
+  del CLI). Alcance por alta de grupo: de ~10 lugares a ~4 manuales
+  (PROJECT_GROUP_LABELS, PROJECT_FILTER_CATEGORIES, PROJECT_FILTER_ACCENT,
+  pins del test) + el vocabulario en content-kinds; el compilador falla en
+  falta el label.
+- **L5** · gate epic final: 30 archivos / 740 tests verdes, tsc
+  `--noUnusedLocals` exit 0, build ok, árbol limpio. Nota: la verificación
+  visual de los botones (colores por grupo) queda para `npm run dev` — los
+  pines estructurales y de render SSR cubren el contrato, no los píxeles.
