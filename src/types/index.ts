@@ -1,18 +1,15 @@
-export interface MachineLink {
-  title: string;
-  url: string;
-  badge?: string;
-  type?: 'platform' | 'download' | 'ip' | 'cve';
-}
+// Link types are DERIVED from the validated frontmatter contract
+// (url-scheme-hardening era, p2 U4): the pipeline types in /types.ts are the
+// single source, so `githubStars` (string | number) and the optionality of
+// `description` can never drift between validation and rendering again.
+import type { MachineLinkFm, ToolLinkFm } from '../../types';
 
-export interface ToolLink {
-  name: string;
-  url: string;
-  description: string;
+/** UI machine link — verbatim shape of the validated frontmatter entry. */
+export type MachineLink = MachineLinkFm;
+
+/** UI tool link — the validated entry plus the display-only category. */
+export interface ToolLink extends ToolLinkFm {
   category?: 'CUSTOM_TOOL' | 'EXPLOIT' | 'RECON' | 'WORDLIST' | 'REFERENCE';
-  developedByAuthor?: boolean;
-  githubStars?: string;
-  badge?: string;
 }
 
 export interface Writeup {

@@ -23,7 +23,7 @@
 //   'automatizaciones' → 'scan'
 //   missing/unknown group → 'shield'
 import type { ContentIndexItem, WriteupIndexItem } from '../../types';
-import type { Certification, Project, ToolLink, Writeup } from '../types';
+import type { Certification, Project, Writeup } from '../types';
 
 const WRITEUP_ICON_BY_PLATFORM: Readonly<Record<string, Writeup['iconType']>> = Object.freeze({
   hackmyvm: 'wave',
@@ -80,13 +80,10 @@ export const toUiWriteup = (item: WriteupIndexItem): Writeup => ({
   ...(item.date !== undefined ? { releaseDate: item.date } : {}),
   ...(item.tags !== undefined ? { tags: item.tags } : {}),
   ...(item.machineLinks !== undefined ? { machineLinks: item.machineLinks } : {}),
-  // Boundary note (writeup-links A2): validated `toolLinks` mirror the
-  // frontmatter contract (assertValidWriteupLinks), where `githubStars` may be
-  // a string OR a number, while the UI ToolLink types it `string` (display
-  // label). Values pass through VERBATIM (WriteupPage renders either), so this
-  // passthrough carries one documented cast; widening src/types/index.ts is
-  // outside this task's edit surfaces.
-  ...(item.toolLinks !== undefined ? { toolLinks: item.toolLinks as ToolLink[] } : {}),
+  // Passthrough VERBATIM (p2 U4): the UI ToolLink is now derived from the
+  // validated frontmatter contract (ToolLinkFm), so no cast is needed —
+  // string-or-number githubStars and optional description ride along as-is.
+  ...(item.toolLinks !== undefined ? { toolLinks: item.toolLinks } : {}),
   ...(() => {
     const levelCover =
       item.level !== undefined

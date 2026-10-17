@@ -448,3 +448,30 @@ describe('real public/index.json entries', () => {
     expect(index.length).toBeGreaterThan(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// P2 U4 (p2-structure): the UI link types are DERIVED from the validated
+// frontmatter contract (/types.ts) — the divergence that once forced a
+// documented `as ToolLink[]` cast in the adapter is closed at the type level.
+// ---------------------------------------------------------------------------
+
+describe('UI link types derive from the pipeline contract (p2 U4)', () => {
+  const uiTypes = readFileSync(
+    new URL('../src/types/index.ts', import.meta.url),
+    'utf8'
+  );
+
+  it('src/types imports and aliases the frontmatter link types', () => {
+    expect(uiTypes).toContain("import type { MachineLinkFm, ToolLinkFm } from '../../types'");
+    expect(uiTypes).toContain('export type MachineLink = MachineLinkFm');
+    expect(uiTypes).toContain('export interface ToolLink extends ToolLinkFm');
+  });
+
+  it('the adapter carries no toolLinks cast anymore (types are compatible)', () => {
+    const adapter = readFileSync(
+      new URL('../src/lib/contentAdapter.ts', import.meta.url),
+      'utf8'
+    );
+    expect(adapter).not.toContain('as ToolLink[]');
+  });
+});
