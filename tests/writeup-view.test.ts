@@ -207,13 +207,14 @@ describe('buildWriteupView — machineLinks / toolLinks (frontmatter only)', () 
     expect(view.toolLinks).toEqual(FRONTMATTER_LINKS.toolLinks);
   });
 
-  it('wave renders its migrated frontmatter links verbatim (1 machine + 5 tool links, categories kept)', () => {
+  it('wave mirrors its real frontmatter — today it carries NO links (frontmatter is the single source)', () => {
+    // The human removed wave's machineLinks/toolLinks in the content reform;
+    // nothing in the app can reinvent them (no fallback source exists).
+    expect(WAVE_ENTRY.machineLinks).toBeUndefined();
+    expect(WAVE_ENTRY.toolLinks).toBeUndefined();
     const view = buildWriteupView(WAVE_SOURCE);
-    expect(view.machineLinks).toEqual(WAVE_SOURCE.machineLinks);
-    expect(view.toolLinks).toEqual(WAVE_SOURCE.toolLinks);
-    expect(view.machineLinks).toHaveLength(1); // migrated machineLinks entry
-    expect(view.toolLinks).toHaveLength(5); // migrated toolLinks entries
-    expect(view.toolLinks.every((link) => link.category !== undefined)).toBe(true); // incl. category
+    expect(view.machineLinks).toEqual([]);
+    expect(view.toolLinks).toEqual([]);
   });
 
   it('absent links keys resolve to [] for ANY slug — wave included (no fallback source exists)', () => {
@@ -374,11 +375,10 @@ describe('WriteupPage (rendered with real pipeline data)', () => {
     expect(markup).not.toContain('OS:');
   });
 
-  it('renders link sections exactly when the resolved view carries them (frontmatter links for wave)', async () => {
-    const withLinks = await renderPage(WAVE_SOURCE);
+  it('renders link sections exactly when the resolved view carries them', async () => {
+    const withLinks = await renderPage({ ...WAVE_SOURCE, ...FRONTMATTER_LINKS });
     expect(withLinks).toContain('ENLACES DE LA MÁQUINA');
-    expect(withLinks).toContain('HERRAMIENTAS');
-    expect(withLinks).toContain('OTROS LINKS');
+    expect(withLinks).toContain('HERRAMIENTAS &amp; OTROS LINKS'); // & escaped by renderToStaticMarkup
     const withoutLinks = await renderPage({
       ...BARE_SOURCE,
       id: 'krustykrab',
