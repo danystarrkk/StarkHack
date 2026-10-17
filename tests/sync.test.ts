@@ -141,7 +141,8 @@ describe('real project/certificate group + tag drift', () => {
     const problems: string[] = [];
     for (const file of filesOfKind('project')) {
       const { group, tags } = file.data;
-      if (typeof group !== 'string' || !KINDS.project.groups.includes(group)) {
+      const knownGroups = KINDS.project.groups;
+      if (knownGroups === null || typeof group !== 'string' || !knownGroups.includes(group)) {
         problems.push(`${file.kind} ${file.rel}: invalid group ${JSON.stringify(group)}`);
       }
       if (!Array.isArray(tags) || tags.length < 1) {

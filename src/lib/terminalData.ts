@@ -57,8 +57,9 @@ export interface TerminalWriteupRow {
   /** Real pipeline slug (toUiWriteup's id) — the React key. */
   id: string;
   title: string;
-  /** Real pipeline platform (toUiWriteup's platformId, lowercased). */
-  platform: string;
+  /** Real pipeline platform (toUiWriteup's platformId) — absent only when
+   * the source entry carries none (the render omits the parenthetical). */
+  platform: string | undefined;
   /** Real pipeline date — absent only when the source has none. */
   date?: string;
   /** Real pipeline tags — absent when the source has none. */

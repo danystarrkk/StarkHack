@@ -55,3 +55,17 @@ describe('useContentQuery — single fetch state machine (p2 U1)', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// P2 U3 (p2-structure): the compiler runs with full strict mode. Pinned so a
+// future tsconfig edit cannot silently regress it.
+// ---------------------------------------------------------------------------
+
+describe('tsconfig strict mode (p2 U3)', () => {
+  it('keeps strict:true', () => {
+    const config = JSON.parse(
+      read('tsconfig.json').replace(/\/\/.*$/gm, '')
+    ) as { compilerOptions: { strict?: boolean } };
+    expect(config.compilerOptions.strict).toBe(true);
+  });
+});

@@ -94,7 +94,9 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
     }
   };
 
-  const getCategoryBadgeStyle = (category: ProjectGroupLabel) => {
+  // A missing group falls through to the documented default style (honest:
+  // projects without a group render the neutral chip).
+  const getCategoryBadgeStyle = (category: ProjectGroupLabel | undefined) => {
     switch (category) {
       case 'HERRAMIENTA':
         return {

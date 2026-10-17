@@ -210,7 +210,7 @@ export const MainframeTerminalModal: React.FC<MainframeTerminalModalProps> = ({
                     </div>
                   ) : (
                     <div key={line.id} className="flex items-center justify-between text-[11px] text-[#bdc8cf]">
-                      <span>• {line.title} ({line.platform}){line.date !== undefined ? ` - ${line.date}` : ''}</span>
+                      <span>• {line.title}{line.platform !== undefined ? ` (${line.platform})` : ''}{line.date !== undefined ? ` - ${line.date}` : ''}</span>
                       <span className="text-[#5a6673]">{(line.tags ?? []).join(' • ')}</span>
                     </div>
                   )

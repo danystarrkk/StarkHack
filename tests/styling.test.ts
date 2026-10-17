@@ -457,9 +457,10 @@ describe('certificate lightbox contract (certificate-hires)', () => {
 
   it('the card cover <img> is the zoom click target (cursor-zoom-in)', () => {
     // Match the whole self-closing <img ... /> tag (the onClick arrow `=>`
-    // contains `>`, so a naive [^>]* tag scan would cut the tag short).
+    // contains `>`, so a naive [^>]* tag scan would cut the tag short). The
+    // src is the captured real cover (`const image = cert.image` guard above).
     const coverImg = (certificationsScreen.match(/<img[\s\S]*?\/>/g) ?? []).find((tag) =>
-      tag.includes('src={cert.image}'),
+      tag.includes('src={image}'),
     );
     expect(coverImg, 'the card cover must render the real cover in an <img').toBeDefined();
     expect(coverImg, 'the card cover must be clickable (onClick opens the lightbox)').toContain(
@@ -470,10 +471,10 @@ describe('certificate lightbox contract (certificate-hires)', () => {
     );
   });
 
-  it('the lightbox prefers imageHires and falls back to image (`cert.imageHires ?? cert.image`)', () => {
+  it('the lightbox prefers imageHires and falls back to the captured cover (`cert.imageHires ?? image`)', () => {
     expect(
       certificationsScreen,
       'the lightbox source must be the hires original with the cover as fallback',
-    ).toContain('cert.imageHires ?? cert.image');
+    ).toContain('cert.imageHires ?? image');
   });
 });

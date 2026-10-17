@@ -100,13 +100,16 @@ export const CertificationsScreen: React.FC = () => {
     // Real cover image (frontmatter `image`) occupies the frame when the
     // pipeline supplies one — the real certificate artwork, never invented.
     if (cert.image !== undefined) {
+      // Captured for the closure: the zoomed lightbox always shows the best
+      // available artwork (hires when present, the cover otherwise).
+      const image = cert.image;
       return (
         <div className={frameClassName}>
           <img
-            src={cert.image}
+            src={image}
             alt={cert.title}
             loading="lazy"
-            onClick={() => setZoomedImage({ src: cert.imageHires ?? cert.image, alt: cert.title })}
+            onClick={() => setZoomedImage({ src: cert.imageHires ?? image, alt: cert.title })}
             className="h-full w-full cursor-zoom-in object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
