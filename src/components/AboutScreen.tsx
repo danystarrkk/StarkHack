@@ -72,37 +72,37 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       <div data-reveal className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
         {/* Left Column: Operator Profile Card (5 cols on lg) */}
         <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
-          {/* Header */}
-          <div className="flex items-start gap-4">
-            {/* Identity box: the real portrait (public/ui/avatar.webp) at a
-                size where the face is actually recognizable without zoom
-                (128/144px — doubled from the old Shield box); the red-tuned
-                frame matches the illustration's accent color. */}
-            <div className="h-32 w-32 sm:h-36 sm:w-36 shrink-0 overflow-hidden rounded-2xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_28px_rgba(240,113,120,0.3)]">
+          {/* Header: the alias block sits FIRST, then the big centered
+              portrait (human decision: face first for trust) — the portrait
+              stretches with the card (flex-1, min floor on mobile, capped on
+              desktop) so the metadata table below fills the remainder with no
+              dead space. The red-tuned frame matches the illustration. */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-sans text-2xl font-bold text-white tracking-tight">STARK</h2>
+              <span className="rounded border border-[#39bae6]/30 bg-[#141821] px-2 py-0.5 text-xs font-mono font-semibold text-[#39bae6]">
+                0x4E7
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#7edc73] font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
+              <span>DISPONIBLE // NETWORKING &amp; COLABORACIONES</span>
+            </div>
+
+            <div className="text-xs font-mono text-[#879299]">
+              Software, Seguridad &amp; Sistemas
+            </div>
+          </div>
+
+          <div className="flex min-h-56 flex-1 items-center justify-center">
+            <div className="aspect-square h-full max-h-96 max-w-full overflow-hidden rounded-2xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_28px_rgba(240,113,120,0.3)]">
               <img
                 src="/ui/avatar.webp"
                 alt="Stark"
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-sans text-2xl font-bold text-white tracking-tight">STARK</h2>
-                <span className="rounded border border-[#39bae6]/30 bg-[#141821] px-2 py-0.5 text-xs font-mono font-semibold text-[#39bae6]">
-                  0x4E7
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#7edc73] font-semibold">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-                <span>DISPONIBLE // NETWORKING &amp; COLABORACIONES</span>
-              </div>
-
-              <div className="text-xs font-mono text-[#879299]">
-                Software, Seguridad &amp; Sistemas
-              </div>
             </div>
           </div>
 

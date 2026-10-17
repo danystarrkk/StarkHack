@@ -305,24 +305,33 @@ describe('motion surface contract (site-motion)', () => {
     expect(aboutScreen, 'AboutScreen.tsx must carry data-reveal').toContain('data-reveal');
   });
 
-  it('the operator profile card renders the real avatar in its identity box (red frame, recognizable size)', () => {
-    // The identity box keeps the portrait VISIBLE without zoom (128px, 144px
-    // from sm) and the red-tuned frame; the face must be recognizable at the
-    // rendered size, so the box can never shrink back to the old 56/64px.
-    const identityBox = (aboutScreen.match(/<div className="h-32 w-32 sm:h-36 sm:w-36[^"]*">[\s\S]*?<\/div>/g) ?? []).find((block) =>
+  it('the operator profile card is stacked: alias block first, then the big centered portrait that stretches', () => {
+    // Layout contract (human decision): STARK/0x4E7/status on top, the big
+    // portrait centered BELOW (it stretches with the card so the metadata
+    // table fills the remainder — no dead space), red-tuned frame, lazy, and
+    // the old tiny identity box can never come back.
+    const aliasAt = aboutScreen.indexOf('>STARK<');
+    const avatarAt = aboutScreen.indexOf('avatar.webp');
+    expect(aliasAt, 'the STARK alias exists').toBeGreaterThan(0);
+    expect(avatarAt, 'the portrait exists').toBeGreaterThan(0);
+    expect(aliasAt, 'the alias block comes BEFORE the portrait').toBeLessThan(avatarAt);
+
+    const identityBox = (aboutScreen.match(/<div className="aspect-square[^"]*">[\s\S]*?<\/div>/g) ?? []).find((block) =>
       block.includes('avatar.webp'),
     );
-    expect(identityBox, 'the identity box must render /ui/avatar.webp at 128/144px').toBeDefined();
-    expect(identityBox).toContain('object-cover');
+    expect(identityBox, 'the portrait box is aspect-square').toBeDefined();
     expect(identityBox).toContain('rounded-2xl');
     expect(identityBox).toContain('border-[#f07178]/40'); // the red frame
-    expect(aboutScreen, 'the avatar must be lazy like the rest of the media').toContain(
-      'loading="lazy"',
-    );
+    expect(identityBox).toContain('object-cover');
+    // The portrait grows with the card (flex-1) from a mobile floor (min-h).
+    expect(aboutScreen).toContain('flex-1');
+    expect(aboutScreen).toContain('min-h-56');
+    expect(aboutScreen, 'the portrait must stay lazy').toContain('loading="lazy"');
     expect(aboutScreen, 'the portrait carries the operator alias as alt').toContain('alt="Stark"');
     expect(aboutScreen, 'the old tiny identity box must not come back').not.toContain(
       'h-14 w-14 sm:h-16 sm:w-16',
     );
+    expect(aboutScreen, 'nor the mid-size side box').not.toContain('h-32 w-32 sm:h-36 sm:w-36');
   });
 });
 
