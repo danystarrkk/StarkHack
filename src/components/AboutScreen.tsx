@@ -60,6 +60,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
             <div className="rounded border border-[#39bae6]/30 bg-[#39bae6]/10 px-2.5 py-1 text-xs text-[#39bae6] font-medium">
               [ ROLE: SECURITY RESEARCHER ]
             </div>
+
           </div>
         </div>
 
@@ -69,16 +70,35 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
       </div>
 
       {/* Main Top Two-Column Section */}
-      <div data-reveal className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
-        {/* Left Column: Operator Profile Card (5 cols on lg) */}
-        <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
+      {/* Single profile card (human decision): ONE frame with ONE chrome
+          header across the top; alias + avatar + metadata table on the LEFT,
+          intro + terminal narrative + 2x2 metric boxes on the RIGHT - both
+          columns carry similar content volume (no big voids, no divider). */}
+      <div data-reveal className="rounded-xl border border-[#1b1f29] bg-[#10141c] overflow-hidden shadow-[0_0_28px_-4px_rgba(0,0,0,0.7)]">
+          {/* Chrome header of the whole single card */}
+          <div className="flex items-center justify-between border-b border-[#1b1f29] bg-[#141821] px-5 py-3 font-mono text-xs">
+            <div className="flex items-center gap-2 text-[#39bae6] font-semibold">
+              <Terminal className="h-4 w-4" />
+              <span>[ABOUT_ME // PRESENTACIÓN &amp; ENFOQUE]</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#3d484e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#3d484e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#3d484e]" />
+            </div>
+          </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12">
+          <div className="lg:col-span-5 p-5 sm:p-6 flex flex-col space-y-6">
+
           {/* Header: the alias block sits FIRST, then the big centered
               portrait (human decision: face first for trust). HEIGHT
-              CONTRACT: the card height is dictated by the RIGHT ABOUT_ME
-              column - this wrapper is shrinkable (min-h-0) and carries no
-              floor; the box takes a per-breakpoint height (256/320px, then
-              whatever the stretched card has left, capped at 28rem) so the
-              portrait only fills what remains and never inflates the card. */}
+              CONTRACT: the ABOUT_ME card no longer sits beside it (it moved
+              to its own full-width row below), so the portrait takes a plain
+              per-breakpoint height (208/256/320px) and can never inflate the
+              card. The wrapper keeps min-h-0 so the card height stays
+              content-driven. */}
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-sans text-2xl font-bold text-white tracking-tight">STARK</h2>
@@ -86,19 +106,10 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
                 0x4E7
               </span>
             </div>
-
-            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#7edc73] font-semibold">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#7edc73] shadow-[0_0_6px_#7edc73]" />
-              <span>DISPONIBLE // NETWORKING &amp; COLABORACIONES</span>
-            </div>
-
-            <div className="text-xs font-mono text-[#879299]">
-              Software, Seguridad &amp; Sistemas
-            </div>
           </div>
 
           <div className="flex min-h-0 flex-1 items-center justify-center">
-            <div className="aspect-square h-64 sm:h-80 lg:h-full max-h-[28rem] max-w-full overflow-hidden rounded-2xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_28px_rgba(240,113,120,0.3)]">
+            <div className="aspect-square h-52 sm:h-64 lg:h-80 max-w-full overflow-hidden rounded-2xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_28px_rgba(240,113,120,0.3)]">
               <img
                 src="/ui/avatar.webp"
                 alt="Stark"
@@ -141,33 +152,15 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
               <span className="text-[#bdc8cf]">Ecuador</span>
             </div>
           </div>
-
-          {/* Contact links live in the GitHub / LinkedIn / Email cards below */}
-        </div>
-
-        {/* Right Column: Terminal Presentation & Stats Card (7 cols on lg) */}
-        <div className="lg:col-span-7 rounded-xl border border-[#1b1f29] bg-[#10141c] overflow-hidden flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
-          {/* Terminal Chrome Bar */}
-          <div className="flex items-center justify-between border-b border-[#1b1f29] bg-[#141821] px-5 py-3 font-mono text-xs">
-            <div className="flex items-center gap-2 text-[#39bae6] font-semibold">
-              <Terminal className="h-4 w-4" />
-              <span>[ABOUT_ME // PRESENTACIÓN &amp; ENFOQUE]</span>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#3d484e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#3d484e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#3d484e]" />
-            </div>
           </div>
 
-          {/* Presentation Narrative Body */}
-          <div className="p-5 sm:p-6 space-y-4 font-mono text-xs sm:text-[13px] leading-relaxed text-[#bdc8cf]">
-            <p>
+          <div className="lg:col-span-7 p-5 sm:p-6 flex flex-col space-y-6">
+            <p className="text-xs sm:text-[13px] leading-relaxed text-[#bdc8cf]">
               ¡Hola! Soy <strong className="text-white font-bold">Stark</strong>, actualmente{' '}
               <strong className="text-white font-bold">cursando el Grado en Ingeniería en Tecnologías de la Información</strong> con vocación multidisciplinar y pasión continua por entender cómo funcionan la tecnología y los sistemas desde su base.
             </p>
 
+            <div className="space-y-4 text-xs sm:text-[13px] leading-relaxed">
             <div className="rounded border-l-2 border-[#39bae6] bg-[#0d1017]/80 p-3.5 text-[#e0e2ec] font-mono text-xs sm:text-[13px] leading-relaxed">
               <span className="text-[#39bae6] font-bold mr-1.5">&gt;</span> No creo en encasillarme en una sola etiqueta: disfruto programando aplicaciones web limpias y funcionales, automatizando flujos con Python y Bash, profundizando en protocolos de red y explorando la seguridad ofensiva con un enfoque analítico, ético y riguroso.
             </div>
@@ -175,40 +168,43 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
             <p className="text-[#879299]">
               Este espacio es mi laboratorio personal y cuaderno de bitácora para compartir conocimientos, proyectos y conectar con otros profesionales, entusiastas del software y la ciberseguridad.
             </p>
-          </div>
-
-          {/* 4 Metrics Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-[#1b1f29] bg-[#0d1017]/50 divide-x divide-y sm:divide-y-0 divide-[#1b1f29]">
-            <div className="p-4 sm:p-5 text-center">
-              <div className="font-sans text-2xl sm:text-3xl font-bold text-[#39bae6] mb-1">5+</div>
-              <div className="font-mono text-[11px] text-[#879299] leading-tight">
-                Áreas Técnicas Dominadas
-              </div>
             </div>
 
-            <div className="p-4 sm:p-5 text-center">
-              <div className="font-sans text-2xl sm:text-3xl font-bold text-[#7edc73] mb-1">Open</div>
-              <div className="font-mono text-[11px] text-[#879299] leading-tight">
-                Colaboración &amp; Open Source
+            {/* 4 metrics as bordered boxes, 2x2 inside the right column
+                (human decision: they balance the left column's volume) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-[#1b1f29] bg-[#0d1017]/60 p-5 text-center">
+                <div className="font-sans text-2xl sm:text-3xl font-bold text-[#39bae6] mb-1">5+</div>
+                <div className="font-mono text-[11px] text-[#879299] leading-tight">
+                  Áreas Técnicas Dominadas
+                </div>
               </div>
-            </div>
 
-            <div className="p-4 sm:p-5 text-center">
-              <div className="font-sans text-2xl sm:text-3xl font-bold text-[#f4c05b] mb-1">En Curso</div>
-              <div className="font-mono text-[11px] text-[#879299] leading-tight">
-                Grado en Ing. Tecnologías de la Información
+              <div className="rounded-xl border border-[#1b1f29] bg-[#0d1017]/60 p-5 text-center">
+                <div className="font-sans text-2xl sm:text-3xl font-bold text-[#7edc73] mb-1">Open</div>
+                <div className="font-mono text-[11px] text-[#879299] leading-tight">
+                  Colaboración &amp; Open Source
+                </div>
               </div>
-            </div>
 
-            <div className="p-4 sm:p-5 text-center">
-              <div className="font-sans text-2xl sm:text-3xl font-bold text-[#7edc73] mb-1">100%</div>
-              <div className="font-mono text-[11px] text-[#879299] leading-tight">
-                Curiosidad y Aprendizaje Activo
+              <div className="rounded-xl border border-[#1b1f29] bg-[#0d1017]/60 p-5 text-center">
+                <div className="font-sans text-2xl sm:text-3xl font-bold text-[#f4c05b] mb-1">En Curso</div>
+                <div className="font-mono text-[11px] text-[#879299] leading-tight">
+                  Grado en Ing. Tecnologías de la Información
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#1b1f29] bg-[#0d1017]/60 p-5 text-center">
+                <div className="font-sans text-2xl sm:text-3xl font-bold text-[#7edc73] mb-1">100%</div>
+                <div className="font-mono text-[11px] text-[#879299] leading-tight">
+                  Curiosidad y Aprendizaje Activo
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+
+        </div>
 
       {/* Section: HABILIDADES & DOMINIOS TÉCNICOS */}
       <div data-reveal className="space-y-4 pt-4">

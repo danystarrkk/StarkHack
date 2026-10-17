@@ -328,8 +328,7 @@ describe('motion surface contract (site-motion)', () => {
     expect(identityBox).toContain('rounded-2xl');
     expect(identityBox).toContain('border-[#f07178]/40'); // the red frame
     expect(identityBox).toContain('object-cover');
-    expect(identityBox).toContain('h-64 sm:h-80 lg:h-full'); // per-breakpoint height
-    expect(identityBox).toContain('max-h-[28rem]'); // desktop cap
+    expect(identityBox).toContain('h-52 sm:h-64 lg:h-80'); // per-breakpoint height
     expect(aboutScreen, 'the wrapper must be shrinkable, never floor the height').toContain(
       'min-h-0',
     );
