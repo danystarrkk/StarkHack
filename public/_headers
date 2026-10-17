@@ -1,0 +1,24 @@
+# Security headers (url-scheme-hardening S2) — Netlify / Cloudflare Pages
+# format. If the host changes, mirror these directives in the equivalent
+# config (e.g. vercel.json "headers"); tests/headers.test.ts pins the
+# contract so a deletion or drift fails the suite.
+#
+# CSP notes:
+#   script-src 'self'            — Vite builds one module script from /assets;
+#                                  no inline scripts exist in index.html.
+#   style-src … 'unsafe-inline'  — React inline style attributes (progress
+#                                  bars, accent chips) need it; the compiled
+#                                  Tailwind CSS is same-origin.
+#   img-src 'self' https:        — content images live under /writeups|projects|
+#                                  certificates; remote https images stay
+#                                  possible. data: is deliberately absent
+#                                  (the renderer already blocks data: URLs).
+#   frame-ancestors 'none'       — clickjacking (pairs with X-Frame-Options).
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; manifest-src 'self'; upgrade-insecure-requests
