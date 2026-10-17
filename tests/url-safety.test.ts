@@ -45,3 +45,22 @@ describe('isSafeUrl — shared scheme allowlist', () => {
     expect(isSafeUrl({})).toBe(false);
   });
 });
+
+// Regression probes from the independent verification (T7): browsers
+// normalize URLs (strip tabs/newlines/control chars, treat leading
+// backslashes as slashes), so an obfuscated scheme must be rejected BEFORE
+// that happens.
+describe('isSafeUrl — URL-normalization obfuscation (verifier probes)', () => {
+  it('rejects schemes obfuscated with control characters', () => {
+    expect(isSafeUrl('java\tscript:alert(1)')).toBe(false);
+    expect(isSafeUrl('java\nscript:alert(1)')).toBe(false);
+    expect(isSafeUrl('java\rscript:alert(1)')).toBe(false);
+    expect(isSafeUrl('\u0001javascript:alert(1)')).toBe(false);
+    expect(isSafeUrl('\u0000data:text/html,x')).toBe(false);
+  });
+
+  it('rejects backslash scheme-relative URLs (browsers treat a leading backslash pair as slashes)', () => {
+    expect(isSafeUrl('\\evil.com/x')).toBe(false);
+    expect(isSafeUrl(' \\evil.com/x')).toBe(false);
+  });
+});

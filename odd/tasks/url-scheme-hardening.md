@@ -50,3 +50,16 @@ defensa en profundidad con `public/_headers` (M3).
   (los branches existentes sí lo hacen). Fix: `i++` antes del `continue`.
   RED observado (href javascript: en el DOM) → GREEN tras el fix; aislado
   con tests scratch bisectando link vs imagen.
+- **L4** · verificación · gate previo verde (706 tests) + ASSESS nativo
+  `package-local-binary-missing` (unassessable) → verificación independiente
+  (gentle-ai-verify, task mvcg7pjb-5-nb67): puntos 2-7 OK, pero **FALLO en el
+  allowlist**: bypass por normalización de URL (`java\tscript:`, `\u0001javascript:`,
+  `\\host` → origin escape) — solo React 19 y el CSP de deploy lo mitigaban.
+  Fix (test-first, probes del verificador como RED): `isSafeUrl` rechaza
+  cualquier control char (\u0000-\u001f, \u007f) y backslashes iniciales.
+  Probes verde; gate final 27 archivos / 710 tests, tsc 0, índice real
+  regenera idéntico (0 falsos positivos con el allowlist endurecido).
+  Nota: el doc T6 decía `img-src 'self' data: https:`; la implementación
+  excluye `data:` a propósito (comentario en _headers) — decision correcta.
+  Descarte: los scratch del verificador en /tmp quedan con archivos
+  read-only de root (candidate-views del binario nativo); el SO los limpia.

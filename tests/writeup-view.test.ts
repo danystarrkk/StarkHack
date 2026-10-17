@@ -464,3 +464,33 @@ describe('WriteupPage render — frontmatter link cards with unsafe schemes neve
     expect(markup).toContain('ENLACES DE LA MÁQUINA');
   });
 });
+
+describe('WriteupPage render — obfuscated schemes never reach the DOM (verifier probes)', () => {
+  it('a body link with a TAB-in-scheme never renders an href', async () => {
+    const { WriteupPage } = await import('../src/components/WriteupPage');
+    const markup = renderToStaticMarkup(
+      createElement(WriteupPage, {
+        writeup: { ...BARE_SOURCE, markdownContent: '# T\n\n[click](java\tscript:alert(1))' },
+        onBack: () => undefined,
+      })
+    );
+    expect(markup).not.toContain('javascript:');
+    expect(markup).toContain('click');
+  });
+
+  it('a frontmatter machineLinks backslash-host entry never renders an anchor', async () => {
+    const { WriteupPage } = await import('../src/components/WriteupPage');
+    const markup = renderToStaticMarkup(
+      createElement(WriteupPage, {
+        writeup: {
+          ...BARE_SOURCE,
+          markdownContent: '# T',
+          machineLinks: [{ title: 'Evil', url: '\\evil.com/x' }],
+        },
+        onBack: () => undefined,
+      })
+    );
+    expect(markup).not.toContain('href="\\evil.com/x"');
+    expect(markup).not.toContain('ENLACES DE LA MÁQUINA');
+  });
+});
