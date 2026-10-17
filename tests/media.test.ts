@@ -10,7 +10,7 @@ import { KINDS } from '../lib/content-kinds.js';
 //   public/projects/<slug>/media/             → ídem para proyectos (raíz plana)
 //   public/certificates/<slug>/media/         → ídem para certificados (raíz plana)
 //   public/ui/                                 → stark.webp, logo.webp (assets de código)
-//   public/_archive/unreferenced/              → huérfanos (nunca se borran)
+//   huérfanos en cualquier media/             → prohibidos: este test los marca
 //   la bóveda plana antigua de imágenes          → ya no existe
 //
 // Las raíces de contenido salen del registro KINDS (lib/content-kinds.js), nunca
