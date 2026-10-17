@@ -1,5 +1,5 @@
 // Home content model: the single orchestration behind the Home screen
-// (src/lib/Home.tsx). One fetch of the real content pipeline (public/index.json
+// (src/screens/Home.tsx). One fetch of the real content pipeline (public/index.json
 // via lib/content.ts) feeds the two Home sections, mapped to UI types by the
 // pure adapters in src/lib/contentAdapter.ts. No mock data on the Home screen.
 //

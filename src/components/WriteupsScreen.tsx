@@ -10,7 +10,7 @@
 // (the /machines/:platformId redirect target, see src/lib/paths.ts). The
 // filter UI reads it and writes it back via useSearchParams. Selecting a
 // writeup routes via the existing path builder (writeupDetailPath, wired in
-// src/lib/router.tsx) — never component state.
+// src/app/router.tsx) — never component state.
 //
 // Filters back REAL pipeline fields only: platform (real), level (real,
 // displayed verbatim as 'Easy' | 'Medium' | 'Hard' — NOT translated into the

@@ -1,5 +1,5 @@
 // Root layout for the real router (replaces the old activeTab state machine).
-// The screen a URL shows is decided by the route table in src/lib/router.tsx
+// The screen a URL shows is decided by the route table in src/app/router.tsx
 // and rendered through <Outlet />; this component keeps the shell exactly as
 // it was: background layers, Navbar, Footer and the Mainframe terminal modal.
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -8,7 +8,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { MainframeTerminalModal } from './components/MainframeTerminalModal';
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
-import { TerminalContext } from './lib/terminal';
+import { TerminalContext } from './app/terminal';
 import { initReveal } from './lib/reveal';
 
 export default function App() {

@@ -135,7 +135,7 @@ describe('FeaturedProjects counters use the real total, not the grid length', ()
 
 describe('Home source structure', () => {
   it('routes Home loading through loadHomeContent(), never getProjects() directly', () => {
-    const homeSource = readFileSync(path.join(repoRoot, 'src', 'lib', 'Home.tsx'), 'utf8');
+    const homeSource = readFileSync(path.join(repoRoot, 'src', 'screens', 'Home.tsx'), 'utf8');
 
     expect(homeSource).toContain('loadHomeContent(');
     expect(homeSource).not.toContain('getProjects(');

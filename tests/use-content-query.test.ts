@@ -14,12 +14,12 @@ const read = (relative: string): string =>
   readFileSync(new URL(`../${relative}`, import.meta.url), 'utf8');
 
 const CONTAINERS: Array<{ file: string; loader: string }> = [
-  { file: 'src/lib/Home.tsx', loader: 'loadHomeContent' },
+  { file: 'src/screens/Home.tsx', loader: 'loadHomeContent' },
   { file: 'src/components/WriteupsScreen.tsx', loader: 'fetchIndex' },
   { file: 'src/components/ProjectsScreen.tsx', loader: 'getProjects' },
   { file: 'src/components/CertificationsScreen.tsx', loader: 'getCertificates' },
-  { file: 'src/lib/detailRoutes.tsx', loader: 'resolveWriteupDetail' },
-  { file: 'src/lib/detailRoutes.tsx', loader: 'resolveProjectDetail' },
+  { file: 'src/screens/detailRoutes.tsx', loader: 'resolveWriteupDetail' },
+  { file: 'src/screens/detailRoutes.tsx', loader: 'resolveProjectDetail' },
 ];
 
 function sourceFilesIn(relativeDir: string): string[] {
@@ -46,6 +46,8 @@ describe('useContentQuery — single fetch state machine (p2 U1)', () => {
   it('no container hand-rolls its own cancelled flag anymore', () => {
     const files = [
       ...sourceFilesIn('src/components'),
+      ...sourceFilesIn('src/screens'),
+      ...sourceFilesIn('src/app'),
       ...sourceFilesIn('src/lib'),
     ].filter((file) => !file.endsWith('useContentQuery.ts'));
     for (const file of files) {

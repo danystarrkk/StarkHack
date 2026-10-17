@@ -1,7 +1,7 @@
 // Global render-crash boundary for the app shell (p1-reliability S3).
 //
 // The detail routes already convert their own render crashes into an honest
-// state (DetailErrorBoundary of src/lib/detailRoutes.tsx); this boundary is
+// state (DetailErrorBoundary of src/screens/detailRoutes.tsx); this boundary is
 // the last resort for EVERYTHING else routed below the shell (Home, Writeups,
 // Projects, Certifications, About, 404): a crash becomes a visible honest
 // panel instead of a white screen.

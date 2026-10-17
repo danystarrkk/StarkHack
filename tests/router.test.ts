@@ -13,11 +13,11 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ROUTES } from '../src/lib/router';
+import { ROUTES } from '../src/app/router';
 import {
   resolveProjectDetail,
   resolveWriteupDetail,
-} from '../src/lib/detailRoutes';
+} from '../src/screens/detailRoutes';
 import type { WriteupIndexItem } from '../types';
 
 // The router settles loader-driven navigation (e.g. redirect loaders)

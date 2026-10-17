@@ -28,10 +28,10 @@ import { AboutScreen } from '../components/AboutScreen';
 import { CertificationsScreen } from '../components/CertificationsScreen';
 import { ProjectsScreen } from '../components/ProjectsScreen';
 import { WriteupsScreen } from '../components/WriteupsScreen';
-import { Home } from './Home';
-import { NotFoundScreen } from './NotFound';
-import { ProjectDetailRoute, WriteupDetailRoute } from './detailRoutes';
-import { projectDetailPath, writeupDetailPath, writeupsFilterPath } from './paths';
+import { Home } from '../screens/Home';
+import { NotFoundScreen } from '../screens/NotFound';
+import { ProjectDetailRoute, WriteupDetailRoute } from '../screens/detailRoutes';
+import { projectDetailPath, writeupDetailPath, writeupsFilterPath } from '../lib/paths';
 
 // The exact <main> wrappers the tabbed shell used, so layout stays identical:
 // list/home screens use the narrower container, certifications/about the wide one.

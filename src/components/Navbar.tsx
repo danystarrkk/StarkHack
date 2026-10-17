@@ -8,7 +8,7 @@ interface NavbarProps {
 
 // Router-driven navigation: every item is a real URL (NavLink gives the same
 // active-state styling the tabbed shell had). Paths match the route table in
-// src/lib/router.tsx.
+// src/app/router.tsx.
 const navItems = [
   { id: 'home', label: 'Home', to: '/', icon: Terminal },
   { id: 'writeups', label: 'Writeups', to: '/writeups', icon: FileText },

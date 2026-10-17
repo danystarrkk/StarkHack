@@ -11,11 +11,11 @@ import { useNavigate } from 'react-router-dom';
 import { TerminalHero } from '../components/TerminalHero';
 import { NewsWriteups } from '../components/NewsWriteups';
 import { FeaturedProjects } from '../components/FeaturedProjects';
-import { loadHomeContent } from './homeModel';
+import { loadHomeContent } from '../lib/homeModel';
 import { Writeup } from '../types';
-import { projectDetailPath, writeupDetailPath } from './paths';
-import { useTerminal } from './terminal';
-import { useContentQuery } from './useContentQuery';
+import { projectDetailPath, writeupDetailPath } from '../lib/paths';
+import { useTerminal } from '../app/terminal';
+import { useContentQuery } from '../lib/useContentQuery';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();

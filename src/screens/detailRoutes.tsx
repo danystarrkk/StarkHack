@@ -26,13 +26,13 @@
 import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchIndex, fetchProject, fetchWriteup, getProjects } from '../../lib/content';
-import { toUiProject, toUiWriteup } from './contentAdapter';
+import { toUiProject, toUiWriteup } from '../lib/contentAdapter';
 import { ProjectPage } from '../components/ProjectPage';
 import { WriteupPage } from '../components/WriteupPage';
 import type { ProjectViewSource, Writeup } from '../types';
 import type { ContentDoc, ContentIndexItem, WriteupContent, WriteupIndexItem } from '../../types';
-import { projectDetailPath, writeupDetailPath } from './paths';
-import { useContentQuery } from './useContentQuery';
+import { projectDetailPath, writeupDetailPath } from '../lib/paths';
+import { useContentQuery } from '../lib/useContentQuery';
 
 // ---------------------------------------------------------------------------
 // Real pipeline resolution
