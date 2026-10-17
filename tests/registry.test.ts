@@ -939,6 +939,33 @@ describe('planGroupAddition — edits and position invariant (rule 5)', () => {
       listEntries(plan.files[1].source, declPin('APPROVED_CERTIFICATE_GROUPS'))
     );
   });
+
+  it('extends the literal-tuple @type of BOTH group lists together with the runtime array (p2 U6)', () => {
+    // The ProjectGroup/CertificateGroup unions derive from the @type tuple
+    // (src/types/kinds.ts); a vocabulary addition that forgot it would drift
+    // from the compiler union and break tests/content-kinds.test.ts's pin.
+    for (const kind of ['project', 'certificate'] as const) {
+      const plan = planGroupAddition({
+        kind,
+        slug: 'oscp-labs',
+        kindsSource,
+        pinSource: taxonomyPinSource,
+      });
+      expect(plan.problems, kind).toEqual([]);
+      const kinds = plan.files.find((file) => file.name === 'lib/content-kinds.js')!;
+      const libName = kind === 'project' ? 'PROJECT_GROUPS' : 'CERTIFICATE_GROUPS';
+      const tuple = new RegExp(
+        `@type \\{readonly \\[([^\\]]*)\\]\\}[\\s\\S]{0,60}export const ${libName}`
+      ).exec(kinds.source);
+      expect(tuple, `${kind} literal-tuple @type`).not.toBeNull();
+      const members = tuple![1]
+        .split(',')
+        .map((entry) => entry.trim().replace(/^'|'$/g, ''));
+      expect(members[members.length - 1], `${kind} tuple gains the slug`).toBe('oscp-labs');
+      // Tuple and runtime array carry the same members (same order).
+      expect(members).toEqual(listEntries(kinds.source, declLib(libName)));
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1051,15 +1078,15 @@ describe('planGroupWiring — certificate UI wiring (T5)', () => {
     //    part holds today).
     expect(byName(plan.files, 'src/types/index.ts')).toContain(`'OSCP-LABS' | 'UDEMY'`);
 
-    // 2. src/lib/certificationsModel.ts: group union, label union, labels map
-    //    (after cisco), filter categories (after the CISCO entry) and the
-    //    normalizeGroup canonical check.
+    // 2. src/lib/certificationsModel.ts: label union, labels map (after
+    //    cisco) and filter categories (after the CISCO entry). The GROUP type
+    //    and the membership check derive from lib/content-kinds.js (p2 U6).
     const model = byName(plan.files, 'src/lib/certificationsModel.ts');
-    expect(model).toContain(`| 'oscp-labs';`);
     expect(model).toContain(`| 'OSCP-LABS';`);
     expect(model).toContain(`'oscp-labs': 'OSCP-LABS',`);
     expect(model).toContain(`Object.freeze({ id: 'OSCP-LABS', group: 'oscp-labs' }),`);
-    expect(model).toContain(`|| lower === 'oscp-labs'`);
+    expect(model).toContain('export type { CertificateGroup }'); // derivation kept intact
+    expect(model).not.toContain(`| 'oscp-labs';`); // no per-kind group union anymore
 
     // 3. ONE filter button cloned from the CISCO block (label + activeFilter
     //    id only); getCategoryBadgeStyle is NOT touched (default covers it).
@@ -1090,8 +1117,10 @@ describe('planGroupWiring — certificate UI wiring (T5)', () => {
       `getProjectGroups() returns all ${titleGroupCount(contentKindsApiTestSource, 'getProjectGroups')} canonical groups`
     );
 
-    // The badge default is a plan note, never an edit.
+    // The badge default and the derived-vocabulary note are plan notes, never
+    // edits.
     expect(plan.notes.some((note) => note.includes('getCategoryBadgeStyle'))).toBe(true);
+    expect(plan.notes.some((note) => note.includes('derive from lib/content-kinds.js'))).toBe(true);
   });
 
   it('defaults the label to the slug uppercased and honors an explicit trimmed label', () => {
@@ -1169,11 +1198,13 @@ describe('planGroupWiring — project UI wiring (T5)', () => {
     ]);
 
     const model = byName(plan.files, 'src/lib/projectsModel.ts');
-    expect(model).toContain(`| 'oscp-labs';`);
+    // The GROUP type and the membership check derive from lib/content-kinds.js
+    // (p2 U6): the plan writes labels/maps/filters only.
     expect(model).toContain(`| 'OSCP-LABS';`);
     expect(model).toContain(`'oscp-labs': { badge: 'OSCP-LABS', filter: 'OSCP-LABS' },`);
     expect(model).toContain(`Object.freeze({ id: 'OSCP-LABS', group: 'oscp-labs' }),`);
-    expect(model).toContain(`|| lower === 'oscp-labs'`);
+    expect(model).toContain('export type { ProjectGroup }'); // derivation kept intact
+    expect(model).not.toContain(`| 'oscp-labs';`); // no per-kind group union anymore
 
     const screen = byName(plan.files, 'src/components/ProjectsScreen.tsx');
     expect(screen.split(`setActiveFilter('OSCP-LABS')`).length - 1).toBe(1);
@@ -1195,8 +1226,10 @@ describe('planGroupWiring — project UI wiring (T5)', () => {
       `getCertificateGroups() returns all ${titleGroupCount(contentKindsApiTestSource, 'getCertificateGroups')} canonical groups`
     ); // sibling untouched
 
-    // Without --icon the documented FALLBACK_PROJECT_ICON covers the group.
+    // Without --icon the documented FALLBACK_PROJECT_ICON covers the group,
+    // and the derived-vocabulary note is always part of the plan.
     expect(plan.notes.some((note) => note.includes('FALLBACK_PROJECT_ICON'))).toBe(true);
+    expect(plan.notes.some((note) => note.includes('derive from lib/content-kinds.js'))).toBe(true);
   });
 
   it('with an explicit icon, requires the icon-map sources too (missing → fail-loud, never a silent skip)', () => {

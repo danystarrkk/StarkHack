@@ -153,7 +153,10 @@ export const fetchIndex = async (): Promise<WriteupIndexItem[]> => {
 // Passing undefined / omitting the argument is not a group: it returns all
 // projects (R3-unknown-group-silent-empty).
 export const getProjects = async (group?: string): Promise<ContentIndexItem[]> => {
-  if (group !== undefined && !PROJECT_GROUPS.includes(group)) {
+  // Widened for the membership check: `group` is arbitrary caller input and
+  // the tuple-typed array is the closed vocabulary it is validated against
+  // (p2 U6 — the type-level union lives in src/types/kinds.ts).
+  if (group !== undefined && !(PROJECT_GROUPS as readonly string[]).includes(group)) {
     const listed = PROJECT_GROUPS.map((entry) => JSON.stringify(entry)).join(', ');
     throw new Error(
       `Invalid project group: expected one of ${listed}, got ${JSON.stringify(group)}.`

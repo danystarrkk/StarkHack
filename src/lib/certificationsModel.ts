@@ -33,8 +33,11 @@ import type { ContentIndexItem } from '../../types';
 import type { Certification } from '../types';
 import { toUiCertification } from './contentAdapter';
 
-/** Real pipeline certificate groups (lib/content-kinds.js), verbatim. */
-export type CertificateGroup = 'universidad' | 'hack4u' | 'cisco' | 'hacker-mentor';
+/** Real pipeline certificate groups — derived from lib/content-kinds.js
+ * CERTIFICATE_GROUPS via src/types/kinds.ts (p2 U6: single source; the label
+ * map below fails to compile until every real group has its label). */
+export type { CertificateGroup } from '../types/kinds';
+import type { CertificateGroup } from '../types/kinds';
 
 /** The category pill label on a card: the group's uppercase label. */
 export type CertificationGroupLabel = 'UNIVERSIDAD' | 'HACK4U' | 'CISCO' | 'HACKER-MENTOR';

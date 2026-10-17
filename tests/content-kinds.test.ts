@@ -1,5 +1,11 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { KINDS, missingFields } from '../lib/content-kinds.js';
+import {
+  CERTIFICATE_GROUPS,
+  KINDS,
+  PROJECT_GROUPS,
+  missingFields,
+} from '../lib/content-kinds.js';
 
 describe('KINDS registry (single source of truth)', () => {
   it('defines exactly the three content kinds', () => {
@@ -76,5 +82,32 @@ describe('missingFields', () => {
 
   it('throws for an unknown kind', () => {
     expect(() => missingFields({}, 'book')).toThrow(/book/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P2 U6: the group vocabularies carry a literal-tuple `@type` so
+// src/types/kinds.ts can derive the ProjectGroup/CertificateGroup unions at
+// the type level. The tuple must never drift from the runtime array — pinned
+// here (the registry CLI rewrites both lines together on every addition).
+// ---------------------------------------------------------------------------
+
+describe('group vocabularies — literal-tuple @type pin (p2 U6)', () => {
+  const source = readFileSync(new URL('../lib/content-kinds.js', import.meta.url), 'utf8');
+
+  function tupleFor(name: string): string[] {
+    const match = new RegExp(
+      `@type \\{readonly \\[([^\\]]+)\\]\\}\\s*\\n \\*/\\nexport const ${name}`
+    ).exec(source);
+    expect(match, `${name} literal-tuple @type`).not.toBeNull();
+    return match![1].split(',').map((entry) => entry.trim().replace(/^'|'$/g, ''));
+  }
+
+  it('PROJECT_GROUPS @type tuple matches the runtime array', () => {
+    expect(tupleFor('PROJECT_GROUPS')).toEqual([...PROJECT_GROUPS]);
+  });
+
+  it('CERTIFICATE_GROUPS @type tuple matches the runtime array', () => {
+    expect(tupleFor('CERTIFICATE_GROUPS')).toEqual([...CERTIFICATE_GROUPS]);
   });
 });

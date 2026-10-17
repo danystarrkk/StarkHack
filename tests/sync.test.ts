@@ -160,7 +160,9 @@ describe('real project/certificate group + tag drift', () => {
     const problems: string[] = [];
     for (const file of filesOfKind('certificate')) {
       const { group, tags } = file.data;
-      if (typeof group !== 'string' || !CERTIFICATE_GROUPS.includes(group)) {
+      // Widened for the membership check: `group` is arbitrary frontmatter
+      // input validated against the closed vocabulary (p2 U6 tuple typing).
+      if (typeof group !== 'string' || !(CERTIFICATE_GROUPS as readonly string[]).includes(group)) {
         problems.push(`${file.kind} ${file.rel}: invalid group ${JSON.stringify(group)}`);
       }
       if (!Array.isArray(tags) || tags.length < 1) {

@@ -46,8 +46,13 @@ import { toUiProject } from './contentAdapter';
 /** The "recientes" slice: featured shows at most the first N of the list. */
 export const FEATURED_PROJECT_COUNT = 3;
 
-/** Real pipeline project groups (lib/content-kinds.js PROJECT_GROUPS), verbatim. */
-export type ProjectGroup = 'scripts' | 'automatizaciones' | 'herramientas';
+/** Real pipeline project groups — derived from lib/content-kinds.js
+ * PROJECT_GROUPS via src/types/kinds.ts (p2 U6: the single source flows into
+ * the compiler; PROJECT_GROUP_LABELS below fails to compile until every real
+ * group has its label). */
+export type { ProjectGroup } from '../types/kinds';
+import type { ProjectGroup } from '../types/kinds';
+import { PROJECT_GROUPS } from '../../lib/content-kinds.js';
 
 /** The category pill label on a card: the group's uppercase Spanish label. */
 export type ProjectGroupLabel = 'HERRAMIENTA' | 'SCRIPT' | 'AUTOMATIZACIÓN';
@@ -132,10 +137,14 @@ export interface ProjectsModel {
 
 // Real pipeline group → canonical vocabulary (case-insensitive); anything the
 // pipeline does not recognize stays absent — never mapped onto a real group.
+// Membership over the single source (p2 U6): no per-group literal chain to
+// extend — adding a group to lib/content-kinds.js reaches this check (and the
+// compiler) automatically. `value` is arbitrary content input, hence the
+// readonly-string widen for the check and the cast back on a match.
 const normalizeGroup = (value: string | undefined): ProjectGroup | undefined => {
   const lower = (value ?? '').trim().toLowerCase();
-  return lower === 'herramientas' || lower === 'scripts' || lower === 'automatizaciones'
-    ? lower
+  return (PROJECT_GROUPS as readonly string[]).includes(lower)
+    ? (lower as ProjectGroup)
     : undefined;
 };
 
