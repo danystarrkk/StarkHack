@@ -55,3 +55,13 @@ código muerto y su de-exportación agrega churn; queda anotado, no se toca.
 - **L3** · evidencia · suite de partida ROJA: 6 failed | 683 passed (689) en 5
   archivos (media, projects-model, terminal-data, registry, writeup-view×2);
   causas atribuidas al commit `79f5246 "reforma completo"`.
+- **L4** · ejecución · T1-T9 cerrados en 7 commits sobre chore/code-polish:
+  `4de4f63` (doc) · `59adb64` (cadena template) · `d1fc924` (imports/props/
+  tipos) · `1385cda` (restos de plantilla + migrate-images) · `297b2bc`
+  (18 huérfanos + _archive; public/ 34MB → 28MB) · `7c9adcc` (pines wave) ·
+  `24543e3` (3 pines stale).
+- **L5** · gate final · `npm test`: build ok + 25 archivos / 688 tests
+  VERDES (de 6/689 rojos a 0; −2 pines muertos con la cadena template) y
+  `tsc --noUnusedLocals --noUnusedParameters` exit 0; árbol limpio.
+- **L6** · slices · corte registrado: T2 = 690 líneas (unit grande, un commit);
+  los units siguientes (T3-T9) son chicos y autocontenidos.
