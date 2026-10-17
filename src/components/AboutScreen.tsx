@@ -74,8 +74,16 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
         <div className="lg:col-span-5 rounded-xl border border-[#1b1f29] bg-[#10141c] p-5 sm:p-6 flex flex-col space-y-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.7)]">
           {/* Header */}
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl border border-[#39bae6]/40 bg-[#0d1017] text-[#39bae6] shadow-[0_0_20px_rgba(57,186,230,0.25)] shrink-0">
-              <Shield className="h-7 w-7 sm:h-8 sm:w-8" />
+            {/* Identity box: the real portrait (public/ui/avatar.webp), same
+                geometry as the old Shield box; the red-tuned frame matches the
+                illustration's accent color. */}
+            <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl border border-[#f07178]/40 bg-[#0d1017] shadow-[0_0_20px_rgba(240,113,120,0.25)]">
+              <img
+                src="/ui/avatar.webp"
+                alt="Stark"
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
             </div>
 
             <div className="space-y-1">

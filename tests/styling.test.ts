@@ -304,6 +304,22 @@ describe('motion surface contract (site-motion)', () => {
   it('AboutScreen reveals its top-level section blocks', () => {
     expect(aboutScreen, 'AboutScreen.tsx must carry data-reveal').toContain('data-reveal');
   });
+
+  it('the operator profile card renders the real avatar in its identity box (red frame)', () => {
+    // The identity box keeps its geometry (h-14/16 w-14/16 rounded-xl) and
+    // swaps the Shield glyph for the real portrait served from /ui/.
+    const identityBox = (aboutScreen.match(/<div className="h-14 w-14 sm:h-16 sm:w-16[^"]*">[\s\S]*?<\/div>/g) ?? []).find((block) =>
+      block.includes('avatar.webp'),
+    );
+    expect(identityBox, 'the identity box must render /ui/avatar.webp').toBeDefined();
+    expect(identityBox).toContain('object-cover');
+    expect(identityBox).toContain('rounded-xl');
+    expect(identityBox).toContain('border-[#f07178]/40'); // the red frame
+    expect(aboutScreen, 'the avatar must be lazy like the rest of the media').toContain(
+      'loading="lazy"',
+    );
+    expect(aboutScreen, 'the portrait carries the operator alias as alt').toContain('alt="Stark"');
+  });
 });
 
 // Compiled layer for the motion contract (runs only when dist/assets/*.css
