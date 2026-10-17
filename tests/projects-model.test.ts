@@ -330,9 +330,26 @@ describe('real public/index.json entries', () => {
   );
   const projects = raw.filter((item) => item.kind === 'project') as unknown as ContentIndexItem[];
 
-  it('is honestly empty today: zero project entries → empty lists, stable zero-count categories', () => {
+  it('mirrors the real index today: 4 project entries → populated lists and honest category counts', () => {
     const model = buildProjectsModel(projects, EMPTY_PROJECTS_FILTERS);
-    expect(projects).toHaveLength(0); // documented current state of the index
+    expect(projects).toHaveLength(4); // documented current state of the index
+    expect(model.totalCount).toBe(4);
+    expect(model.featuredCount).toBe(3); // capped at FEATURED_PROJECT_COUNT
+    expect(model.featured).toHaveLength(3);
+    expect(model.archiveCount).toBe(4);
+    expect(model.archive).toHaveLength(4);
+    // All canonical categories stay rendered with counts straight from the index.
+    expect(model.filterCategories.map((c) => c.id)).toEqual([
+      'TODOS',
+      'HERRAMIENTAS',
+      'SCRIPTS',
+      'AUTOMATIZACIÓN',
+    ]);
+    expect(model.filterCategories.map((c) => c.count)).toEqual([4, 1, 1, 2]);
+  });
+
+  it('an EMPTY index still yields empty lists and zero-count categories (empty-state contract)', () => {
+    const model = buildProjectsModel([], EMPTY_PROJECTS_FILTERS);
     expect(model.featured).toEqual([]);
     expect(model.archive).toEqual([]);
     expect(model.featuredCount).toBe(0);

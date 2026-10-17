@@ -373,10 +373,12 @@ describe('planTagAddition — insertion position (rule 2)', () => {
     // Appended last in BOTH lists; the approved order before it is untouched.
     expect(libEntries[libEntries.length - 1]).toBe('Exploit Development');
     expect(pinEntries[pinEntries.length - 1]).toBe('Exploit Development');
-    expect(libEntries.slice(0, -1)).toEqual([
-      'CLI Utilities', 'Recon', 'OSINT', 'Scanning', 'Networking', 'Web',
-      'Cryptography', 'Parsers', 'Integrations', 'Reporting', 'Databases',
-    ]);
+    // The approved prefix is derived from the real sources (never hardcoded),
+    // so an approved vocabulary addition can no longer stale this pin.
+    const originalLibEntries = listEntries(taxonomySource, declLib('PROJECT_TAGS'));
+    const originalPinEntries = listEntries(taxonomyPinSource, declPin('APPROVED_PROJECT_TAGS'));
+    expect(libEntries.slice(0, -1)).toEqual(originalLibEntries);
+    expect(pinEntries.slice(0, -1)).toEqual(originalPinEntries);
     // Rule 2 invariant (order-sensitive pin: plain toEqual keeps it green).
     expectAlignedAtEveryIndex(libEntries, pinEntries);
   });
