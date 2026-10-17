@@ -396,11 +396,11 @@ describe('real public/index.json entries', () => {
   ) as unknown as ContentIndexItem[];
 
   it('agrees with the real index: one row per entry, empty state only when a kind is empty', () => {
-    // Projects hold real entries too (4 today): the terminal renders one row
-    // per project — never the empty-state row. The empty-state contract
-    // itself is pinned above against EMPTY input, so publishing content never
-    // breaks this file again.
-    expect(projects).toHaveLength(4); // documented current state of the index
+    // Projects hold real entries: the terminal renders one row per project —
+    // never the empty-state row. The count is derived from the index (never a
+    // publish-fragile literal); the empty-state contract itself is pinned
+    // above against EMPTY input.
+    expect(projects.length).toBeGreaterThan(0);
     const projectLines = buildTerminalProjectLines(projects);
     expect(projectLines).toHaveLength(projects.length);
     expect(projectLines).not.toContainEqual(PROJECTS_EMPTY_ROW);
@@ -416,28 +416,22 @@ describe('real public/index.json entries', () => {
     );
   });
 
-  it('the 16 real writeups produce rows of real fields only', () => {
-    expect(writeups).toHaveLength(16); // documented current state of the index
+  it('the real writeups produce rows of real fields only', () => {
+    expect(writeups.length).toBeGreaterThan(0); // derived: real entries exist
     const rows = writeupRows(buildTerminalWriteupLines(writeups));
-    expect(rows).toHaveLength(16);
+    expect(rows).toHaveLength(writeups.length);
     for (const row of rows) {
       for (const field of TEMPLATE_ONLY_WRITEUP_FIELDS) {
         expect(row, `${row.id}.${field}`).not.toHaveProperty(field);
       }
     }
-    // Real index data, verbatim.
+    // Every row mirrors its index entry verbatim (derived, no content literals).
     expect(rows[0]).toMatchObject({
-      id: 'wave',
-      title: 'Wave',
-      platform: 'hackmyvm',
-      date: '2026-09-15',
-      tags: [
-        'File Upload',
-        'Information Disclosure',
-        'Misconfiguration',
-        'Privilege Escalation',
-        'Remote Code Execution',
-      ],
+      id: writeups[0].slug,
+      title: writeups[0].title,
+      platform: writeups[0].platform.toLowerCase(),
+      date: writeups[0].date,
+      tags: writeups[0].tags,
     });
     expect(rows.map((r) => r.platform)).toEqual(writeups.map((w) => w.platform.toLowerCase()));
     expect(rows.map((r) => r.date)).toEqual(writeups.map((w) => w.date));

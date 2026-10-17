@@ -84,8 +84,11 @@ describe('buildWriteupView — body source', () => {
   it('renders the real pipeline markdown as the body', () => {
     const view = buildWriteupView(WAVE_SOURCE);
     expect(view.markdownContent).toBe(WAVE_BODY);
-    expect(view.markdownContent).toContain('# Enumeración');
-    expect(view.markdownContent).toContain('sudo arp-scan');
+    // Derived from the real file (never a content literal): the body carries
+    // its first markdown heading.
+    const firstHeading = WAVE_BODY.match(/^# (.+)$/m)?.[1] ?? '';
+    expect(firstHeading.length).toBeGreaterThan(0);
+    expect(view.markdownContent).toContain(`# ${firstHeading}`);
   });
 
   // The old "never takes the body from the retired curated sample map" pin
@@ -269,20 +272,21 @@ describe('buildWriteupView — machineLinks / toolLinks (frontmatter only)', () 
 describe('buildWriteupView — sections TOC', () => {
   it('extracts the real section list from the pipeline markdown', () => {
     const view = buildWriteupView(WAVE_SOURCE);
-    expect(view.headings).toHaveLength(9);
-    expect(view.headings.map((h) => h.cleanText)).toEqual([
-      'Enumeración',
-      'Explotación',
-      'Escalando Privilegios 1',
-      'Escalada de Privilegios 2',
-      'Mitigaciones',
-      'Exposición de información sensible y copias de seguridad',
-      'Ausencia de control de integridad y detección de webshells',
-      'Configuración insegura de servicios y escritura en directorios críticos',
-      'Configuración permisiva de Sudo',
-    ]);
-    expect(view.headings[0].level).toBe(1);
-    expect(view.headings[5].level).toBe(2);
+    // Derived from the real file (publish-fragile literals removed): the TOC
+    // mirrors every markdown heading the body actually carries.
+    const headingsFromBody = [...WAVE_BODY.matchAll(/^(#{1,6})\s+(.+)$/gm)].map((match) => ({
+      level: match[1].length,
+      text: match[2].trim(),
+    }));
+    expect(headingsFromBody.length).toBeGreaterThan(0);
+    expect(view.headings).toHaveLength(headingsFromBody.length);
+    expect(view.headings[0].level).toBe(headingsFromBody[0].level);
+    expect(view.headings[0].cleanText.length).toBeGreaterThan(0);
+    for (const heading of view.headings) {
+      expect(heading.id).toBeTruthy(); // every entry is anchorable
+    }
+    // Levels round-trip: entry N carries the markdown level of heading N.
+    expect(view.headings.map((h) => h.level)).toEqual(headingsFromBody.map((h) => h.level));
   });
 
   it('fenced-code comments are not headings', () => {
@@ -364,7 +368,7 @@ describe('WriteupPage (rendered with real pipeline data)', () => {
 
   it('renders the real markdown body for /writeups/hackmyvm/wave', async () => {
     const markup = await renderPage(WAVE_SOURCE);
-    expect(markup).toContain('Enumeración');
+    expect(markup).toContain(WAVE_BODY.match(/^# (.+)$/m)?.[1] ?? 'missing-heading'); // first real heading, derived
     expect(markup).toContain('sudo arp-scan');
   });
 

@@ -330,14 +330,16 @@ describe('real public/index.json entries', () => {
   );
   const projects = raw.filter((item) => item.kind === 'project') as unknown as ContentIndexItem[];
 
-  it('mirrors the real index today: 4 project entries → populated lists and honest category counts', () => {
+  it('mirrors the real index: populated lists and category counts derived from the entries', () => {
     const model = buildProjectsModel(projects, EMPTY_PROJECTS_FILTERS);
-    expect(projects).toHaveLength(4); // documented current state of the index
-    expect(model.totalCount).toBe(4);
-    expect(model.featuredCount).toBe(3); // capped at FEATURED_PROJECT_COUNT
-    expect(model.featured).toHaveLength(3);
-    expect(model.archiveCount).toBe(4);
-    expect(model.archive).toHaveLength(4);
+    // Derived, never publish-fragile literals: real entries exist and every
+    // count comes from the entries themselves.
+    expect(projects.length).toBeGreaterThan(0);
+    expect(model.totalCount).toBe(projects.length);
+    expect(model.featuredCount).toBe(Math.min(projects.length, FEATURED_PROJECT_COUNT));
+    expect(model.featured).toHaveLength(model.featuredCount);
+    expect(model.archiveCount).toBe(projects.length);
+    expect(model.archive).toHaveLength(projects.length);
     // All canonical categories stay rendered with counts straight from the index.
     expect(model.filterCategories.map((c) => c.id)).toEqual([
       'TODOS',
@@ -345,7 +347,12 @@ describe('real public/index.json entries', () => {
       'SCRIPTS',
       'AUTOMATIZACIÓN',
     ]);
-    expect(model.filterCategories.map((c) => c.count)).toEqual([4, 1, 1, 2]);
+    expect(model.filterCategories.map((c) => c.count)).toEqual([
+      projects.length,
+      ...['herramientas', 'scripts', 'automatizaciones'].map(
+        (group) => projects.filter((entry) => entry.group === group).length
+      ),
+    ]);
   });
 
   it('an EMPTY index still yields empty lists and zero-count categories (empty-state contract)', () => {

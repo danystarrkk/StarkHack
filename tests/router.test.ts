@@ -18,6 +18,7 @@ import {
   resolveProjectDetail,
   resolveWriteupDetail,
 } from '../src/lib/detailRoutes';
+import type { WriteupIndexItem } from '../types';
 
 // The router settles loader-driven navigation (e.g. redirect loaders)
 // asynchronously; poll until the initial navigation has completed.
@@ -119,8 +120,11 @@ describe('detail route resolution against the real content pipeline', () => {
     const resolved = await resolveWriteupDetail('hackmyvm', 'wave');
     expect(resolved).not.toBeNull();
     expect(resolved!.entry.slug).toBe('wave');
-    expect(resolved!.entry.title).toBe('Wave');
-    expect(resolved!.doc.content).toContain('# Enumeración');
+    expect(resolved!.entry.title).toBe(
+      (REAL_INDEX as WriteupIndexItem[]).find((item) => item.slug === 'wave')!.title
+    ); // derived from the real index, never a content literal
+    // The doc body is exactly the real file minus its frontmatter (derived).
+    expect(resolved!.doc.content).toBe(REAL_WAVE_MD.replace(/^---\n[\s\S]*?\n---\n/, ''));
   });
 
   it('resolveWriteupDetail returns null for unknown slugs (honest not-found)', async () => {
