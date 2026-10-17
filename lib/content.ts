@@ -12,6 +12,20 @@ import {
   PlatformStats,
 } from '../types';
 
+// Infrastructure failure while loading one markdown document (network error,
+// timeout, unreadable body). Thrown instead of resolving null so a deployment
+// failure never masquerades as an honest "this document does not exist" — the
+// routes show their error state instead of a fake NOT FOUND (p1-reliability S1).
+export class ContentDocError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message);
+    this.name = 'ContentDocError';
+    if (options !== undefined && options.cause !== undefined) {
+      (this as Error & { cause?: unknown }).cause = options.cause;
+    }
+  }
+}
+
 const INDEX_URL = '/index.json';
 
 // Default bound for every content fetch (p1-reliability S2): a hung request
@@ -265,31 +279,45 @@ async function fetchMarkdownDoc(
   slug: string,
   label: string
 ): Promise<CertificateDoc | null> {
+  let response: Response;
   try {
-    const response = await fetchWithTimeout(filePath);
-    if (!response.ok) throw new Error("File not found");
-    const text = await response.text();
-
-    const { data, content } = parseFrontmatter<Partial<Frontmatter>>(text);
-
-    return {
-      // El spread va primero: lo que el frontmatter aporte llena el resto,
-      // pero slug y content se declaran después para que una clave `slug:` o
-      // `content:` escrita en el YAML no pueda pisar el id ni el cuerpo real.
-      ...data,
-      slug,
-      content,
-      // `title` is required for every kind: falling back to the slug can never
-      // fabricate metadata on validated content (see the note above).
-      title: data.title ?? slug,
-      // `date` is NOT set here: present frontmatter dates arrive via ...data;
-      // absent ones stay absent and the dated fetchers apply their fallback.
-    };
-
+    response = await fetchWithTimeout(filePath);
   } catch (error) {
-    console.error(`Error fetching ${label} ${filePath}:`, error);
-    return null;
+    // Network failure or timeout: an infrastructure problem, never a 404.
+    throw new ContentDocError(
+      `Failed to fetch ${label} ${filePath}: ${error instanceof Error ? error.message : String(error)}.`,
+      { cause: error }
+    );
   }
+  // A not-ok response is the honest "this document is not in the pipeline"
+  // answer (the index, not this fetch, is the authority on existence).
+  if (!response.ok) return null;
+
+  let text: string;
+  try {
+    text = await response.text();
+  } catch (error) {
+    throw new ContentDocError(
+      `Failed to read ${label} ${filePath}: ${error instanceof Error ? error.message : String(error)}.`,
+      { cause: error }
+    );
+  }
+
+  const { data, content } = parseFrontmatter<Partial<Frontmatter>>(text);
+
+  return {
+    // El spread va primero: lo que el frontmatter aporte llena el resto,
+    // pero slug y content se declaran después para que una clave `slug:` o
+    // `content:` escrita en el YAML no pueda pisar el id ni el cuerpo real.
+    ...data,
+    slug,
+    content,
+    // `title` is required for every kind: falling back to the slug can never
+    // fabricate metadata on validated content (see the note above).
+    title: data.title ?? slug,
+    // `date` is NOT set here: present frontmatter dates arrive via ...data;
+    // absent ones stay absent and the dated fetchers apply their fallback.
+  };
 }
 
 // Today's date (UTC, YYYY-MM-DD): the documented fallback for the `date` field

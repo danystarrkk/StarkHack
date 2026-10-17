@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  ContentDocError,
   ContentIndexError,
   fetchIndex,
   fetchIndexByKind,
@@ -575,5 +576,40 @@ describe('fetchWithTimeout', () => {
     await fetchWithTimeout('/index.json', {}, 10_000);
 
     expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P1 reliability (p1-reliability S1): infrastructure failures while loading a
+// document must reject honestly — never resolve null and masquerade as a
+// "not found" that the content simply does not exist.
+// ---------------------------------------------------------------------------
+
+describe('fetchWriteup — honest infrastructure errors', () => {
+  it('rejects with ContentDocError when the request itself fails', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const rejection = fetchWriteup('hackmyvm', 'wave');
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentDocError);
+    await expect(rejection).rejects.toThrow('wave.md');
+    await expect(rejection).rejects.toThrow('Failed to fetch');
+  });
+
+  it('rejects with ContentDocError on a fetch timeout', async () => {
+    fetchMock.mockRejectedValue(
+      new DOMException('Request timed out after 10000ms', 'TimeoutError')
+    );
+
+    const rejection = fetchWriteup('hackmyvm', 'wave');
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentDocError);
+    await expect(rejection).rejects.toThrow(/timed out/i);
+  });
+
+  it('still resolves null when the document simply does not exist (!ok)', async () => {
+    fetchMock.mockResolvedValue(notOkResponse());
+
+    await expect(fetchWriteup('hackmyvm', 'missing')).resolves.toBeNull();
   });
 });
