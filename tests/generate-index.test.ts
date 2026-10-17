@@ -625,6 +625,31 @@ describe('assertValidWriteupLinks — writeup machineLinks / toolLinks contract'
     expect(message).toContain('"nope"');
   });
 
+  it('rejects a machineLinks url with a non-http scheme (security: shared scheme allowlist)', () => {
+    const message = linksMessage({
+      machineLinks: [{ title: 'Evil', url: 'javascript:alert(1)' }],
+    });
+    expect(message).toContain(filePath);
+    expect(message).toContain('machineLinks');
+    expect(message).toContain('#0');
+    expect(message).toContain('"url"');
+    expect(message).toContain('safe URL scheme');
+    expect(message).toContain('javascript:alert(1)');
+  });
+
+  it('rejects a toolLinks url with a data: scheme and the scheme-relative //host form', () => {
+    const dataMessage = linksMessage({
+      toolLinks: [{ name: 'evil', url: 'data:text/html;base64,PHNjcmlwdD4=' }],
+    });
+    expect(dataMessage).toContain('toolLinks');
+    expect(dataMessage).toContain('safe URL scheme');
+    const protocolRelative = linksMessage({
+      machineLinks: [{ title: 'Evil', url: '//evil.example/steal' }],
+    });
+    expect(protocolRelative).toContain('safe URL scheme');
+    expect(protocolRelative).toContain('//evil.example/steal');
+  });
+
   it('rejects an entry that is not a plain object (array / null)', () => {
     const message = linksMessage({ machineLinks: [{ title: 'ok', url: 'https://ok' }, null] });
     expect(message).toContain('#1');

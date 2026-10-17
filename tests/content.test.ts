@@ -170,6 +170,48 @@ describe('index entry shape validation (R3-array-entry-shape-unvalidated)', () =
     await expect(rejection).rejects.toThrow('"writeup", "project", "certificate"');
   });
 
+  it('rejects URL fields with a non-http scheme (security: shared scheme allowlist)', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse([{ ...makeItem(), image: 'javascript:alert(1)' }])
+    );
+
+    const rejection = fetchIndex();
+
+    await expect(rejection).rejects.toBeInstanceOf(ContentIndexError);
+    await expect(rejection).rejects.toThrow(/entry 0/);
+    await expect(rejection).rejects.toThrow('image');
+    await expect(rejection).rejects.toThrow('javascript:alert(1)');
+  });
+
+  it('rejects githubUrl / imageHires / pdfUrl with unsafe schemes, naming field and value', async () => {
+    for (const [field, value] of [
+      ['githubUrl', 'javascript:alert(1)'],
+      ['imageHires', 'data:text/html;base64,PHNjcmlwdD4='],
+      ['pdfUrl', 'file:///etc/passwd'],
+    ] as const) {
+      fetchMock.mockResolvedValue(jsonResponse([{ ...makeItem(), [field]: value }]));
+
+      const rejection = fetchIndex();
+
+      await expect(rejection, field).rejects.toBeInstanceOf(ContentIndexError);
+      await expect(rejection, field).rejects.toThrow(/entry 0/);
+      await expect(rejection, field).rejects.toThrow(field);
+      await expect(rejection, field).rejects.toThrow(value);
+    }
+  });
+
+  it('accepts http(s) and site-relative URL fields (regression guard)', async () => {
+    const items = [
+      makeItem({
+        image: '/writeups/hackmyvm/writeup/media/cover.webp',
+        githubUrl: 'https://github.com/danystarrkk/StarkHack',
+      } as Partial<WriteupIndexItem>),
+    ];
+    fetchMock.mockResolvedValue(jsonResponse(items));
+
+    await expect(fetchIndex()).resolves.toEqual(items);
+  });
+
   it('rejects a blank index-level slug', async () => {
     fetchMock.mockResolvedValue(jsonResponse([{ ...makeItem(), slug: '   ' }]));
 
