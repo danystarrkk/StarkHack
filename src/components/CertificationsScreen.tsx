@@ -14,8 +14,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Certification } from '../types';
 import { isSafeUrl } from '../../lib/url-safety.js';
-import type { ContentIndexItem } from '../../types';
 import { getCertificates } from '../../lib/content';
+import { useContentQuery } from '../lib/useContentQuery';
 import { buildCertificationsModel, type CertificationFilterId } from '../lib/certificationsModel';
 import {
   GraduationCap,
@@ -55,31 +55,9 @@ export const CertificationsScreen: React.FC = () => {
   }, [zoomedImage]);
 
   // Real pipeline loading (same honest states as Home / WriteupsScreen).
-  const [entries, setEntries] = useState<ContentIndexItem[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [loadError, setLoadError] = useState<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCertificates = async () => {
-      try {
-        const certificates = await getCertificates();
-        if (cancelled) return;
-        setEntries(certificates);
-        setStatus('ready');
-      } catch (error) {
-        if (cancelled) return;
-        setLoadError(error instanceof Error ? error.message : String(error));
-        setStatus('error');
-      }
-    };
-
-    void loadCertificates();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Honest loading/ready/error through the shared state machine (p2 U1).
+  const { data: loadedCertificates, status, error: loadError } = useContentQuery(getCertificates);
+  const entries = loadedCertificates ?? [];
 
   // Everything the screen renders comes from the pure model builder.
   const model = useMemo(

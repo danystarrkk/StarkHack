@@ -6,49 +6,28 @@
 // the Home screen. The only change versus the template is navigation: detail
 // selection and "explore all" now navigate to real URLs instead of calling an
 // onNavigate(tab) callback / selecting in-memory objects.
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TerminalHero } from '../components/TerminalHero';
 import { NewsWriteups } from '../components/NewsWriteups';
 import { FeaturedProjects } from '../components/FeaturedProjects';
 import { loadHomeContent } from './homeModel';
-import { Project, Writeup } from '../types';
+import { Writeup } from '../types';
 import { projectDetailPath, writeupDetailPath } from './paths';
 import { useTerminal } from './terminal';
+import { useContentQuery } from './useContentQuery';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { openTerminal } = useTerminal();
 
-  const [homeWriteups, setHomeWriteups] = useState<Writeup[]>([]);
-  const [homeProjects, setHomeProjects] = useState<Project[]>([]);
-  const [homeProjectTotal, setHomeProjectTotal] = useState<number>(0);
-  const [homeStatus, setHomeStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [homeError, setHomeError] = useState<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const initHome = async () => {
-      try {
-        const content = await loadHomeContent();
-        if (cancelled) return;
-        setHomeWriteups(content.writeups);
-        setHomeProjects(content.projects);
-        setHomeProjectTotal(content.projectTotal);
-        setHomeStatus('ready');
-      } catch (error) {
-        if (cancelled) return;
-        setHomeError(error instanceof Error ? error.message : String(error));
-        setHomeStatus('error');
-      }
-    };
-
-    void initHome();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Honest loading/ready/error through the shared state machine (p2 U1).
+  const { data: homeContent, status: homeStatus, error: homeError } = useContentQuery(
+    () => loadHomeContent()
+  );
+  const homeWriteups = homeContent?.writeups ?? [];
+  const homeProjects = homeContent?.projects ?? [];
+  const homeProjectTotal = homeContent?.projectTotal ?? 0;
 
   const openWriteup = (writeup: Writeup): void => {
     // Never fabricate a URL: pipeline writeups always carry a platformId

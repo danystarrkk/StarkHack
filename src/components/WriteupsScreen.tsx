@@ -21,8 +21,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Writeup } from '../types';
-import type { WriteupIndexItem } from '../../types';
 import { fetchIndex } from '../../lib/content';
+import { useContentQuery } from '../lib/useContentQuery';
 import {
   DIRECTORY_LEVELS,
   buildDirectoryModel,
@@ -68,32 +68,9 @@ export const WriteupsScreen: React.FC<WriteupsScreenProps> = ({ onSelectWriteup 
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
 
-  // Real pipeline loading (same honest states as Home).
-  const [entries, setEntries] = useState<WriteupIndexItem[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [loadError, setLoadError] = useState<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadWriteups = async () => {
-      try {
-        const index = await fetchIndex();
-        if (cancelled) return;
-        setEntries(index);
-        setStatus('ready');
-      } catch (error) {
-        if (cancelled) return;
-        setLoadError(error instanceof Error ? error.message : String(error));
-        setStatus('error');
-      }
-    };
-
-    void loadWriteups();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Honest loading/ready/error through the shared state machine (p2 U1).
+  const { data: loadedWriteups, status, error: loadError } = useContentQuery(fetchIndex);
+  const entries = loadedWriteups ?? [];
 
   // Everything the screen renders comes from the pure model builder.
   const model = useMemo(

@@ -12,10 +12,10 @@
 // screen's uppercase Spanish labels; search matches real title/description/
 // tags. Template-only fields (stars, versions, badges, ...) have no source
 // in the pipeline, so their chips/labels are hidden — never placeholders.
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Project } from '../types';
-import type { ContentIndexItem } from '../../types';
 import { getProjects } from '../../lib/content';
+import { useContentQuery } from '../lib/useContentQuery';
 import {
   buildProjectsModel,
   type ProjectFilterId,
@@ -45,32 +45,9 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
   const [activeFilter, setActiveFilter] = useState<ProjectFilterId>('TODOS');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Real pipeline loading (same honest states as Home / WriteupsScreen).
-  const [entries, setEntries] = useState<ContentIndexItem[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [loadError, setLoadError] = useState<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadProjects = async () => {
-      try {
-        const projects = await getProjects();
-        if (cancelled) return;
-        setEntries(projects);
-        setStatus('ready');
-      } catch (error) {
-        if (cancelled) return;
-        setLoadError(error instanceof Error ? error.message : String(error));
-        setStatus('error');
-      }
-    };
-
-    void loadProjects();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Honest loading/ready/error through the shared state machine (p2 U1).
+  const { data: loadedProjects, status, error: loadError } = useContentQuery(getProjects);
+  const entries = loadedProjects ?? [];
 
   // Everything the screen renders comes from the pure model builder.
   const model = useMemo(

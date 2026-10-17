@@ -23,7 +23,7 @@
 // and error states are always honest, and a
 // render error boundary converts any residual render crash into an honest
 // visible state instead of crashing the app.
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchIndex, fetchProject, fetchWriteup, getProjects } from '../../lib/content';
 import { toUiProject, toUiWriteup } from './contentAdapter';
@@ -32,6 +32,7 @@ import { WriteupPage } from '../components/WriteupPage';
 import type { ProjectViewSource, Writeup } from '../types';
 import type { ContentDoc, ContentIndexItem, WriteupContent, WriteupIndexItem } from '../../types';
 import { projectDetailPath, writeupDetailPath } from './paths';
+import { useContentQuery } from './useContentQuery';
 
 // ---------------------------------------------------------------------------
 // Real pipeline resolution
@@ -259,34 +260,22 @@ export const WriteupDetailRoute: React.FC = () => {
   const navigate = useNavigate();
   const requestedPath = writeupDetailPath(platformId, slug);
 
-  const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
-  const [detail, setDetail] = useState<ResolvedWriteupDetail | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-    setStatus('loading');
-    resolveWriteupDetail(platformId, slug)
-      .then((resolved) => {
-        if (cancelled) return;
-        if (resolved === null) {
-          setDetail(null);
-          setStatus('missing');
-          return;
-        }
-        setDetail(resolved);
-        setStatus('ready');
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setDetail(null);
-        setErrorMessage(error instanceof Error ? error.message : String(error));
-        setStatus('error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [platformId, slug]);
+  // Honest loading/error through the shared state machine (p2 U1); `ready`
+  // with null data is the honest not-found (the resolver resolves null when
+  // the entry or the document is missing).
+  const {
+    data: detail,
+    status: queryStatus,
+    error: errorMessage,
+  } = useContentQuery(() => resolveWriteupDetail(platformId, slug), [platformId, slug]);
+  const status =
+    queryStatus === 'error'
+      ? 'error'
+      : queryStatus === 'loading'
+        ? 'loading'
+        : detail === null
+          ? 'missing'
+          : 'ready';
 
   if (status === 'loading') return <DetailLoading requestedPath={requestedPath} />;
   if (status === 'error') {
@@ -334,34 +323,22 @@ export const ProjectDetailRoute: React.FC = () => {
   const navigate = useNavigate();
   const requestedPath = projectDetailPath(slug);
 
-  const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
-  const [detail, setDetail] = useState<ResolvedProjectDetail | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-    setStatus('loading');
-    resolveProjectDetail(slug)
-      .then((resolved) => {
-        if (cancelled) return;
-        if (resolved === null) {
-          setDetail(null);
-          setStatus('missing');
-          return;
-        }
-        setDetail(resolved);
-        setStatus('ready');
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setDetail(null);
-        setErrorMessage(error instanceof Error ? error.message : String(error));
-        setStatus('error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
+  // Honest loading/error through the shared state machine (p2 U1); `ready`
+  // with null data is the honest not-found (the resolver resolves null when
+  // the entry or the document is missing).
+  const {
+    data: detail,
+    status: queryStatus,
+    error: errorMessage,
+  } = useContentQuery(() => resolveProjectDetail(slug), [slug]);
+  const status =
+    queryStatus === 'error'
+      ? 'error'
+      : queryStatus === 'loading'
+        ? 'loading'
+        : detail === null
+          ? 'missing'
+          : 'ready';
 
   if (status === 'loading') return <DetailLoading requestedPath={requestedPath} />;
   if (status === 'error') {
