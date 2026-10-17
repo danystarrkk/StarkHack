@@ -1,6 +1,6 @@
 import React from 'react';
 import { Writeup } from '../types';
-import { Terminal, ArrowRight } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 
 interface NewsWriteupsProps {
   writeups: Writeup[];

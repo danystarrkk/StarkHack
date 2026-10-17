@@ -3,14 +3,12 @@ import { createPortal } from 'react-dom';
 import {
   Copy,
   Check,
-  Terminal,
   Info,
   AlertTriangle,
   Lightbulb,
   AlertOctagon,
   Maximize2,
   ExternalLink,
-  ChevronRight
 } from 'lucide-react';
 
 export interface TocHeading {
@@ -23,7 +21,6 @@ export interface TocHeading {
 interface MarkdownRendererProps {
   content: string;
   onHeadingsExtracted?: (headings: TocHeading[]) => void;
-  machineTitle?: string;
 }
 
 // Helper to slugify heading text for anchor IDs
@@ -93,7 +90,6 @@ export function extractHeadingsFromMarkdown(markdown: string): TocHeading[] {
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
-  machineTitle = 'Target Machine',
 }) => {
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string; caption?: string } | null>(null);

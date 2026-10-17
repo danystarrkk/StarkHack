@@ -2,7 +2,7 @@
 // The screen a URL shows is decided by the route table in src/lib/router.tsx
 // and rendered through <Outlet />; this component keeps the shell exactly as
 // it was: background layers, Navbar, Footer and the Mainframe terminal modal.
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';

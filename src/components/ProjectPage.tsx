@@ -303,7 +303,6 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({
                   never template content. */}
               <MarkdownRenderer
                 content={view.markdownContent}
-                machineTitle={view.title}
               />
             </div>
           </main>

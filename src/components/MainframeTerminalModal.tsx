@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { X, Terminal as TerminalIcon, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Terminal as TerminalIcon } from 'lucide-react';
 import type { ContentIndexItem, WriteupIndexItem } from '../../types';
 import { getCertificates, getProjects, getRecentWriteups } from '../../lib/content';
 import {

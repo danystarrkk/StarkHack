@@ -109,12 +109,3 @@ export interface Section {
   id: string;
   title: string;
 }
-
-export interface WriteupSummary {
-  title: string;
-  platform: string;
-  hash: string;
-  date: string;
-  tags: string[];
-  icon: string;
-}

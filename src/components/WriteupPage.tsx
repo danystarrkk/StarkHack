@@ -268,7 +268,6 @@ export const WriteupPage: React.FC<WriteupPageProps> = ({ writeup, onBack }) => 
                   pipeline), never template content. */}
               <MarkdownRenderer
                 content={view.markdownContent}
-                machineTitle={view.title}
               />
             </div>
           </main>

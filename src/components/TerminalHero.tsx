@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Terminal, ShieldAlert, Sparkles } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 
 interface TerminalHeroProps {
   onOpenTerminal: () => void;

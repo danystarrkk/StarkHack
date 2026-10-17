@@ -29,8 +29,6 @@ import {
   buildTerminalCertificateLines,
   buildTerminalProjectLines,
   buildTerminalWriteupLines,
-  type TerminalCertificateRow,
-  type TerminalProjectRow,
   type TerminalWriteupRow,
 } from '../src/lib/terminalData';
 import type { ContentIndexItem, WriteupIndexItem } from '../types';

@@ -25,7 +25,6 @@ import type { WriteupIndexItem } from '../../types';
 import { fetchIndex } from '../../lib/content';
 import {
   DIRECTORY_LEVELS,
-  EMPTY_DIRECTORY_FILTERS,
   buildDirectoryModel,
   normalizePlatformId,
   type DirectoryLevel,

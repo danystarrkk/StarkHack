@@ -23,14 +23,11 @@ import {
 } from '../lib/projectsModel';
 import {
   Search,
-  Code2,
   Settings,
   ArrowRight,
   ArrowLeft,
   Shield,
   Terminal,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
 
 interface ProjectsScreenProps {
