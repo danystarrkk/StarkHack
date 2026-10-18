@@ -16,8 +16,10 @@
  *   1. Faltantes de frontmatter → modo interactivo (TTY): se pregunta campo por
  *      campo con node:readline/promises; sin TTY se imprimen TODOS los problemas
  *      del plan (verbatim) y se sale con 1 — nunca se cuelga.
- *   2. Imágenes sin referenciar en el .md → solo van al plan de medios; el
- *      cuerpo no recibe inserciones (eso ya lo decide el motor).
+ *   2. Imágenes sin referenciar en el .md → NUNCA se copian (decisión humana
+ *      2026-10, incidente de las 811 copias): quedan fuera del plan y se
+ *      listan en el reporte "not copied (no body reference)". El cuerpo no
+ *      recibe inserciones (eso ya lo decide el motor).
  *   3. Cover: writeups NO llevan cover (deriva de `level`); projects y
  *      certificates la piden por nombre (--cover) y si falta se INTERROGA
  *      (para certificates el default del prompt es el --image, porque
@@ -280,6 +282,13 @@ export function formatPlan(plan, sourcePath) {
           ? '   (hires)'
           : '';
     lines.push(`  ${entry.source} -> ${plan.targetDir}/${entry.target}${artifactMark}`);
+  }
+  // Reporte honesto (decisión humana 2026-10): las fuentes de la carpeta sin
+  // referencia en el cuerpo NO se copian y se listan aquí — nunca en silencio.
+  if (Array.isArray(plan.unreferencedImages) && plan.unreferencedImages.length > 0) {
+    lines.push('');
+    lines.push('not copied (no body reference):');
+    for (const source of plan.unreferencedImages) lines.push(`  ${source}`);
   }
   lines.push('');
   lines.push('frontmatter to write:');

@@ -172,7 +172,7 @@ describe('formatPlan', () => {
       {},
     );
 
-  it('shows the source path, target dir, files to create and the image mapping rows', () => {
+  it('shows the source path, target dir, the not-copied report and NO mapping rows', () => {
     const plan = writeupPlan();
     const out = formatPlan(plan, '/tmp/somewhere/Wave Fixture.md');
 
@@ -180,8 +180,13 @@ describe('formatPlan', () => {
     expect(out).toContain('public/writeups/zztest/wave-fixture');
     // The .md is a SIBLING of its media folder — the layout the indexer scans.
     expect(out).toContain('public/writeups/zztest/wave-fixture.md');
-    expect(out).toContain('01.png -> public/writeups/zztest/wave-fixture/media/01.webp');
-    expect(out).toContain('02.jpg -> public/writeups/zztest/wave-fixture/media/02.webp');
+    // The empty body references nothing: folder extras are never copied and
+    // the plan says so (human rule 2026-10).
+    expect(out).toContain('(no images)');
+    expect(out).toContain('not copied (no body reference):');
+    expect(out).toContain('01.png');
+    expect(out).toContain('02.jpg');
+    expect(out).not.toContain(' -> ');
     // Writeups NEVER get a cover row (the UI derives it from `level`).
     expect(out).not.toContain('cover.webp');
   });
@@ -197,8 +202,11 @@ describe('formatPlan', () => {
     const out = formatPlan(plan, '/tmp/app.md');
 
     expect(out).toContain('cover.jpg -> public/projects/app/media/cover.webp   (cover)');
-    // The cover is also planned as a numbered evidence image (on purpose).
-    expect(out).toContain('cover.jpg -> public/projects/app/media/02.webp');
+    // The body references nothing: the cover is copied as cover.webp ONLY
+    // (never as a numbered duplicate) and01.png is reported as not copied.
+    expect(out).not.toContain('media/02.webp');
+    expect(out).toContain('not copied (no body reference):');
+    expect(out).toContain('01.png');
   });
 
   it('renders every problem verbatim under a problems section', () => {
@@ -304,8 +312,6 @@ describe('magick honors the convert hint (certificate-hires B4)', () => {
 
     expect(failure).toBeNull();
     expect(calls).toEqual([
-      ['magick', path.join('/tmp/scan-dir', '01.png'), path.join(REPO_ROOT, 'public/projects/app/media/01.webp')],
-      ['magick', path.join('/tmp/scan-dir', 'cover.jpg'), path.join(REPO_ROOT, 'public/projects/app/media/02.webp')],
       ['magick', path.join('/tmp/scan-dir', 'cover.jpg'), path.join(REPO_ROOT, 'public/projects/app/media/cover.webp')],
     ]);
   });
@@ -500,7 +506,10 @@ describe('add-content CLI (spawned, non-TTY)', () => {
     expect(first.status).toBe(0);
     expect(first.stdout).toContain('public/writeups/zztest/' + FIXTURE);
     expect(first.stdout).toContain('01.png -> public/writeups/zztest/' + FIXTURE + '/media/01.webp');
-    expect(first.stdout).toContain('02.png -> public/writeups/zztest/' + FIXTURE + '/media/02.webp');
+    // The body references only01.png: the extra02.png is never copied and is
+    // reported (human rule 2026-10).
+    expect(first.stdout).toContain('not copied (no body reference):');
+    expect(first.stdout).not.toContain('02.png -> ');
     expect(first.stdout).toContain('problems: none');
     // Byte-idempotent: two dry-runs print exactly the same thing.
     expect(second.stdout).toBe(first.stdout);

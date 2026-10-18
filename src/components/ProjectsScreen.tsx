@@ -190,9 +190,6 @@ export const ProjectsScreen: React.FC<ProjectsScreenProps> = ({
           </div>
         </div>
 
-        <p className="text-xs sm:text-[13px] text-[#879299] max-w-4xl leading-relaxed">
-          // Herramientas de auditoría, scripts de automatización de exploits e investigaciones de seguridad defensiva y ofensiva desarrolladas por Stark.
-        </p>
       </div>
 
       {/* Honest loading / error states (same pattern as Home / WriteupsScreen) */}

@@ -94,12 +94,13 @@ describe('planContentIngestion — writeup happy path', () => {
     expect(plan.imagePlan.some((entry) => entry.target === 'media/cover.webp')).toBe(false);
   });
 
-  it('ignores the cover option for writeups', () => {
+  it('ignores the cover option for writeups and never copies unreferenced folder extras', () => {
     const withCover = planContentIngestion('writeup', doc(WAVE_YAML, ''), 'wave.md', ['01.png'], {
       cover: '01.png',
     });
     expect(withCover.problems).toEqual([]);
-    expect(withCover.imagePlan).toEqual([{ source: '01.png', target: 'media/01.webp' }]);
+    expect(withCover.imagePlan).toEqual([]);
+    expect(withCover.unreferencedImages).toEqual(['01.png']);
   });
 
   it('keeps an existing writeup image key untouched', () => {
@@ -282,7 +283,7 @@ describe('planContentIngestion — project', () => {
     '  - Recon',
   ];
 
-  it('plans the numbered media plus the required cover and refreshes image', () => {
+  it('plans the required cover and only body-referenced media, refreshing image', () => {
     const plan = planContentIngestion(
       'project',
       doc(APP_YAML),
@@ -294,11 +295,10 @@ describe('planContentIngestion — project', () => {
     expect(plan.sitePath).toBe('/projects/autorecon-ng');
     expect(plan.targetDir).toBe('public/projects/autorecon-ng');
     expect(plan.markdownPath).toBe('public/projects/autorecon-ng.md');
-    expect(plan.imagePlan).toEqual([
-      { source: '01.png', target: 'media/01.webp' },
-      { source: 'cover.jpg', target: 'media/02.webp' },
-      { source: 'cover.jpg', target: 'media/cover.webp' },
-    ]);
+    // The body references nothing: only the frontmatter cover is copied, and
+    // the cover itself is NOT reported as discarded (it IS copied).
+    expect(plan.imagePlan).toEqual([{ source: 'cover.jpg', target: 'media/cover.webp' }]);
+    expect(plan.unreferencedImages).toEqual(['01.png']);
     expect(plan.frontmatter.image).toBe('/projects/autorecon-ng/media/cover.webp');
     expect(plan.frontmatter.group).toBe('scripts');
   });
@@ -308,7 +308,8 @@ describe('planContentIngestion — project', () => {
     expect(plan.problems).toEqual([
       'Missing project cover in autorecon-ng.md: expected the cover option naming an image file.',
     ]);
-    expect(plan.imagePlan).toEqual([{ source: '01.png', target: 'media/01.webp' }]);
+    expect(plan.imagePlan).toEqual([]);
+    expect(plan.unreferencedImages).toEqual(['01.png']);
   });
 
   it('rejects a project cover that is not among the folder images', () => {
@@ -319,7 +320,8 @@ describe('planContentIngestion — project', () => {
       'Invalid project cover in autorecon-ng.md: "nope.png" is not among the source images.',
     ]);
     // The unusable cover never reaches the plan.
-    expect(plan.imagePlan).toEqual([{ source: '01.png', target: 'media/01.webp' }]);
+    expect(plan.imagePlan).toEqual([]);
+    expect(plan.unreferencedImages).toEqual(['01.png']);
   });
 
   it('validates group against PROJECT_GROUPS with the assertValidGroup wording', () => {
@@ -691,15 +693,17 @@ describe('planContentIngestion — body rewriting', () => {
     expect(plain.rewrittenBody).toBe('Solo texto, sin evidencias.');
   });
 
-  it('numbers unreferenced images too (the folder plan is complete)', () => {
+  it('plans ONLY the images the body references for writeups (folder extras are never copied)', () => {
+    // Human rule (the incident with 811 copied images): the --images folder
+    // often holds way more than the writeup needs; unreferenced sources must
+    // never reach the media plan — the numbering still comes from the FULL
+    // sorted list so rewritten references stay stable.
     const partial = planContentIngestion('writeup', doc(WAVE_YAML, 'Solo [[b.png]].'), 'wave.md', [
       'b.png',
       'a.png',
     ]);
-    expect(partial.imagePlan).toEqual([
-      { source: 'a.png', target: 'media/01.webp' },
-      { source: 'b.png', target: 'media/02.webp' },
-    ]);
+    expect(partial.imagePlan).toEqual([{ source: 'b.png', target: 'media/02.webp' }]);
+    expect(partial.unreferencedImages).toEqual(['a.png']); // reported, never silent
     expect(partial.rewrittenBody).toBe('Solo ![img2](/writeups/hackmyvm/wave/media/02.webp).');
   });
 });

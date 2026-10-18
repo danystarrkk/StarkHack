@@ -39,6 +39,7 @@ const APPROVED_TAGS = [
   'Remote Code Execution',
   'Server-Side Request Forgery',
   'SQL Injection',
+  'Steganography',
   'Vulnerable Component',
   'XML External Entity',
 ];
@@ -76,7 +77,7 @@ describe('TAGS', () => {
   it('is exactly the 20 approved tags, alphabetically sorted, no duplicates, no blank entries', () => {
     // Exactly the approved 20 (same membership, canonical alphabetical order).
     expect(TAGS).toEqual([...APPROVED_TAGS].sort(byAlphabet));
-    expect(TAGS).toHaveLength(20);
+    expect(TAGS).toHaveLength(21);
 
     // Sorted.
     expect(TAGS).toEqual([...TAGS].sort(byAlphabet));

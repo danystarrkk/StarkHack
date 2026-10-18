@@ -1,5 +1,28 @@
 [
   {
+    "title": "Influencer",
+    "date": "2026-10-19",
+    "draft": false,
+    "description": "Writeup de la máquina Influencer en HackMyVM.",
+    "categories": [
+      "HackMyVM"
+    ],
+    "tags": [
+      "Information Disclosure",
+      "Credential Exposure",
+      "Broken Authentication",
+      "Remote Code Execution",
+      "Misconfiguration",
+      "Privilege Escalation",
+      "Steganography"
+    ],
+    "level": "Medium",
+    "kind": "writeup",
+    "platform": "hackmyvm",
+    "slug": "influencer",
+    "path": "/writeups/hackmyvm/influencer.md"
+  },
+  {
     "title": "VirtualBox to VMware",
     "date": "2026-10-09",
     "group": "herramientas",

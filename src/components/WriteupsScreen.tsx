@@ -149,9 +149,6 @@ export const WriteupsScreen: React.FC<WriteupsScreenProps> = ({ onSelectWriteup 
           </div>
         </div>
 
-        <p className="text-xs sm:text-sm text-[#879299] max-w-3xl leading-relaxed">
-          &gt; Accessing high-security documentation, machine exploitation logs and vulnerability writeups.
-        </p>
       </div>
 
       {/* Global Search Bar */}

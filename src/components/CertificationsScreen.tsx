@@ -365,9 +365,6 @@ export const CertificationsScreen: React.FC = () => {
           </div>
         </div>
 
-        <p className="text-xs sm:text-[13px] text-[#879299] max-w-4xl leading-relaxed">
-          // Acreditaciones académicas, certificaciones de pentesting y especializaciones de seguridad defensiva y ofensiva obtenidas por Stark.
-        </p>
       </div>
 
       {/* Honest loading / error states (same pattern as Home / WriteupsScreen) */}

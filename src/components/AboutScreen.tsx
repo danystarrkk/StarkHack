@@ -64,9 +64,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = () => {
           </div>
         </div>
 
-        <p className="text-xs sm:text-[13px] text-[#879299] max-w-4xl leading-relaxed">
-          // Presentación personal y perfil técnico multidisciplinar: desarrollo de software, ciberseguridad, scripting y administración de sistemas.
-        </p>
       </div>
 
       {/* Main Top Two-Column Section */}
