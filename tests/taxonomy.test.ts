@@ -22,9 +22,11 @@ const writeupsDir = path.join(repoRoot, 'public/writeups');
  */
 const APPROVED_TAGS = [
   'Access Control Bypass',
+  'Brute Force',
   'Buffer Overflow',
   'Broken Authentication',
   'Business Logic',
+  'CMS Exploitation',
   'Container Escape',
   'Credential Exposure',
   'Exposed Service',
@@ -77,7 +79,7 @@ describe('TAGS', () => {
   it('is exactly the 20 approved tags, alphabetically sorted, no duplicates, no blank entries', () => {
     // Exactly the approved 20 (same membership, canonical alphabetical order).
     expect(TAGS).toEqual([...APPROVED_TAGS].sort(byAlphabet));
-    expect(TAGS).toHaveLength(21);
+    expect(TAGS).toHaveLength(23);
 
     // Sorted.
     expect(TAGS).toEqual([...TAGS].sort(byAlphabet));

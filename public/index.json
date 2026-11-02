@@ -1,5 +1,29 @@
 [
   {
+    "title": "Mr Robot",
+    "date": "2026-11-02",
+    "draft": false,
+    "description": "Writeup de la máquina Mr Robot en TryHackMe.",
+    "categories": [
+      "TryHackMe"
+    ],
+    "tags": [
+      "Information Disclosure",
+      "Broken Authentication",
+      "Remote Code Execution",
+      "Credential Exposure",
+      "Misconfiguration",
+      "Privilege Escalation",
+      "Brute Force",
+      "CMS Exploitation"
+    ],
+    "level": "Medium",
+    "kind": "writeup",
+    "platform": "tryhackme",
+    "slug": "mrrobot",
+    "path": "/writeups/tryhackme/mrrobot.md"
+  },
+  {
     "title": "Influencer",
     "date": "2026-10-19",
     "draft": false,
