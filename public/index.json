@@ -1,5 +1,22 @@
 [
   {
+    "title": "Jackpot",
+    "date": "2026-11-08",
+    "draft": false,
+    "description": "Writeup de la máquina Jackpot en TryHackMe.",
+    "categories": "TryHackMe",
+    "tags": [
+      "Information Disclosure",
+      "Exposed Service",
+      "Business Logic"
+    ],
+    "level": "Medium",
+    "kind": "writeup",
+    "platform": "tryhackme",
+    "slug": "jackpot",
+    "path": "/writeups/tryhackme/jackpot.md"
+  },
+  {
     "title": "Mr Robot",
     "date": "2026-11-02",
     "draft": false,
